@@ -1,0 +1,137 @@
+/**
+ * EasyCheckout Admin Styles
+ */
+
+/* Settings Page */
+.easycheckout-settings {
+    max-width: 800px;
+}
+
+.easycheckout-settings .nav-tab-wrapper {
+    margin-bottom: 20px;
+}
+
+.easycheckout-settings .form-table th {
+    width: 200px;
+}
+
+.easycheckout-settings .form-table td {
+    vertical-align: top;
+}
+
+.easycheckout-settings code {
+    background: #f0f0f1;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+/* Connection Status */
+#easycheckout-connection-result,
+#easycheckout-cache-result {
+    margin-left: 10px;
+    display: inline-block;
+}
+
+#easycheckout-connection-result .success,
+#easycheckout-cache-result .success {
+    color: #00a32a;
+}
+
+#easycheckout-connection-result .error,
+#easycheckout-cache-result .error {
+    color: #d63638;
+}
+
+/* Transactions Table */
+.easycheckout-settings .wp-list-table {
+    margin-top: 20px;
+}
+
+.ec-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.ec-status-pending {
+    background: #f0f0f1;
+    color: #50575e;
+}
+
+.ec-status-paid,
+.ec-status-completed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.ec-status-failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.ec-status-refunded {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Webhook URL */
+#webhook-url {
+    display: inline-block;
+    padding: 8px 12px;
+    background: #f0f0f1;
+    border-radius: 4px;
+    font-family: monospace;
+    word-break: break-all;
+}
+
+/* List styles */
+.easycheckout-settings .ul-disc {
+    list-style-type: disc;
+    margin-left: 20px;
+}
+
+.easycheckout-settings .ul-disc li {
+    margin-bottom: 8px;
+}
+
+/* Copy notice */
+.copied-notice {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #1d2327;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    z-index: 99999;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Tab Content */
+.tab-content {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-top: none;
+    padding: 20px;
+}
+
+/* Help text */
+.easycheckout-settings .description {
+    color: #646970;
+    font-style: italic;
+}
+
+/* Multiselect */
+.easycheckout-settings .wc-enhanced-select {
+    min-width: 300px;
+}
