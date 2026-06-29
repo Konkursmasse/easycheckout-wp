@@ -60,78 +60,93 @@ class Shortcodes {
         $atts = shortcode_atts([
             'id' => '',
             'slug' => '',
-            'theme' => 'light',
-            'show_header' => 'yes',
-            'show_products' => 'yes',
+            'mode' => 'iframe',   // 'iframe' = inline checkout (identical to easycheckout.ch) | 'button' = redirect
+            'height' => '',       // fixed px height for the iframe; empty = responsive default
+            'max_width' => '1100',
             'button_text' => __('Jetzt kaufen', 'easycheckout'),
             'new_tab' => 'no',
         ], $atts, 'easycheckout');
 
-        $checkout = $this->get_checkout_data($atts['id'], $atts['slug']);
-
-        if (is_wp_error($checkout)) {
-            return $this->error_for_admin($checkout);
+        $slug = $this->resolve_slug($atts['id'], $atts['slug']);
+        if (is_wp_error($slug)) {
+            return $this->error_for_admin($slug);
         }
 
-        wp_enqueue_style('easycheckout-checkout');
+        $url = $this->hosted_checkout_url($slug);
 
-        $url = $this->hosted_checkout_url($checkout['slug']);
-        $target = $atts['new_tab'] === 'yes' ? ' target="_blank" rel="noopener"' : '';
+        // Redirect-button mode (optional).
+        if ($atts['mode'] === 'button') {
+            wp_enqueue_style('easycheckout-checkout');
+            $target = $atts['new_tab'] === 'yes' ? ' target="_blank" rel="noopener"' : '';
+            return '<div class="easycheckout-actions"><a class="easycheckout-button easycheckout-pay-button" href="'
+                . esc_url($url) . '"' . $target . '>' . esc_html($atts['button_text']) . '</a></div>';
+        }
+
+        // Inline iframe of the hosted checkout — visually identical to
+        // easycheckout.ch and fully functional (payment happens inside).
+        $mw = max(320, intval($atts['max_width']));
+        $fixed_h = intval($atts['height']);
+        $uid = 'ecf-' . substr(md5($slug . wp_rand()), 0, 8);
 
         ob_start();
         ?>
-        <div class="easycheckout-container easycheckout-theme-<?php echo esc_attr($atts['theme']); ?>">
-
-            <?php if ($atts['show_header'] === 'yes') : ?>
-            <div class="easycheckout-header">
-                <?php if (!empty($checkout['logo'])) : ?>
-                    <img src="<?php echo esc_url($checkout['logo']); ?>" alt="" class="easycheckout-logo">
-                <?php endif; ?>
-                <?php if (!empty($checkout['name'])) : ?>
-                    <h2 class="easycheckout-title"><?php echo esc_html($checkout['name']); ?></h2>
-                <?php endif; ?>
-                <?php if (!empty($checkout['description'])) : ?>
-                    <p class="easycheckout-description"><?php echo esc_html($checkout['description']); ?></p>
-                <?php endif; ?>
+        <div class="easycheckout-embed" style="width:100vw;max-width:100vw;margin-left:calc(50% - 50vw);">
+            <div style="max-width:<?php echo esc_attr($mw); ?>px;margin:0 auto;padding:0 16px;box-sizing:border-box;">
+                <iframe id="<?php echo esc_attr($uid); ?>" class="easycheckout-frame"
+                        title="<?php esc_attr_e('Checkout', 'easycheckout'); ?>"
+                        src="<?php echo esc_url($url); ?>"
+                        style="width:100%;border:0;display:block;background:transparent;<?php echo $fixed_h ? 'height:' . esc_attr($fixed_h) . 'px;' : ''; ?>"
+                        loading="lazy" allow="payment *" referrerpolicy="origin"></iframe>
             </div>
-            <?php endif; ?>
-
-            <?php if ($atts['show_products'] === 'yes' && !empty($checkout['products'])) : ?>
-            <div class="easycheckout-products">
-                <?php foreach ($checkout['products'] as $product) : ?>
-                <div class="easycheckout-product">
-                    <?php if (!empty($product['image'])) : ?>
-                        <img src="<?php echo $this->img_src($product['image']); ?>" alt="" class="easycheckout-product-image">
-                    <?php endif; ?>
-                    <div class="easycheckout-product-info">
-                        <h3 class="easycheckout-product-name"><?php echo esc_html($product['name']); ?></h3>
-                        <?php if (!empty($product['description'])) : ?>
-                            <p class="easycheckout-product-description"><?php echo esc_html($product['description']); ?></p>
-                        <?php endif; ?>
-                        <span class="easycheckout-product-price">
-                            <?php echo esc_html($this->format_price($product['price'], $checkout['currency'])); ?>
-                        </span>
-                        <?php if (!empty($product['sold_out'])) : ?>
-                            <span class="easycheckout-soldout"><?php esc_html_e('Ausverkauft', 'easycheckout'); ?></span>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-            </div>
-            <?php endif; ?>
-
-            <div class="easycheckout-actions">
-                <a class="easycheckout-button easycheckout-pay-button" href="<?php echo esc_url($url); ?>"<?php echo $target; ?>>
-                    <?php echo esc_html($atts['button_text']); ?>
-                </a>
-            </div>
-
-            <p class="easycheckout-redirect-info">
-                <?php esc_html_e('Sichere Zahlung über EasyCheckout (Karte, TWINT, QR-Rechnung).', 'easycheckout'); ?>
-            </p>
         </div>
+        <?php if (!$fixed_h) : ?>
+        <style>
+            #<?php echo $uid; ?>{height:1250px;}
+            @media (max-width:980px){#<?php echo $uid; ?>{height:1700px;}}
+            @media (max-width:600px){#<?php echo $uid; ?>{height:1980px;}}
+        </style>
+        <?php endif; ?>
+        <script>
+        (function(){
+            var f = document.getElementById('<?php echo $uid; ?>');
+            if (!f) { return; }
+            // Auto-size when the hosted page reports its height (graceful no-op otherwise).
+            window.addEventListener('message', function(e){
+                if (typeof e.origin !== 'string' || e.origin.indexOf('easycheckout.ch') === -1) { return; }
+                var d = e.data;
+                if (d && d.type === 'easycheckout:height' && d.height) {
+                    f.style.height = (parseInt(d.height, 10) + 24) + 'px';
+                }
+            });
+        })();
+        </script>
         <?php
         return ob_get_clean();
+    }
+
+    /**
+     * Resolve a remote checkout slug from a slug attribute or a local
+     * ec_checkout post (without an API round-trip).
+     *
+     * @param int|string $id
+     * @param string     $slug
+     * @return string|\WP_Error
+     */
+    private function resolve_slug($id, $slug) {
+        if (!empty($slug)) {
+            return $slug;
+        }
+        if (!empty($id)) {
+            $post = get_post($id);
+            if ($post && $post->post_type === 'ec_checkout') {
+                $remote_slug = get_post_meta($post->ID, '_ec_checkout_slug', true);
+                if (!empty($remote_slug)) {
+                    return $remote_slug;
+                }
+                return new \WP_Error('ec_no_slug', __('Diesem Checkout ist kein EasyCheckout-Slug zugeordnet.', 'easycheckout'));
+            }
+        }
+        return new \WP_Error('ec_missing_checkout', __('Bitte gib einen Checkout-Slug an: [easycheckout slug="dein-slug"].', 'easycheckout'));
     }
 
     /**
