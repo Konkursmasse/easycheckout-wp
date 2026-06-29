@@ -105,7 +105,7 @@ class Shortcodes {
                         title="<?php esc_attr_e('Checkout', 'easycheckout'); ?>"
                         <?php if ($match_site_font) : ?>data-ecsrc="<?php echo esc_url($src); ?>"<?php else : ?>src="<?php echo esc_url($src); ?>"<?php endif; ?>
                         style="width:100%;border:0;display:block;background:transparent;<?php echo $fixed_h ? 'height:' . esc_attr($fixed_h) . 'px;' : ''; ?>"
-                        loading="lazy" allow="payment *" referrerpolicy="origin"></iframe>
+                        allow="payment *" referrerpolicy="origin"></iframe>
             </div>
         </div>
         <?php if (!$fixed_h) : ?>
