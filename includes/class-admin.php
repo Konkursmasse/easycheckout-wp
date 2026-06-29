@@ -149,6 +149,43 @@ class Admin {
             'sanitize_callback' => 'sanitize_text_field',
             'default' => 'no',
         ]);
+
+        // Design settings (used by the embed iframe via ec_* params)
+        register_setting('easycheckout_design', 'easycheckout_design', [
+            'type' => 'array',
+            'sanitize_callback' => [$this, 'sanitize_design'],
+            'default' => [],
+        ]);
+    }
+
+    /**
+     * Sanitize design settings.
+     *
+     * @param mixed $value
+     * @return array
+     */
+    public function sanitize_design($value) {
+        if (!is_array($value)) {
+            return [];
+        }
+        $out = [];
+        foreach (['primary', 'text', 'bg', 'button', 'buttontext'] as $k) {
+            if (!empty($value[$k])) {
+                $color = sanitize_hex_color($value[$k]);
+                if ($color) {
+                    $out[$k] = $color;
+                }
+            }
+        }
+        if (isset($value['radius']) && $value['radius'] !== '') {
+            $out['radius'] = max(0, min(40, (int) $value['radius']));
+        }
+        $fs = isset($value['font_source']) ? $value['font_source'] : 'default';
+        $out['font_source'] = in_array($fs, ['default', 'site', 'custom'], true) ? $fs : 'default';
+        if (!empty($value['font_custom'])) {
+            $out['font_custom'] = sanitize_text_field($value['font_custom']);
+        }
+        return $out;
     }
 
     /**
@@ -249,6 +286,10 @@ class Admin {
                     <?php _e('WooCommerce', 'easycheckout'); ?>
                 </a>
                 <?php endif; ?>
+                <a href="?page=<?php echo $this->page_slug; ?>&tab=design"
+                   class="nav-tab <?php echo $active_tab === 'design' ? 'nav-tab-active' : ''; ?>">
+                    <?php _e('Design', 'easycheckout'); ?>
+                </a>
                 <a href="?page=<?php echo $this->page_slug; ?>&tab=webhooks"
                    class="nav-tab <?php echo $active_tab === 'webhooks' ? 'nav-tab-active' : ''; ?>">
                     <?php _e('Webhooks', 'easycheckout'); ?>
@@ -267,6 +308,9 @@ class Admin {
                         break;
                     case 'woocommerce':
                         $this->render_woocommerce_tab();
+                        break;
+                    case 'design':
+                        $this->render_design_tab();
                         break;
                     case 'webhooks':
                         $this->render_webhooks_tab();
@@ -413,6 +457,74 @@ class Admin {
                 <?php _e('Configure WooCommerce Gateway', 'easycheckout'); ?>
             </a>
         </p>
+        <?php
+    }
+
+    /**
+     * Render design tab
+     */
+    private function render_design_tab() {
+        $d = get_option('easycheckout_design', []);
+        if (!is_array($d)) {
+            $d = [];
+        }
+        $get = function ($k, $def = '') use ($d) {
+            return isset($d[$k]) ? $d[$k] : $def;
+        };
+        $fs = $get('font_source', 'default');
+        ?>
+        <h2><?php _e('Design des eingebetteten Checkouts', 'easycheckout'); ?></h2>
+        <p class="description">
+            <?php _e('Diese Einstellungen werden an die eingebettete Checkout-Seite übergeben (Farben, Eckenradius, Schriftart). Leere Felder = Standard des Checkouts. Pro Einbettung überschreibbar via Shortcode-Attribute, z. B. [easycheckout slug="x" primary="#ff0000" font="site"].', 'easycheckout'); ?>
+        </p>
+        <form method="post" action="options.php">
+            <?php settings_fields('easycheckout_design'); ?>
+            <table class="form-table">
+                <tr>
+                    <th scope="row"><label><?php _e('Akzentfarbe (Primary)', 'easycheckout'); ?></label></th>
+                    <td><input type="text" name="easycheckout_design[primary]" value="<?php echo esc_attr($get('primary')); ?>" placeholder="#4F46E5" class="regular-text"></td>
+                </tr>
+                <tr>
+                    <th scope="row"><label><?php _e('Textfarbe', 'easycheckout'); ?></label></th>
+                    <td><input type="text" name="easycheckout_design[text]" value="<?php echo esc_attr($get('text')); ?>" placeholder="#111827" class="regular-text"></td>
+                </tr>
+                <tr>
+                    <th scope="row"><label><?php _e('Hintergrundfarbe', 'easycheckout'); ?></label></th>
+                    <td><input type="text" name="easycheckout_design[bg]" value="<?php echo esc_attr($get('bg')); ?>" placeholder="#F9FAFB" class="regular-text"></td>
+                </tr>
+                <tr>
+                    <th scope="row"><label><?php _e('Button-Farbe', 'easycheckout'); ?></label></th>
+                    <td><input type="text" name="easycheckout_design[button]" value="<?php echo esc_attr($get('button')); ?>" placeholder="#4F46E5" class="regular-text"></td>
+                </tr>
+                <tr>
+                    <th scope="row"><label><?php _e('Button-Textfarbe', 'easycheckout'); ?></label></th>
+                    <td><input type="text" name="easycheckout_design[buttontext]" value="<?php echo esc_attr($get('buttontext')); ?>" placeholder="#FFFFFF" class="regular-text"></td>
+                </tr>
+                <tr>
+                    <th scope="row"><label><?php _e('Eckenradius (px)', 'easycheckout'); ?></label></th>
+                    <td><input type="number" min="0" max="40" name="easycheckout_design[radius]" value="<?php echo esc_attr($get('radius')); ?>" placeholder="12" class="small-text"></td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="ec-font-source"><?php _e('Schriftart', 'easycheckout'); ?></label></th>
+                    <td>
+                        <select name="easycheckout_design[font_source]" id="ec-font-source">
+                            <option value="default" <?php selected($fs, 'default'); ?>><?php _e('Standard (Inter)', 'easycheckout'); ?></option>
+                            <option value="site" <?php selected($fs, 'site'); ?>><?php _e('Schriftart dieser Website übernehmen', 'easycheckout'); ?></option>
+                            <option value="custom" <?php selected($fs, 'custom'); ?>><?php _e('Eigene (Google Font)', 'easycheckout'); ?></option>
+                        </select>
+                        <p class="description"><?php _e('„Schriftart dieser Website übernehmen" liest die Font deiner Seite aus und wendet sie im Checkout an (passende Google-Font wird geladen).', 'easycheckout'); ?></p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label><?php _e('Eigene Schriftart (Name)', 'easycheckout'); ?></label></th>
+                    <td>
+                        <input type="text" name="easycheckout_design[font_custom]" value="<?php echo esc_attr($get('font_custom')); ?>" placeholder="Poppins" class="regular-text">
+                        <p class="description"><?php _e('Google-Font-Name, z. B. „Poppins" oder „Roboto" (nur bei Auswahl „Eigene").', 'easycheckout'); ?></p>
+                    </td>
+                </tr>
+            </table>
+            <?php submit_button(); ?>
+        </form>
         <?php
     }
 

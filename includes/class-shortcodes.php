@@ -65,6 +65,14 @@ class Shortcodes {
             'max_width' => '1100',
             'button_text' => __('Jetzt kaufen', 'easycheckout'),
             'new_tab' => 'no',
+            // Design overrides (each falls back to the global Design settings).
+            'primary' => '',
+            'text' => '',
+            'bg' => '',
+            'button' => '',
+            'button_text_color' => '',
+            'radius' => '',
+            'font' => '',         // '' | 'default' | 'site' (match this site) | a font name e.g. "Poppins"
         ], $atts, 'easycheckout');
 
         $slug = $this->resolve_slug($atts['id'], $atts['slug']);
@@ -72,18 +80,19 @@ class Shortcodes {
             return $this->error_for_admin($slug);
         }
 
-        $url = $this->hosted_checkout_url($slug);
+        $base = $this->hosted_checkout_url($slug);
 
         // Redirect-button mode (optional).
         if ($atts['mode'] === 'button') {
             wp_enqueue_style('easycheckout-checkout');
             $target = $atts['new_tab'] === 'yes' ? ' target="_blank" rel="noopener"' : '';
             return '<div class="easycheckout-actions"><a class="easycheckout-button easycheckout-pay-button" href="'
-                . esc_url($url) . '"' . $target . '>' . esc_html($atts['button_text']) . '</a></div>';
+                . esc_url($base) . '"' . $target . '>' . esc_html($atts['button_text']) . '</a></div>';
         }
 
         // Inline iframe of the hosted checkout — visually identical to
         // easycheckout.ch and fully functional (payment happens inside).
+        list($src, $match_site_font) = $this->build_embed_url($base, $atts);
         $mw = max(320, intval($atts['max_width']));
         $fixed_h = intval($atts['height']);
         $uid = 'ecf-' . substr(md5($slug . wp_rand()), 0, 8);
@@ -94,7 +103,7 @@ class Shortcodes {
             <div style="max-width:<?php echo esc_attr($mw); ?>px;margin:0 auto;padding:0 16px;box-sizing:border-box;">
                 <iframe id="<?php echo esc_attr($uid); ?>" class="easycheckout-frame"
                         title="<?php esc_attr_e('Checkout', 'easycheckout'); ?>"
-                        src="<?php echo esc_url($url); ?>"
+                        <?php if ($match_site_font) : ?>data-ecsrc="<?php echo esc_url($src); ?>"<?php else : ?>src="<?php echo esc_url($src); ?>"<?php endif; ?>
                         style="width:100%;border:0;display:block;background:transparent;<?php echo $fixed_h ? 'height:' . esc_attr($fixed_h) . 'px;' : ''; ?>"
                         loading="lazy" allow="payment *" referrerpolicy="origin"></iframe>
             </div>
@@ -110,6 +119,17 @@ class Shortcodes {
         (function(){
             var f = document.getElementById('<?php echo $uid; ?>');
             if (!f) { return; }
+            <?php if ($match_site_font) : ?>
+            // Match the surrounding site's font: detect it and pass it to the checkout.
+            try {
+                var fam = (getComputedStyle(document.body).fontFamily || '').trim();
+                var base = f.getAttribute('data-ecsrc') || '';
+                var sep = base.indexOf('?') === -1 ? '?' : '&';
+                f.src = (fam && base) ? (base + sep + 'ec_font=' + encodeURIComponent(fam)) : base;
+            } catch (err) {
+                var b = f.getAttribute('data-ecsrc'); if (b) { f.src = b; }
+            }
+            <?php endif; ?>
             // Auto-size when the hosted page reports its height (graceful no-op otherwise).
             window.addEventListener('message', function(e){
                 if (typeof e.origin !== 'string' || e.origin.indexOf('easycheckout.ch') === -1) { return; }
@@ -122,6 +142,67 @@ class Shortcodes {
         </script>
         <?php
         return ob_get_clean();
+    }
+
+    /**
+     * Build the hosted-checkout embed URL with opt-in ec_* design params
+     * (shortcode attributes override the global Design settings).
+     *
+     * @param string $base
+     * @param array  $atts
+     * @return array [string $url, bool $match_site_font]
+     */
+    private function build_embed_url($base, $atts) {
+        $design = get_option('easycheckout_design', []);
+        if (!is_array($design)) {
+            $design = [];
+        }
+
+        $pick = function ($att_key, $opt_key) use ($atts, $design) {
+            if (isset($atts[$att_key]) && $atts[$att_key] !== '') {
+                return $atts[$att_key];
+            }
+            return isset($design[$opt_key]) ? $design[$opt_key] : '';
+        };
+
+        $params = ['ec_embed' => '1'];
+
+        $colors = [
+            'primary'           => ['primary', 'ec_primary'],
+            'text'              => ['text', 'ec_text'],
+            'bg'                => ['bg', 'ec_bg'],
+            'button'            => ['button', 'ec_button'],
+            'button_text_color' => ['buttontext', 'ec_buttontext'],
+        ];
+        foreach ($colors as $att_key => $info) {
+            $val = $pick($att_key, $info[0]);
+            if ($val !== '') {
+                $params[$info[1]] = ltrim($val, '#');
+            }
+        }
+
+        $radius = $pick('radius', 'radius');
+        if ($radius !== '' && is_numeric($radius)) {
+            $params['ec_radius'] = (int) $radius;
+        }
+
+        // Font: '' falls back to the global setting; 'site' = match this site
+        // (resolved in JS); 'custom' uses the configured custom font; any other
+        // non-default value is treated as a literal font name.
+        $font = $atts['font'] !== '' ? $atts['font'] : (isset($design['font_source']) ? $design['font_source'] : 'default');
+        $match_site_font = false;
+        if ($font === 'site') {
+            $match_site_font = true;
+        } elseif ($font === 'custom') {
+            $custom = isset($design['font_custom']) ? $design['font_custom'] : '';
+            if ($custom !== '') {
+                $params['ec_font'] = $custom;
+            }
+        } elseif ($font !== '' && $font !== 'default' && $font !== 'inter') {
+            $params['ec_font'] = $font;
+        }
+
+        return [add_query_arg($params, $base), $match_site_font];
     }
 
     /**
