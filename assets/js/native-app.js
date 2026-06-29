@@ -411,6 +411,262 @@
 		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, props.title ) ), el( 'div', { className: 'ec-alert' }, 'Dieser Bereich wird gerade nativ gebaut und folgt in Kürze.' ) );
 	}
 
+	// --- Onboarding / KYC ---------------------------------------------------
+
+	var MCC = [ [ '5734', 'Software / IT' ], [ '7372', 'Programmierung' ], [ '5999', 'Einzelhandel (div.)' ], [ '5045', 'Computer/Zubehör' ], [ '7299', 'Dienstleistungen' ], [ '8999', 'Freiberuflich' ], [ '5812', 'Gastronomie' ], [ '5611', 'Bekleidung' ], [ '7991', 'Freizeit/Events' ] ];
+
+	function OnboardingView() {
+		var s = useState( { status: null, acct: null, error: '', msg: '' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function load() {
+			api( 'GET', '/api/stripe/connect' ).then( function ( status ) {
+				set( function ( p ) { return Object.assign( {}, p, { status: status } ); } );
+				api( 'GET', '/api/stripe/account-status' ).then( function ( a ) { set( function ( p ) { return Object.assign( {}, p, { acct: a } ); } ); } ).catch( function () {} );
+			} ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { error: err.message, status: {} } ); } ); } );
+		}
+		useEffect( function () { load(); }, [] );
+		function start() { api( 'POST', '/api/stripe/connect', { origin: window.location.origin } ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
+		function hosted() { api( 'POST', '/api/stripe/connect/onboarding-link', { origin: window.location.origin } ).then( function ( b ) { if ( b && b.url ) { window.open( b.url, '_blank', 'noopener' ); } else if ( b && b.redirectUrl ) { window.open( b.redirectUrl, '_blank', 'noopener' ); } else { window.alert( 'Onboarding bereits abgeschlossen.' ); } } ).catch( function ( err ) { window.alert( err.message ); } ); }
+
+		if ( ! st.status ) { return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Verifizierung' ) ), st.error ? ErrorBox( st.error ) : Spinner() ); }
+		var hasAccount = !! ( st.status.stripeAccountId || ( st.acct && st.acct.hasAccount ) );
+		var charges = st.status.chargesEnabled || ( st.acct && st.acct.chargesEnabled );
+
+		return el( 'div', null,
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Verifizierung (Stripe)' ),
+				el( 'button', { className: 'ec-btn', onClick: hosted }, 'Bei Stripe abschließen ↗' ) ),
+			ErrorBox( st.error ),
+			el( 'div', { className: 'ec-card', style: { marginBottom: '16px' } },
+				el( 'h3', null, 'Status' ),
+				el( 'p', null, charges ? el( 'span', { className: 'ec-badge ec-badge-on' }, 'Zahlungen aktiv' ) : el( 'span', { className: 'ec-badge ec-badge-off' }, ( st.acct && st.acct.status && ( st.acct.status.summary || st.acct.status.label ) ) || 'Verifizierung erforderlich' ) ),
+				st.acct && st.acct.tasks && st.acct.tasks.length > 0 && el( 'ul', { className: 'ec-tasklist' }, st.acct.tasks.map( function ( t, i ) { return el( 'li', { key: i }, el( 'strong', null, t.title ), t.description && el( 'span', { className: 'ec-muted' }, ' — ' + t.description ) ); } ) ),
+				! hasAccount && el( 'button', { className: 'ec-btn ec-btn-primary', onClick: start }, 'Verifizierung starten' )
+			),
+			hasAccount && el( 'div', { className: 'ec-form-grid' },
+				el( BusinessForm, { onSaved: load } ),
+				el( PersonForm, { onSaved: load } ),
+				el( PersonsCard, null ),
+				el( BankForm, { onSaved: load } ),
+				el( DocsCard, null ),
+				el( TermsCard, { onSaved: load } )
+			)
+		);
+	}
+
+	function BusinessForm( props ) {
+		var s = useState( { businessType: 'company', companyName: '', taxId: '', industry: '5734', website: '', productDescription: '', phone: '', line1: '', postalCode: '', city: '', country: 'CH', busy: false, msg: '', error: '' } );
+		var st = s[ 0 ], set = s[ 1 ]; function up( o ) { set( Object.assign( {}, st, { msg: '', error: '' }, o ) ); }
+		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true } ) );
+			api( 'POST', '/api/stripe/connect/business', { businessType: st.businessType, companyName: st.companyName, taxId: st.taxId, industry: st.industry, website: st.website, productDescription: st.productDescription, phone: st.phone, address: { line1: st.line1, postalCode: st.postalCode, city: st.city, country: st.country } } )
+				.then( function () { set( Object.assign( {}, st, { busy: false, msg: 'Gespeichert.' } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
+		}
+		return cardForm( '1. Geschäftsangaben', el( 'div', null,
+			Field( 'Art', el( 'select', { value: st.businessType, onChange: function ( e ) { up( { businessType: e.target.value } ); } }, el( 'option', { value: 'company' }, 'Firma' ), el( 'option', { value: 'individual' }, 'Einzelunternehmen' ) ) ),
+			Field( 'Firmenname', el( 'input', { value: st.companyName, onChange: function ( e ) { up( { companyName: e.target.value } ); } } ) ),
+			Field( 'UID / Steuernr.', el( 'input', { value: st.taxId, onChange: function ( e ) { up( { taxId: e.target.value } ); } } ) ),
+			Field( 'Branche', el( 'select', { value: st.industry, onChange: function ( e ) { up( { industry: e.target.value } ); } }, MCC.map( function ( m ) { return el( 'option', { key: m[ 0 ], value: m[ 0 ] }, m[ 1 ] ); } ) ) ),
+			Field( 'Website', el( 'input', { value: st.website, onChange: function ( e ) { up( { website: e.target.value } ); } }, 'oder Beschreibung unten' ) ),
+			Field( 'Produktbeschreibung', el( 'input', { value: st.productDescription, onChange: function ( e ) { up( { productDescription: e.target.value } ); } } ) ),
+			Field( 'Telefon', el( 'input', { value: st.phone, onChange: function ( e ) { up( { phone: e.target.value } ); } } ) ),
+			Field( 'Strasse', el( 'input', { value: st.line1, onChange: function ( e ) { up( { line1: e.target.value } ); } } ) ),
+			el( 'div', { className: 'ec-two' }, Field( 'PLZ', el( 'input', { value: st.postalCode, onChange: function ( e ) { up( { postalCode: e.target.value } ); } } ) ), Field( 'Ort', el( 'input', { value: st.city, onChange: function ( e ) { up( { city: e.target.value } ); } } ) ) )
+		), st, save );
+	}
+
+	function PersonForm( props ) {
+		var s = useState( { firstName: '', lastName: '', email: '', phone: '', day: '', month: '', year: '', line1: '', postalCode: '', city: '', isOwner: true, percentOwnership: '', busy: false, msg: '', error: '' } );
+		var st = s[ 0 ], set = s[ 1 ]; function up( o ) { set( Object.assign( {}, st, { msg: '', error: '' }, o ) ); }
+		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true } ) );
+			api( 'POST', '/api/stripe/connect/person', { firstName: st.firstName, lastName: st.lastName, email: st.email, phone: st.phone, dob: { day: parseInt( st.day, 10 ), month: parseInt( st.month, 10 ), year: parseInt( st.year, 10 ) }, address: { line1: st.line1, postalCode: st.postalCode, city: st.city }, isOwner: st.isOwner, percentOwnership: st.percentOwnership ? parseInt( st.percentOwnership, 10 ) : undefined } )
+				.then( function () { set( Object.assign( {}, st, { busy: false, msg: 'Gespeichert.' } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
+		}
+		return cardForm( '2. Vertretungsberechtigte Person', el( 'div', null,
+			el( 'div', { className: 'ec-two' }, Field( 'Vorname', el( 'input', { value: st.firstName, onChange: function ( e ) { up( { firstName: e.target.value } ); } } ) ), Field( 'Nachname', el( 'input', { value: st.lastName, onChange: function ( e ) { up( { lastName: e.target.value } ); } } ) ) ),
+			Field( 'E-Mail', el( 'input', { type: 'email', value: st.email, onChange: function ( e ) { up( { email: e.target.value } ); } } ) ),
+			el( 'span', { className: 'ec-field' }, el( 'span', null, 'Geburtsdatum' ), el( 'div', { className: 'ec-dob' },
+				el( 'input', { type: 'number', placeholder: 'TT', value: st.day, onChange: function ( e ) { up( { day: e.target.value } ); } } ),
+				el( 'input', { type: 'number', placeholder: 'MM', value: st.month, onChange: function ( e ) { up( { month: e.target.value } ); } } ),
+				el( 'input', { type: 'number', placeholder: 'JJJJ', value: st.year, onChange: function ( e ) { up( { year: e.target.value } ); } } ) ) ),
+			Field( 'Strasse', el( 'input', { value: st.line1, onChange: function ( e ) { up( { line1: e.target.value } ); } } ) ),
+			el( 'div', { className: 'ec-two' }, Field( 'PLZ', el( 'input', { value: st.postalCode, onChange: function ( e ) { up( { postalCode: e.target.value } ); } } ) ), Field( 'Ort', el( 'input', { value: st.city, onChange: function ( e ) { up( { city: e.target.value } ); } } ) ) ),
+			el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.isOwner, onChange: function ( e ) { up( { isOwner: e.target.checked } ); } } ), ' Eigentümer/in' ),
+			st.isOwner && Field( 'Anteil (%)', el( 'input', { type: 'number', value: st.percentOwnership, onChange: function ( e ) { up( { percentOwnership: e.target.value } ); } } ) )
+		), st, save );
+	}
+
+	function PersonsCard() {
+		var s = useState( { persons: null, error: '' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function load() { api( 'GET', '/api/stripe/connect/persons' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { persons: ( b && b.persons ) || [] } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { persons: [], error: err.message } ); } ); } ); }
+		useEffect( function () { load(); }, [] );
+		function del( id ) { if ( ! window.confirm( 'Person entfernen?' ) ) { return; } api( 'DELETE', '/api/stripe/connect/persons?personId=' + id ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
+		function confirmOwners() { api( 'POST', '/api/stripe/connect/confirm-owners', { owners: true, directors: true, executives: true } ).then( function () { window.alert( 'Bestätigt.' ); } ).catch( function ( err ) { window.alert( err.message ); } ); }
+		return el( 'div', { className: 'ec-card' }, el( 'h3', null, '3. Weitere Eigentümer/Direktoren' ), ErrorBox( st.error ),
+			st.persons === null ? Spinner() : st.persons.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Keine weiteren Personen.' ) :
+				el( 'ul', { className: 'ec-tasklist' }, st.persons.map( function ( p ) { return el( 'li', { key: p.id }, ( p.firstName || '' ) + ' ' + ( p.lastName || '' ), ' ', el( 'a', { href: '#', onClick: function ( e ) { e.preventDefault(); del( p.id ); } }, 'entfernen' ) ); } ) ),
+			el( 'div', { className: 'ec-form-actions' }, el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', onClick: confirmOwners }, 'Alle Eigentümer angegeben' ) ) );
+	}
+
+	function BankForm( props ) {
+		var s = useState( { iban: '', accountHolderName: '', busy: false, msg: '', error: '' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true, msg: '', error: '' } ) ); api( 'POST', '/api/stripe/connect/bank', { iban: st.iban, accountHolderName: st.accountHolderName } ).then( function () { set( Object.assign( {}, st, { busy: false, msg: 'Gespeichert.' } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
+		return cardForm( '4. Bankverbindung', el( 'div', null,
+			Field( 'IBAN', el( 'input', { value: st.iban, onChange: function ( e ) { set( Object.assign( {}, st, { iban: e.target.value } ) ); } } ) ),
+			Field( 'Kontoinhaber', el( 'input', { value: st.accountHolderName, onChange: function ( e ) { set( Object.assign( {}, st, { accountHolderName: e.target.value } ) ); } } ) )
+		), st, save );
+	}
+
+	function DocsCard() {
+		var s = useState( { busy: false, msg: '', error: '' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function upId( e ) { var f = e.target.files[ 0 ]; if ( ! f ) { return; } set( { busy: true, msg: '', error: '' } ); uploadFile( 'POST', '/api/stripe/connect/document', 'front', f ).then( function () { set( { busy: false, msg: 'Ausweis hochgeladen.' } ); } ).catch( function ( err ) { set( { busy: false, error: err.message } ); } ); }
+		function upCo( e ) { var f = e.target.files[ 0 ]; if ( ! f ) { return; } set( { busy: true, msg: '', error: '' } ); uploadFile( 'POST', '/api/stripe/connect/company-document', 'document', f ).then( function () { set( { busy: false, msg: 'Firmendokument hochgeladen.' } ); } ).catch( function ( err ) { set( { busy: false, error: err.message } ); } ); }
+		return el( 'div', { className: 'ec-card' }, el( 'h3', null, '5. Dokumente' ), st.msg && el( 'div', { className: 'ec-alert' }, st.msg ), ErrorBox( st.error ),
+			Field( 'Ausweis / Pass', el( 'input', { type: 'file', accept: 'image/*,.pdf', onChange: upId, disabled: st.busy } ) ),
+			Field( 'Handelsregisterauszug', el( 'input', { type: 'file', accept: 'image/*,.pdf', onChange: upCo, disabled: st.busy } ) ) );
+	}
+
+	function TermsCard( props ) {
+		var s = useState( { busy: false, msg: '', error: '' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function accept() { set( { busy: true, msg: '', error: '' } ); api( 'POST', '/api/stripe/connect/terms', {} ).then( function ( b ) { if ( b && b.redirectUrl ) { window.open( b.redirectUrl, '_blank', 'noopener' ); } set( { busy: false, msg: 'AGB akzeptiert.' } ); props.onSaved(); } ).catch( function ( err ) { set( { busy: false, error: err.message } ); } ); }
+		return el( 'div', { className: 'ec-card' }, el( 'h3', null, '6. AGB akzeptieren' ), st.msg && el( 'div', { className: 'ec-alert' }, st.msg ), ErrorBox( st.error ),
+			el( 'p', { className: 'ec-muted ec-sm' }, 'Mit dem Akzeptieren bestätigst du die Stripe-Nutzungsbedingungen.' ),
+			el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy, onClick: accept }, st.busy ? '…' : 'AGB akzeptieren' ) );
+	}
+
+	// --- Emails -------------------------------------------------------------
+
+	function EmailsView() {
+		var s = useState( { tab: 'templates' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		return el( 'div', null,
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'E-Mails' ),
+				el( 'div', null, el( 'button', { className: 'ec-btn ec-btn-sm' + ( st.tab === 'templates' ? ' ec-btn-primary' : '' ), onClick: function () { set( { tab: 'templates' } ); } }, 'Vorlagen' ), ' ',
+					el( 'button', { className: 'ec-btn ec-btn-sm' + ( st.tab === 'logs' ? ' ec-btn-primary' : '' ), onClick: function () { set( { tab: 'logs' } ); } }, 'Protokoll' ) ) ),
+			st.tab === 'templates' ? el( EmailTemplates, null ) : el( EmailLogs, null )
+		);
+	}
+	function EmailTemplates() {
+		var s = useState( { items: null, error: '', editing: null } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function load() { api( 'GET', '/api/emails' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.templates ) || [] } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } ); }
+		useEffect( function () { load(); }, [] );
+		return el( 'div', null, ErrorBox( st.error ),
+			st.editing && el( EmailTemplateForm, { tpl: st.editing, onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
+			st.items === null ? Spinner() : el( 'table', { className: 'ec-table' }, el( 'thead', null, el( 'tr', null, el( 'th', null, 'Typ' ), el( 'th', null, 'Betreff' ), el( 'th', null, 'Aktiv' ), el( 'th', null, '' ) ) ),
+				el( 'tbody', null, st.items.map( function ( t ) { return el( 'tr', { key: t.id }, el( 'td', null, el( 'code', null, t.type ) ), el( 'td', null, t.subject ), el( 'td', null, t.isActive === false ? 'Nein' : 'Ja' ), el( 'td', { className: 'ec-row-actions' }, el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { editing: Object.assign( {}, t ) } ) ); } }, 'Bearbeiten' ) ) ); } ) ) ) );
+	}
+	function EmailTemplateForm( props ) {
+		var s = useState( Object.assign( { busy: false, error: '' }, props.tpl ) );
+		var st = s[ 0 ], set = s[ 1 ]; function up( o ) { set( Object.assign( {}, st, { error: '' }, o ) ); }
+		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true } ) ); api( 'POST', '/api/emails', { type: st.type, name: st.name, subject: st.subject, body: st.body, isActive: st.isActive !== false } ).then( function () { props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
+		return el( 'div', { className: 'ec-modal' }, el( 'form', { className: 'ec-modal-card', onSubmit: save }, el( 'h3', null, 'Vorlage: ' + st.type ), ErrorBox( st.error ),
+			Field( 'Betreff', el( 'input', { value: st.subject || '', onChange: function ( e ) { up( { subject: e.target.value } ); } } ) ),
+			Field( 'Inhalt (HTML)', el( 'textarea', { rows: 10, value: st.body || '', onChange: function ( e ) { up( { body: e.target.value } ); } } ) ),
+			el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.isActive !== false, onChange: function ( e ) { up( { isActive: e.target.checked } ); } } ), ' Aktiv' ),
+			el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, 'Speichern' ), el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, 'Abbrechen' ) ) ) );
+	}
+	function EmailLogs() {
+		var s = useState( { data: null } ); var st = s[ 0 ], set = s[ 1 ];
+		useEffect( function () { api( 'GET', '/api/email-logs?limit=50' ).then( set ).catch( function () { set( { emails: [] } ); } ); }, [] );
+		var rows = st && st.emails;
+		return rows == null ? Spinner() : el( 'table', { className: 'ec-table' }, el( 'thead', null, el( 'tr', null, el( 'th', null, 'Datum' ), el( 'th', null, 'An' ), el( 'th', null, 'Betreff' ), el( 'th', null, 'Status' ) ) ),
+			el( 'tbody', null, rows.map( function ( m ) { return el( 'tr', { key: m.id }, el( 'td', null, fmtDate( m.createdAt ) ), el( 'td', null, m.toEmail ), el( 'td', null, m.subject ), el( 'td', null, m.status ) ); } ) ) );
+	}
+
+	// --- Marketing ----------------------------------------------------------
+
+	function MarketingView() {
+		var s = useState( { subs: null, camps: null, error: '', newSub: '', editing: null } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function load() {
+			api( 'GET', '/api/subscribers?limit=100' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { subs: ( b && b.subscribers ) || [] } ); } ); } ).catch( function () {} );
+			api( 'GET', '/api/marketing' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { camps: ( b && b.campaigns ) || [] } ); } ); } ).catch( function () {} );
+		}
+		useEffect( function () { load(); }, [] );
+		function addSub( e ) { e.preventDefault(); if ( ! st.newSub ) { return; } api( 'POST', '/api/subscribers', { email: st.newSub } ).then( function () { set( Object.assign( {}, st, { newSub: '' } ) ); load(); } ).catch( function ( err ) { window.alert( err.message ); } ); }
+		function sendCamp( c ) { if ( ! window.confirm( 'Kampagne „' + c.name + '" jetzt senden?' ) ) { return; } api( 'POST', '/api/marketing/' + c.id + '/send', {} ).then( function ( b ) { window.alert( 'Gesendet: ' + ( b && b.sent != null ? b.sent : '?' ) ); load(); } ).catch( function ( err ) { window.alert( err.message ); } ); }
+		return el( 'div', null,
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Marketing' ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { editing: {} } ) ); } }, '+ Kampagne' ) ),
+			st.editing && el( CampaignForm, { onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
+			el( 'div', { className: 'ec-form-grid' },
+				el( 'div', { className: 'ec-card' }, el( 'h3', null, 'Abonnenten (' + ( st.subs ? st.subs.length : '…' ) + ')' ),
+					el( 'form', { className: 'ec-inline-form', onSubmit: addSub }, el( 'input', { type: 'email', placeholder: 'E-Mail', value: st.newSub, onChange: function ( e ) { set( Object.assign( {}, st, { newSub: e.target.value } ) ); } } ), el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary' }, '+' ) ),
+					st.subs === null ? Spinner() : el( 'ul', { className: 'ec-tasklist' }, st.subs.slice( 0, 30 ).map( function ( su ) { return el( 'li', { key: su.id }, su.email, su.name && el( 'span', { className: 'ec-muted' }, ' · ' + su.name ) ); } ) ) ),
+				el( 'div', { className: 'ec-card' }, el( 'h3', null, 'Kampagnen' ),
+					st.camps === null ? Spinner() : st.camps.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Keine Kampagnen.' ) :
+						el( 'ul', { className: 'ec-tasklist' }, st.camps.map( function ( c ) { return el( 'li', { key: c.id }, el( 'strong', null, c.name ), ' (' + c.status + ') ', c.status !== 'sent' && el( 'a', { href: '#', onClick: function ( e ) { e.preventDefault(); sendCamp( c ); } }, 'senden' ) ); } ) ) )
+			)
+		);
+	}
+	function CampaignForm( props ) {
+		var s = useState( { name: '', subject: '', body: '', busy: false, error: '' } );
+		var st = s[ 0 ], set = s[ 1 ]; function up( o ) { set( Object.assign( {}, st, { error: '' }, o ) ); }
+		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true } ) ); api( 'POST', '/api/marketing', { name: st.name, subject: st.subject, body: st.body } ).then( function () { props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
+		return el( 'div', { className: 'ec-modal' }, el( 'form', { className: 'ec-modal-card', onSubmit: save }, el( 'h3', null, 'Neue Kampagne' ), ErrorBox( st.error ),
+			Field( 'Name', el( 'input', { required: true, value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
+			Field( 'Betreff', el( 'input', { required: true, value: st.subject, onChange: function ( e ) { up( { subject: e.target.value } ); } } ) ),
+			Field( 'Inhalt (HTML)', el( 'textarea', { rows: 8, value: st.body, onChange: function ( e ) { up( { body: e.target.value } ); } } ) ),
+			el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, 'Speichern' ), el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, 'Abbrechen' ) ) ) );
+	}
+
+	// --- Webhooks / Support / Billing ---------------------------------------
+
+	function WebhooksView() {
+		var s = useState( { items: null, error: '', url: '', events: 'order.paid,order.refunded' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function load() { api( 'GET', '/api/merchant/webhooks' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { items: ( b && ( b.endpoints || b.webhooks ) ) || [] } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } ); }
+		useEffect( function () { load(); }, [] );
+		function add( e ) { e.preventDefault(); api( 'POST', '/api/merchant/webhooks', { url: st.url, events: st.events.split( ',' ).map( function ( x ) { return x.trim(); } ).filter( Boolean ), isActive: true } ).then( function () { set( Object.assign( {}, st, { url: '' } ) ); load(); } ).catch( function ( err ) { window.alert( err.message ); } ); }
+		function del( w ) { if ( ! window.confirm( 'Webhook löschen?' ) ) { return; } api( 'DELETE', '/api/merchant/webhooks?id=' + w.id ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
+		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Webhooks' ) ), ErrorBox( st.error ),
+			el( 'form', { className: 'ec-inline-form', onSubmit: add }, el( 'input', { type: 'url', placeholder: 'https://…', required: true, value: st.url, onChange: function ( e ) { set( Object.assign( {}, st, { url: e.target.value } ) ); }, style: { flex: '1' } } ), el( 'input', { placeholder: 'events (kommagetrennt)', value: st.events, onChange: function ( e ) { set( Object.assign( {}, st, { events: e.target.value } ) ); } } ), el( 'button', { className: 'ec-btn ec-btn-primary' }, 'Hinzufügen' ) ),
+			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Keine Webhooks.' ) :
+				el( 'table', { className: 'ec-table' }, el( 'thead', null, el( 'tr', null, el( 'th', null, 'URL' ), el( 'th', null, 'Events' ), el( 'th', null, '' ) ) ),
+					el( 'tbody', null, st.items.map( function ( w ) { return el( 'tr', { key: w.id }, el( 'td', null, el( 'code', null, w.url ) ), el( 'td', null, ( w.events || [] ).join( ', ' ) ), el( 'td', { className: 'ec-row-actions' }, el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { del( w ); } }, 'Löschen' ) ) ); } ) ) ) );
+	}
+
+	function SupportView() {
+		var s = useState( { items: null, error: '', creating: false, subject: '', message: '', category: 'general', priority: 'normal' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function load() { api( 'GET', '/api/support/tickets' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.tickets ) || [] } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } ); }
+		useEffect( function () { load(); }, [] );
+		function create( e ) { e.preventDefault(); api( 'POST', '/api/support/tickets', { subject: st.subject, message: st.message, category: st.category, priority: st.priority } ).then( function () { set( Object.assign( {}, st, { creating: false, subject: '', message: '' } ) ); load(); } ).catch( function ( err ) { window.alert( err.message ); } ); }
+		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Support' ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { creating: true } ) ); } }, '+ Anfrage' ) ), ErrorBox( st.error ),
+			st.creating && el( 'form', { className: 'ec-card', onSubmit: create, style: { marginBottom: '14px' } },
+				Field( 'Betreff', el( 'input', { required: true, value: st.subject, onChange: function ( e ) { set( Object.assign( {}, st, { subject: e.target.value } ) ); } } ) ),
+				Field( 'Nachricht', el( 'textarea', { rows: 4, required: true, value: st.message, onChange: function ( e ) { set( Object.assign( {}, st, { message: e.target.value } ) ); } } ) ),
+				el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary' }, 'Senden' ), el( 'button', { type: 'button', className: 'ec-btn', onClick: function () { set( Object.assign( {}, st, { creating: false } ) ); } }, 'Abbrechen' ) ) ),
+			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Keine Anfragen.' ) :
+				el( 'table', { className: 'ec-table' }, el( 'thead', null, el( 'tr', null, el( 'th', null, 'Nummer' ), el( 'th', null, 'Betreff' ), el( 'th', null, 'Status' ), el( 'th', null, 'Datum' ) ) ),
+					el( 'tbody', null, st.items.map( function ( t ) { return el( 'tr', { key: t.id }, el( 'td', null, el( 'code', null, t.ticketNumber ) ), el( 'td', null, t.subject ), el( 'td', null, t.status ), el( 'td', null, fmtDate( t.createdAt ) ) ); } ) ) ) );
+	}
+
+	var PLANS = [ [ 'free', 'Free' ], [ 'free_plus', 'Free+' ], [ 'basic', 'Basic' ], [ 'pro', 'Pro' ], [ 'rechnungen_only', 'Rechnungen' ] ];
+	function BillingView() {
+		var s = useState( { me: null, error: '', busy: '' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function load() { api( 'GET', '/api/auth/me' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { me: ( b && b.merchant ) || b } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { error: err.message } ); } ); } ); }
+		useEffect( function () { load(); }, [] );
+		function choose( plan ) {
+			if ( plan === 'free' ) { set( Object.assign( {}, st, { busy: plan } ) ); api( 'POST', '/api/subscription/checkout', { plan: 'free' } ).then( function () { set( Object.assign( {}, st, { busy: '' } ) ); load(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: '', error: err.message } ) ); } ); return; }
+			// Paid plans require card payment -> hosted billing in a new tab.
+			window.open( ecNative.appUrl + '/dashboard/billing', '_blank', 'noopener' );
+		}
+		if ( ! st.me ) { return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Tarif' ) ), st.error ? ErrorBox( st.error ) : Spinner() ); }
+		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Tarif & Add-ons' ) ), ErrorBox( st.error ),
+			el( 'p', null, 'Aktueller Tarif: ', el( 'strong', null, st.me.plan ) ),
+			el( 'div', { className: 'ec-stat-grid' }, PLANS.map( function ( pl ) {
+				var current = st.me.plan === pl[ 0 ];
+				return el( 'div', { key: pl[ 0 ], className: 'ec-stat' }, el( 'div', { className: 'ec-stat-val', style: { fontSize: '18px' } }, pl[ 1 ] ),
+					el( 'button', { className: 'ec-btn ec-btn-sm' + ( current ? '' : ' ec-btn-primary' ), disabled: current || st.busy === pl[ 0 ], onClick: function () { choose( pl[ 0 ] ); }, style: { marginTop: '8px' } }, current ? 'Aktiv' : ( pl[ 0 ] === 'free' ? 'Wechseln' : 'Upgrade ↗' ) ) );
+			} ) ),
+			el( 'p', { className: 'ec-muted ec-sm', style: { marginTop: '12px' } }, 'Kostenpflichtige Tarife: Kartenzahlung über die sichere EasyCheckout-Seite (neuer Tab).' )
+		);
+	}
+
 	// --- Invoices -----------------------------------------------------------
 
 	function InvoicesView() {
@@ -609,7 +865,12 @@
 		{ key: 'orders', label: 'Bestellungen', icon: 'list-view' },
 		{ key: 'customers', label: 'Kunden', icon: 'groups' },
 		{ key: 'invoices', label: 'Rechnungen', icon: 'media-document' },
+		{ key: 'emails', label: 'E-Mails', icon: 'email' },
+		{ key: 'marketing', label: 'Marketing', icon: 'megaphone' },
 		{ key: 'onboarding', label: 'Verifizierung', icon: 'id' },
+		{ key: 'billing', label: 'Tarif', icon: 'cart' },
+		{ key: 'webhooks', label: 'Webhooks', icon: 'admin-links' },
+		{ key: 'support', label: 'Support', icon: 'sos' },
 		{ key: 'settings', label: 'Einstellungen', icon: 'admin-generic' },
 	];
 
@@ -629,6 +890,12 @@
 			case 'customers': content = el( CustomersView, null ); break;
 			case 'settings': content = el( SettingsView, null ); break;
 			case 'invoices': content = el( InvoicesView, null ); break;
+			case 'onboarding': content = el( OnboardingView, null ); break;
+			case 'emails': content = el( EmailsView, null ); break;
+			case 'marketing': content = el( MarketingView, null ); break;
+			case 'webhooks': content = el( WebhooksView, null ); break;
+			case 'support': content = el( SupportView, null ); break;
+			case 'billing': content = el( BillingView, null ); break;
 			default: content = el( Placeholder, { title: ( NAV.filter( function ( n ) { return n.key === route.view; } )[ 0 ] || { label: route.view } ).label } );
 		}
 		var activeTop = ( route.view === 'checkout' || route.view === 'products' ) ? 'checkouts' : route.view;

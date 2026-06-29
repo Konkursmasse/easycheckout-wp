@@ -102,3 +102,11 @@
 .ec-item-desc { flex:1; }
 .ec-item-qty { width:64px; }
 .ec-item-price { width:96px; }
+
+/* Onboarding / lists */
+.ec-tasklist { list-style:none; margin:8px 0 0; padding:0; }
+.ec-tasklist li { padding:7px 0; border-bottom:1px solid #f1f5f9; font-size:13px; }
+.ec-tasklist li:last-child { border-bottom:none; }
+.ec-dob { display:flex; gap:6px; }
+.ec-dob input { width:70px; padding:8px 9px; border:1px solid var(--ec-border); border-radius:7px; }
+.ec-dob input:last-child { width:90px; }
