@@ -83,6 +83,7 @@ class EasyCheckout {
         // Admin components
         if (is_admin()) {
             $this->admin = new Admin();
+            new Dashboard_Page();
             new Checkouts_Page();
         }
 
