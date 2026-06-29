@@ -33,6 +33,23 @@
 		} );
 	}
 
+	function uploadFile( method, path, field, file ) {
+		var fd = new FormData();
+		fd.append( 'action', 'easycheckout_native_upload' );
+		fd.append( 'nonce', ecNative.nonce );
+		fd.append( 'method', method );
+		fd.append( 'path', path );
+		fd.append( field, file );
+		return fetch( ecNative.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd } )
+			.then( function ( r ) { return r.json(); } )
+			.then( function ( j ) {
+				if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || 'Upload fehlgeschlagen' ); }
+				var b = j.data.body;
+				if ( j.data.status >= 400 ) { throw new Error( ( b && ( b.error || b.message ) ) || 'Fehler' ); }
+				return b;
+			} );
+	}
+
 	function fmtMoney( n, cur ) {
 		if ( n == null || isNaN( n ) ) { return '—'; }
 		return ( cur || 'CHF' ) + ' ' + Number( n ).toFixed( 2 );
@@ -394,9 +411,111 @@
 		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, props.title ) ), el( 'div', { className: 'ec-alert' }, 'Dieser Bereich wird gerade nativ gebaut und folgt in Kürze.' ) );
 	}
 
+	// --- Overview -----------------------------------------------------------
+
+	function OverviewView() {
+		var s = useState( null );
+		var stats = s[ 0 ], set = s[ 1 ];
+		useEffect( function () { api( 'GET', '/api/dashboard/stats' ).then( set ).catch( function () { set( {} ); } ); }, [] );
+		var cards = [
+			[ 'Umsatz (30 Tage)', stats ? fmtMoney( stats.revenue ) : '…' ],
+			[ 'Bestellungen', stats ? ( stats.ordersCount != null ? stats.ordersCount : 0 ) : '…' ],
+			[ 'Checkouts', stats ? ( stats.checkoutsCount != null ? stats.checkoutsCount : 0 ) : '…' ],
+			[ 'Conversion', stats ? ( ( stats.conversionRate != null ? stats.conversionRate : 0 ) + ' %' ) : '…' ],
+		];
+		return el( 'div', null,
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Übersicht' ) ),
+			el( 'div', { className: 'ec-stat-grid' }, cards.map( function ( c, i ) {
+				return el( 'div', { key: i, className: 'ec-stat' }, el( 'div', { className: 'ec-stat-val' }, c[ 1 ] ), el( 'div', { className: 'ec-stat-lbl' }, c[ 0 ] ) );
+			} ) )
+		);
+	}
+
+	// --- Settings -----------------------------------------------------------
+
+	function SettingsView() {
+		var s = useState( { me: null, error: '' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function loadMe() { api( 'GET', '/api/auth/me' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { me: ( b && b.merchant ) || b } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { error: err.message } ); } ); } ); }
+		useEffect( function () { loadMe(); }, [] );
+		if ( ! st.me ) { return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Einstellungen' ) ), st.error ? ErrorBox( st.error ) : Spinner() ); }
+		return el( 'div', null,
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Einstellungen' ) ),
+			el( 'div', { className: 'ec-form-grid' },
+				el( ProfileCard, { me: st.me, onSaved: loadMe } ),
+				el( LogoCard, { me: st.me, onSaved: loadMe } ),
+				el( QrCard, { me: st.me, onSaved: loadMe } ),
+				el( DescriptorCard, { me: st.me } ),
+				el( PasswordCard, null )
+			)
+		);
+	}
+
+	function cardForm( title, body, st, onSubmit ) {
+		return el( 'form', { className: 'ec-card', onSubmit: onSubmit }, el( 'h3', null, title ),
+			st.msg && el( 'div', { className: 'ec-alert' }, st.msg ), ErrorBox( st.error ), body,
+			el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : 'Speichern' ) ) );
+	}
+
+	function ProfileCard( props ) {
+		var s = useState( { d: { companyName: props.me.companyName || '', email: props.me.email || '', street: props.me.street || '', postalCode: props.me.postalCode || '', city: props.me.city || '', phone: props.me.phone || '', vatNumber: props.me.vatNumber || '' }, busy: false, msg: '', error: '' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function up( k, v ) { var d = Object.assign( {}, st.d ); d[ k ] = v; set( Object.assign( {}, st, { d: d, msg: '', error: '' } ) ); }
+		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true, msg: '', error: '' } ) ); api( 'PUT', '/api/auth/profile', st.d ).then( function () { set( Object.assign( {}, st, { busy: false, msg: 'Gespeichert.' } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
+		return cardForm( 'Firmenprofil', el( 'div', null,
+			Field( 'Firma', el( 'input', { value: st.d.companyName, onChange: function ( e ) { up( 'companyName', e.target.value ); } } ) ),
+			Field( 'E-Mail', el( 'input', { type: 'email', value: st.d.email, onChange: function ( e ) { up( 'email', e.target.value ); } } ) ),
+			Field( 'Strasse', el( 'input', { value: st.d.street, onChange: function ( e ) { up( 'street', e.target.value ); } } ) ),
+			el( 'div', { className: 'ec-two' }, Field( 'PLZ', el( 'input', { value: st.d.postalCode, onChange: function ( e ) { up( 'postalCode', e.target.value ); } } ) ), Field( 'Ort', el( 'input', { value: st.d.city, onChange: function ( e ) { up( 'city', e.target.value ); } } ) ) ),
+			Field( 'Telefon', el( 'input', { value: st.d.phone, onChange: function ( e ) { up( 'phone', e.target.value ); } } ) ),
+			Field( 'MwSt-Nr.', el( 'input', { value: st.d.vatNumber, onChange: function ( e ) { up( 'vatNumber', e.target.value ); } } ) )
+		), st, save );
+	}
+
+	function LogoCard( props ) {
+		var s = useState( { url: props.me.logoUrl || '', busy: false, error: '' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function pick( e ) { var f = e.target.files[ 0 ]; if ( ! f ) { return; } set( Object.assign( {}, st, { busy: true, error: '' } ) ); uploadFile( 'POST', '/api/merchant/logo', 'logo', f ).then( function ( b ) { set( Object.assign( {}, st, { busy: false, url: b.logoUrl || '' } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
+		function remove() { api( 'DELETE', '/api/merchant/logo' ).then( function () { set( Object.assign( {}, st, { url: '' } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { error: err.message } ) ); } ); }
+		return el( 'div', { className: 'ec-card' }, el( 'h3', null, 'Logo' ), ErrorBox( st.error ),
+			st.url ? el( 'img', { src: st.url, className: 'ec-thumb-lg' } ) : el( 'p', { className: 'ec-muted' }, 'Kein Logo.' ),
+			el( 'input', { type: 'file', accept: 'image/*', onChange: pick, disabled: st.busy } ),
+			st.url && el( 'div', { style: { marginTop: '8px' } }, el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: remove }, 'Entfernen' ) ) );
+	}
+
+	function QrCard( props ) {
+		var s = useState( { iban: props.me.iban || '', enabled: !! props.me.qrPaymentEnabled, busy: false, msg: '', error: '' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true, msg: '', error: '' } ) ); api( 'PUT', '/api/auth/qr-settings', { iban: st.iban, qrPaymentEnabled: st.enabled } ).then( function () { set( Object.assign( {}, st, { busy: false, msg: 'Gespeichert.' } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
+		return cardForm( 'QR-Rechnung', el( 'div', null,
+			Field( 'IBAN (CH)', el( 'input', { value: st.iban, onChange: function ( e ) { set( Object.assign( {}, st, { iban: e.target.value } ) ); } } ) ),
+			el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.enabled, onChange: function ( e ) { set( Object.assign( {}, st, { enabled: e.target.checked } ) ); } } ), ' QR-Zahlung aktiv' )
+		), st, save );
+	}
+
+	function DescriptorCard( props ) {
+		var s = useState( { v: props.me.statementDescriptor || '', busy: false, msg: '', error: '' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true, msg: '', error: '' } ) ); api( 'PUT', '/api/auth/statement-descriptor', { statementDescriptor: st.v } ).then( function ( b ) { set( Object.assign( {}, st, { busy: false, msg: 'Gespeichert.', v: ( b && b.statementDescriptor ) || st.v } ) ); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
+		return cardForm( 'Zahlungs-Referenz', el( 'div', null,
+			Field( 'Text (5–22 Zeichen)', el( 'input', { value: st.v, maxLength: 22, onChange: function ( e ) { set( Object.assign( {}, st, { v: e.target.value } ) ); } } ), 'Erscheint auf der Kartenabrechnung des Kunden.' )
+		), st, save );
+	}
+
+	function PasswordCard() {
+		var s = useState( { cur: '', nw: '', busy: false, msg: '', error: '' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true, msg: '', error: '' } ) ); api( 'PUT', '/api/auth/password', { currentPassword: st.cur, newPassword: st.nw } ).then( function () { set( { cur: '', nw: '', busy: false, msg: 'Passwort geändert.', error: '' } ); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
+		return cardForm( 'Passwort ändern', el( 'div', null,
+			Field( 'Aktuelles Passwort', el( 'input', { type: 'password', value: st.cur, onChange: function ( e ) { set( Object.assign( {}, st, { cur: e.target.value } ) ); } } ) ),
+			Field( 'Neues Passwort', el( 'input', { type: 'password', value: st.nw, onChange: function ( e ) { set( Object.assign( {}, st, { nw: e.target.value } ) ); } } ) )
+		), st, save );
+	}
+
 	// --- Shell + router -----------------------------------------------------
 
 	var NAV = [
+		{ key: 'overview', label: 'Übersicht', icon: 'dashboard' },
 		{ key: 'checkouts', label: 'Checkouts', icon: 'cart' },
 		{ key: 'orders', label: 'Bestellungen', icon: 'list-view' },
 		{ key: 'customers', label: 'Kunden', icon: 'groups' },
@@ -406,18 +525,20 @@
 	];
 
 	function Shell( props ) {
-		var r = useState( { view: 'checkouts', params: {} } );
+		var r = useState( { view: 'overview', params: {} } );
 		var route = r[ 0 ], setRoute = r[ 1 ];
 		function navigate( view, params ) { setRoute( { view: view, params: params || {} } ); }
 		function logout() { post( 'easycheckout_native_logout', {} ).then( function () { props.onLogout(); } ); }
 
 		var content;
 		switch ( route.view ) {
+			case 'overview': content = el( OverviewView, null ); break;
 			case 'checkouts': content = el( CheckoutsList, { navigate: navigate } ); break;
 			case 'checkout': content = el( CheckoutEditor, { id: route.params.id, navigate: navigate } ); break;
 			case 'products': content = el( ProductsManager, { id: route.params.id, name: route.params.name, navigate: navigate } ); break;
 			case 'orders': content = el( OrdersView, null ); break;
 			case 'customers': content = el( CustomersView, null ); break;
+			case 'settings': content = el( SettingsView, null ); break;
 			default: content = el( Placeholder, { title: ( NAV.filter( function ( n ) { return n.key === route.view; } )[ 0 ] || { label: route.view } ).label } );
 		}
 		var activeTop = ( route.view === 'checkout' || route.view === 'products' ) ? 'checkouts' : route.view;

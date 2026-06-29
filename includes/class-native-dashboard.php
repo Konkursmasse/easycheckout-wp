@@ -34,6 +34,7 @@ class Native_Dashboard {
         add_action('wp_ajax_easycheckout_native_register', [$this, 'ajax_register']);
         add_action('wp_ajax_easycheckout_native_logout', [$this, 'ajax_logout']);
         add_action('wp_ajax_easycheckout_native_proxy', [$this, 'ajax_proxy']);
+        add_action('wp_ajax_easycheckout_native_upload', [$this, 'ajax_upload']);
     }
 
     public function add_menu() {
@@ -134,6 +135,38 @@ class Native_Dashboard {
         }
 
         $r = $this->api->request($method, $path, $body);
+        if (is_wp_error($r)) {
+            wp_send_json_error(['message' => $r->get_error_message(), 'status' => 0]);
+        }
+        wp_send_json_success(['status' => $r['status'], 'body' => $r['body']]);
+    }
+
+    /**
+     * Multipart upload proxy: forwards $_FILES to the API with the JWT.
+     */
+    public function ajax_upload() {
+        $this->guard();
+        $method = isset($_POST['method']) ? strtoupper(sanitize_text_field(wp_unslash($_POST['method']))) : 'POST';
+        $path   = isset($_POST['path']) ? wp_unslash($_POST['path']) : '';
+        if (strpos($path, '/api/') !== 0) {
+            wp_send_json_error(['message' => 'Invalid path'], 400);
+        }
+
+        $files = [];
+        foreach ($_FILES as $field => $f) {
+            if (!empty($f['tmp_name']) && is_uploaded_file($f['tmp_name'])) {
+                $files[$field] = [
+                    'name' => sanitize_file_name($f['name']),
+                    'type' => $f['type'],
+                    'tmp_name' => $f['tmp_name'],
+                ];
+            }
+        }
+        if (empty($files)) {
+            wp_send_json_error(['message' => 'Keine Datei.'], 400);
+        }
+
+        $r = $this->api->upload($method, $path, $files);
         if (is_wp_error($r)) {
             wp_send_json_error(['message' => $r->get_error_message(), 'status' => 0]);
         }

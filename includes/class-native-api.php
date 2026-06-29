@@ -158,6 +158,58 @@ class Native_API {
         return ['status' => $status, 'body' => $body];
     }
 
+    /**
+     * Authenticated multipart/form-data upload (logo, KYC documents).
+     *
+     * @param string $path
+     * @param array  $files  field => ['name','type','tmp_name']
+     * @param array  $fields extra text fields field => value
+     * @return array|\WP_Error { status, body }
+     */
+    public function upload($method, $path, $files, $fields = []) {
+        $token = $this->get_token();
+        if (!$token) {
+            return new \WP_Error('ec_not_authenticated', __('Nicht angemeldet.', 'easycheckout'), ['status' => 401]);
+        }
+
+        $boundary = wp_generate_password(24, false);
+        $body = '';
+        foreach ($fields as $name => $value) {
+            $body .= "--{$boundary}\r\nContent-Disposition: form-data; name=\"{$name}\"\r\n\r\n{$value}\r\n";
+        }
+        foreach ($files as $field => $f) {
+            $content = file_get_contents($f['tmp_name']);
+            if ($content === false) {
+                continue;
+            }
+            $type = !empty($f['type']) ? $f['type'] : 'application/octet-stream';
+            $body .= "--{$boundary}\r\nContent-Disposition: form-data; name=\"{$field}\"; filename=\"{$f['name']}\"\r\n";
+            $body .= "Content-Type: {$type}\r\n\r\n" . $content . "\r\n";
+        }
+        $body .= "--{$boundary}--\r\n";
+
+        $response = wp_remote_request($this->base_url() . $path, [
+            'method'  => strtoupper($method),
+            'timeout' => 60,
+            'headers' => [
+                'Accept'        => 'application/json',
+                'Authorization' => 'Bearer ' . $token,
+                'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
+            ],
+            'body' => $body,
+        ]);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+        $status = wp_remote_retrieve_response_code($response);
+        $decoded = json_decode(wp_remote_retrieve_body($response), true);
+        if ($status === 401) {
+            $this->logout();
+        }
+        return ['status' => $status, 'body' => $decoded];
+    }
+
     // ---------------------------------------------------------------------
 
     /**
