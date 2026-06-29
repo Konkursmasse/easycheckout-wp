@@ -5,7 +5,6 @@
 	var el = wp.element.createElement;
 	var useState = wp.element.useState;
 	var useEffect = wp.element.useEffect;
-	var Fragment = wp.element.Fragment;
 	var render = wp.element.render;
 
 	// --- API helpers --------------------------------------------------------
@@ -14,9 +13,7 @@
 		var body = new URLSearchParams();
 		body.append( 'action', action );
 		body.append( 'nonce', ecNative.nonce );
-		Object.keys( fields || {} ).forEach( function ( k ) {
-			body.append( k, fields[ k ] );
-		} );
+		Object.keys( fields || {} ).forEach( function ( k ) { body.append( k, fields[ k ] ); } );
 		return fetch( ecNative.ajaxUrl, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -25,33 +22,38 @@
 		} ).then( function ( r ) { return r.json(); } );
 	}
 
-	// Authenticated API call through the WP proxy. Resolves with the parsed
-	// body; rejects with an Error (message from the API) on HTTP >= 400.
 	function api( method, path, payload ) {
 		return post( 'easycheckout_native_proxy', {
-			method: method,
-			path: path,
-			body: payload ? JSON.stringify( payload ) : '',
+			method: method, path: path, body: payload ? JSON.stringify( payload ) : '',
 		} ).then( function ( j ) {
-			if ( ! j.success ) {
-				throw new Error( ( j.data && j.data.message ) || 'Fehler' );
-			}
-			var status = j.data.status;
-			var b = j.data.body;
-			if ( status >= 400 ) {
-				throw new Error( ( b && ( b.error || b.message ) ) || ( 'Fehler ' + status ) );
-			}
+			if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || 'Fehler' ); }
+			var status = j.data.status, b = j.data.body;
+			if ( status >= 400 ) { throw new Error( ( b && ( b.error || b.message ) ) || ( 'Fehler ' + status ) ); }
 			return b;
 		} );
 	}
 
+	function fmtMoney( n, cur ) {
+		if ( n == null || isNaN( n ) ) { return '—'; }
+		return ( cur || 'CHF' ) + ' ' + Number( n ).toFixed( 2 );
+	}
+	function fmtDate( s ) { if ( ! s ) { return '—'; } try { return new Date( s ).toLocaleDateString( 'de-CH' ); } catch ( e ) { return s; } }
+	function fileToDataUrl( file ) { return new Promise( function ( res, rej ) { var r = new FileReader(); r.onload = function () { res( r.result ); }; r.onerror = rej; r.readAsDataURL( file ); } ); }
+
+	// --- Small UI helpers ---------------------------------------------------
+
+	function Field( label, node, hint ) {
+		return el( 'label', { className: 'ec-field' }, el( 'span', null, label ), node, hint && el( 'em', { className: 'ec-hint' }, hint ) );
+	}
+	function Spinner() { return el( 'p', { className: 'ec-muted' }, 'Lädt…' ); }
+	function ErrorBox( msg ) { return msg ? el( 'div', { className: 'ec-alert ec-alert-error' }, msg ) : null; }
+
 	// --- Login --------------------------------------------------------------
 
 	function LoginView( props ) {
-		var s = useState( { email: '', password: '', mode: 'login', busy: false, error: '', companyName: '' } );
+		var s = useState( { email: '', password: '', companyName: '', mode: 'login', busy: false, error: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
-		function up( k, v ) { set( Object.assign( {}, st, { error: '' }, ( function () { var o = {}; o[ k ] = v; return o; } )() ) ); }
-
+		function up( o ) { set( Object.assign( {}, st, { error: '' }, o ) ); }
 		function submit( e ) {
 			e.preventDefault();
 			set( Object.assign( {}, st, { busy: true, error: '' } ) );
@@ -61,120 +63,338 @@
 					else { set( Object.assign( {}, st, { busy: false, error: ( j.data && j.data.message ) || 'Anmeldung fehlgeschlagen' } ) ); }
 				} );
 			} else {
-				post( 'easycheckout_native_register', {
-					data: JSON.stringify( { email: st.email, password: st.password, companyName: st.companyName } ),
-				} ).then( function ( j ) {
+				post( 'easycheckout_native_register', { data: JSON.stringify( { email: st.email, password: st.password, companyName: st.companyName, plan: 'free' } ) } ).then( function ( j ) {
 					if ( j.success ) { props.onAuthed( j.data.merchant || {} ); }
 					else { set( Object.assign( {}, st, { busy: false, error: ( j.data && j.data.message ) || 'Registrierung fehlgeschlagen' } ) ); }
 				} );
 			}
 		}
-
-		return el( 'div', { className: 'ec-auth' },
-			el( 'div', { className: 'ec-auth-card' },
-				el( 'h1', { className: 'ec-auth-title' }, st.mode === 'login' ? 'Willkommen zurück' : 'Konto erstellen' ),
-				el( 'p', { className: 'ec-auth-sub' }, st.mode === 'login' ? 'Melde dich bei deinem EasyCheckout-Konto an' : 'Registriere dich für EasyCheckout' ),
-				st.error && el( 'div', { className: 'ec-alert ec-alert-error' }, st.error ),
-				el( 'form', { onSubmit: submit },
-					st.mode === 'register' && el( 'label', { className: 'ec-field' },
-						el( 'span', null, 'Firma' ),
-						el( 'input', { type: 'text', value: st.companyName, onChange: function ( e ) { up( 'companyName', e.target.value ); } } )
-					),
-					el( 'label', { className: 'ec-field' },
-						el( 'span', null, 'E-Mail-Adresse' ),
-						el( 'input', { type: 'email', required: true, value: st.email, onChange: function ( e ) { up( 'email', e.target.value ); } } )
-					),
-					el( 'label', { className: 'ec-field' },
-						el( 'span', null, 'Passwort' ),
-						el( 'input', { type: 'password', required: true, value: st.password, onChange: function ( e ) { up( 'password', e.target.value ); } } )
-					),
-					el( 'button', { type: 'submit', className: 'ec-btn ec-btn-primary ec-btn-block', disabled: st.busy },
-						st.busy ? 'Bitte warten…' : ( st.mode === 'login' ? 'Anmelden' : 'Registrieren' )
-					)
-				),
-				el( 'p', { className: 'ec-auth-switch' },
-					st.mode === 'login' ? 'Noch kein Konto? ' : 'Schon ein Konto? ',
-					el( 'a', { href: '#', onClick: function ( e ) { e.preventDefault(); set( Object.assign( {}, st, { mode: st.mode === 'login' ? 'register' : 'login', error: '' } ) ); } },
-						st.mode === 'login' ? 'Kostenlos registrieren' : 'Anmelden'
-					)
-				)
-			)
-		);
+		return el( 'div', { className: 'ec-auth' }, el( 'div', { className: 'ec-auth-card' },
+			el( 'h1', { className: 'ec-auth-title' }, st.mode === 'login' ? 'Willkommen zurück' : 'Konto erstellen' ),
+			el( 'p', { className: 'ec-auth-sub' }, st.mode === 'login' ? 'Melde dich bei deinem EasyCheckout-Konto an' : 'Registriere dich für EasyCheckout' ),
+			ErrorBox( st.error ),
+			el( 'form', { onSubmit: submit },
+				st.mode === 'register' && Field( 'Firma', el( 'input', { type: 'text', value: st.companyName, onChange: function ( e ) { up( { companyName: e.target.value } ); } } ) ),
+				Field( 'E-Mail-Adresse', el( 'input', { type: 'email', required: true, value: st.email, onChange: function ( e ) { up( { email: e.target.value } ); } } ) ),
+				Field( 'Passwort', el( 'input', { type: 'password', required: true, value: st.password, onChange: function ( e ) { up( { password: e.target.value } ); } } ) ),
+				el( 'button', { type: 'submit', className: 'ec-btn ec-btn-primary ec-btn-block', disabled: st.busy }, st.busy ? 'Bitte warten…' : ( st.mode === 'login' ? 'Anmelden' : 'Registrieren' ) )
+			),
+			el( 'p', { className: 'ec-auth-switch' }, st.mode === 'login' ? 'Noch kein Konto? ' : 'Schon ein Konto? ',
+				el( 'a', { href: '#', onClick: function ( e ) { e.preventDefault(); set( Object.assign( {}, st, { mode: st.mode === 'login' ? 'register' : 'login', error: '' } ) ); } }, st.mode === 'login' ? 'Kostenlos registrieren' : 'Anmelden' ) )
+		) );
 	}
 
-	// --- Checkouts ----------------------------------------------------------
+	// --- Checkouts list -----------------------------------------------------
 
-	function CheckoutsView() {
-		var s = useState( { items: null, error: '', creating: false, newName: '', newSlug: '', busy: false } );
+	function CheckoutsList( props ) {
+		var s = useState( { items: null, error: '', creating: false, name: '', slug: '', busy: false } );
 		var st = s[ 0 ], set = s[ 1 ];
-
 		function load() {
 			api( 'GET', '/api/checkouts' ).then( function ( b ) {
-				var items = Array.isArray( b ) ? b : ( b && b.checkouts ) || ( b && b.data ) || [];
-				set( function ( p ) { return Object.assign( {}, p, { items: items, error: '' } ); } );
-			} ).catch( function ( err ) {
-				set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } );
-			} );
+				set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.checkouts ) || [], error: '' } ); } );
+			} ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } );
 		}
 		useEffect( function () { load(); }, [] );
-
 		function create( e ) {
-			e.preventDefault();
-			set( Object.assign( {}, st, { busy: true, error: '' } ) );
-			api( 'POST', '/api/checkouts', { name: st.newName, slug: st.newSlug } ).then( function () {
-				set( Object.assign( {}, st, { busy: false, creating: false, newName: '', newSlug: '' } ) );
-				load();
-			} ).catch( function ( err ) {
-				set( Object.assign( {}, st, { busy: false, error: err.message } ) );
-			} );
+			e.preventDefault(); set( Object.assign( {}, st, { busy: true, error: '' } ) );
+			api( 'POST', '/api/checkouts', { name: st.name, slug: st.slug } ).then( function ( b ) {
+				set( Object.assign( {}, st, { busy: false, creating: false, name: '', slug: '' } ) );
+				if ( b && b.checkout ) { props.navigate( 'checkout', { id: b.checkout.id } ); } else { load(); }
+			} ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
 		}
-
 		function del( c ) {
 			if ( ! window.confirm( 'Checkout „' + ( c.name || c.slug ) + '" wirklich löschen?' ) ) { return; }
 			api( 'DELETE', '/api/checkouts/' + c.id ).then( load ).catch( function ( err ) { window.alert( err.message ); } );
 		}
-
 		return el( 'div', null,
-			el( 'div', { className: 'ec-page-head' },
-				el( 'h2', null, 'Checkouts' ),
-				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { creating: true } ) ); } }, '+ Neuer Checkout' )
-			),
-			st.error && el( 'div', { className: 'ec-alert ec-alert-error' }, st.error ),
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Checkouts' ),
+				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { creating: true } ) ); } }, '+ Neuer Checkout' ) ),
+			ErrorBox( st.error ),
 			st.creating && el( 'form', { className: 'ec-inline-form', onSubmit: create },
-				el( 'input', { placeholder: 'Name', required: true, value: st.newName, onChange: function ( e ) { set( Object.assign( {}, st, { newName: e.target.value } ) ); } } ),
-				el( 'input', { placeholder: 'Slug (z. B. mein-shop)', required: true, value: st.newSlug, onChange: function ( e ) { set( Object.assign( {}, st, { newSlug: e.target.value } ) ); } } ),
+				el( 'input', { placeholder: 'Name', required: true, value: st.name, onChange: function ( e ) { set( Object.assign( {}, st, { name: e.target.value } ) ); } } ),
+				el( 'input', { placeholder: 'Slug (z. B. mein-shop)', required: true, value: st.slug, onChange: function ( e ) { set( Object.assign( {}, st, { slug: e.target.value } ) ); } } ),
 				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : 'Erstellen' ),
-				el( 'button', { type: 'button', className: 'ec-btn', onClick: function () { set( Object.assign( {}, st, { creating: false } ) ); } }, 'Abbrechen' )
-			),
-			st.items === null ? el( 'p', { className: 'ec-muted' }, 'Lädt…' ) :
-				st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Checkouts. Lege deinen ersten an.' ) :
+				el( 'button', { type: 'button', className: 'ec-btn', onClick: function () { set( Object.assign( {}, st, { creating: false } ) ); } }, 'Abbrechen' ) ),
+			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Checkouts.' ) :
 				el( 'table', { className: 'ec-table' },
-					el( 'thead', null, el( 'tr', null,
-						el( 'th', null, 'Name' ), el( 'th', null, 'Slug' ), el( 'th', null, 'Produkte' ), el( 'th', null, 'Status' ), el( 'th', null, '' )
-					) ),
+					el( 'thead', null, el( 'tr', null, el( 'th', null, 'Name' ), el( 'th', null, 'Slug' ), el( 'th', null, 'Produkte' ), el( 'th', null, 'Bestellungen' ), el( 'th', null, 'Status' ), el( 'th', null, '' ) ) ),
 					el( 'tbody', null, st.items.map( function ( c ) {
 						return el( 'tr', { key: c.id },
-							el( 'td', null, el( 'strong', null, c.name || '—' ) ),
+							el( 'td', null, el( 'a', { href: '#', onClick: function ( e ) { e.preventDefault(); props.navigate( 'checkout', { id: c.id } ); } }, el( 'strong', null, c.name || '—' ) ) ),
 							el( 'td', null, el( 'code', null, c.slug || '' ) ),
-							el( 'td', null, ( c.productsCount != null ? c.productsCount : ( c._count && c._count.products ) != null ? c._count.products : ( c.products ? c.products.length : '—' ) ) ),
-							el( 'td', null, ( c.isActive === false ? el( 'span', { className: 'ec-badge ec-badge-off' }, 'Inaktiv' ) : el( 'span', { className: 'ec-badge ec-badge-on' }, 'Aktiv' ) ) ),
+							el( 'td', null, ( c._count && c._count.products != null ) ? c._count.products : '—' ),
+							el( 'td', null, ( c._count && c._count.orders != null ) ? c._count.orders : '—' ),
+							el( 'td', null, c.isActive === false ? el( 'span', { className: 'ec-badge ec-badge-off' }, 'Inaktiv' ) : el( 'span', { className: 'ec-badge ec-badge-on' }, 'Aktiv' ) ),
 							el( 'td', { className: 'ec-row-actions' },
-								el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { del( c ); } }, 'Löschen' )
-							)
+								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { props.navigate( 'products', { id: c.id, name: c.name } ); } }, 'Produkte' ),
+								' ',
+								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { props.navigate( 'checkout', { id: c.id } ); } }, 'Bearbeiten' ),
+								' ',
+								el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { del( c ); } }, 'Löschen' ) )
 						);
 					} ) )
 				)
 		);
 	}
 
-	function Placeholder( props ) {
+	// --- Checkout editor ----------------------------------------------------
+
+	var PAYMENT_METHODS = [ [ 'card', 'Karte' ], [ 'twint', 'TWINT' ], [ 'klarna', 'Klarna' ], [ 'sepa_debit', 'SEPA' ], [ 'bancontact', 'Bancontact' ], [ 'eps', 'EPS' ], [ 'giropay', 'giropay' ], [ 'ideal', 'iDEAL' ], [ 'p24', 'Przelewy24' ] ];
+
+	function CheckoutEditor( props ) {
+		var s = useState( { c: null, error: '', saving: false, saved: false } );
+		var st = s[ 0 ], set = s[ 1 ];
+		useEffect( function () {
+			api( 'GET', '/api/checkouts/' + props.id ).then( function ( b ) {
+				var c = b && b.checkout ? b.checkout : b;
+				c.design = c.design || {};
+				c.paymentMethods = c.paymentMethods || [];
+				set( function ( p ) { return Object.assign( {}, p, { c: c } ); } );
+			} ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { error: err.message } ); } ); } );
+		}, [ props.id ] );
+
+		function upd( o ) { set( Object.assign( {}, st, { saved: false, c: Object.assign( {}, st.c, o ) } ) ); }
+		function updDesign( o ) { upd( { design: Object.assign( {}, st.c.design, o ) } ); }
+		function togglePm( m ) { var arr = st.c.paymentMethods.slice(); var i = arr.indexOf( m ); if ( i >= 0 ) { arr.splice( i, 1 ); } else { arr.push( m ); } upd( { paymentMethods: arr } ); }
+
+		function save( e ) {
+			e.preventDefault(); set( Object.assign( {}, st, { saving: true, error: '', saved: false } ) );
+			var c = st.c;
+			var payload = {
+				name: c.name, description: c.description, slug: c.slug, isActive: c.isActive !== false,
+				design: c.design, vatEnabled: !! c.vatEnabled, vatRate: parseFloat( c.vatRate ) || 0, vatInclusive: c.vatInclusive !== false,
+				paymentMethods: c.paymentMethods, currency: c.currency || 'CHF', successUrl: c.successUrl || '', cancelUrl: c.cancelUrl || '', qrPaymentEnabled: !! c.qrPaymentEnabled,
+			};
+			api( 'PUT', '/api/checkouts/' + props.id, payload ).then( function () { set( Object.assign( {}, st, { saving: false, saved: true } ) ); } )
+				.catch( function ( err ) { set( Object.assign( {}, st, { saving: false, error: err.message } ) ); } );
+		}
+
+		if ( st.error && ! st.c ) { return el( 'div', null, backHead( props, 'Checkout' ), ErrorBox( st.error ) ); }
+		if ( ! st.c ) { return el( 'div', null, backHead( props, 'Checkout' ), Spinner() ); }
+		var c = st.c;
 		return el( 'div', null,
-			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, props.title ) ),
-			el( 'div', { className: 'ec-alert' }, 'Dieser Bereich wird gerade nativ gebaut und folgt in Kürze.' )
+			backHead( props, 'Checkout bearbeiten', el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { props.navigate( 'products', { id: props.id, name: c.name } ); } }, 'Produkte verwalten' ) ),
+			ErrorBox( st.error ), st.saved && el( 'div', { className: 'ec-alert' }, 'Gespeichert.' ),
+			el( 'form', { onSubmit: save, className: 'ec-form-grid' },
+				el( 'div', { className: 'ec-card' },
+					el( 'h3', null, 'Allgemein' ),
+					Field( 'Name', el( 'input', { value: c.name || '', onChange: function ( e ) { upd( { name: e.target.value } ); } } ) ),
+					Field( 'Slug', el( 'input', { value: c.slug || '', onChange: function ( e ) { upd( { slug: e.target.value } ); } } ) ),
+					Field( 'Beschreibung', el( 'textarea', { rows: 2, value: c.description || '', onChange: function ( e ) { upd( { description: e.target.value } ); } } ) ),
+					Field( 'Währung', el( 'select', { value: c.currency || 'CHF', onChange: function ( e ) { upd( { currency: e.target.value } ); } }, [ 'CHF', 'EUR', 'USD' ].map( function ( x ) { return el( 'option', { key: x, value: x }, x ); } ) ) ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: c.isActive !== false, onChange: function ( e ) { upd( { isActive: e.target.checked } ); } } ), ' Aktiv' )
+				),
+				el( 'div', { className: 'ec-card' },
+					el( 'h3', null, 'MwSt' ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! c.vatEnabled, onChange: function ( e ) { upd( { vatEnabled: e.target.checked } ); } } ), ' MwSt aktiv' ),
+					Field( 'MwSt-Satz (%)', el( 'input', { type: 'number', step: '0.1', value: c.vatRate != null ? c.vatRate : '', onChange: function ( e ) { upd( { vatRate: e.target.value } ); } } ) ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: c.vatInclusive !== false, onChange: function ( e ) { upd( { vatInclusive: e.target.checked } ); } } ), ' Preise inkl. MwSt' )
+				),
+				el( 'div', { className: 'ec-card' },
+					el( 'h3', null, 'Zahlungsarten' ),
+					el( 'div', { className: 'ec-checks' }, PAYMENT_METHODS.map( function ( m ) {
+						return el( 'label', { key: m[ 0 ], className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: c.paymentMethods.indexOf( m[ 0 ] ) >= 0, onChange: function () { togglePm( m[ 0 ] ); } } ), ' ' + m[ 1 ] );
+					} ) ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! c.qrPaymentEnabled, onChange: function ( e ) { upd( { qrPaymentEnabled: e.target.checked } ); } } ), ' QR-Rechnung' )
+				),
+				el( 'div', { className: 'ec-card' },
+					el( 'h3', null, 'Design' ),
+					colorField( 'Akzentfarbe', c.design.primaryColor || '#4F46E5', function ( v ) { updDesign( { primaryColor: v } ); } ),
+					colorField( 'Button-Farbe', c.design.buttonColor || c.design.primaryColor || '#4F46E5', function ( v ) { updDesign( { buttonColor: v } ); } ),
+					colorField( 'Button-Text', c.design.buttonTextColor || '#FFFFFF', function ( v ) { updDesign( { buttonTextColor: v } ); } ),
+					colorField( 'Textfarbe', c.design.textColor || '#111827', function ( v ) { updDesign( { textColor: v } ); } ),
+					colorField( 'Hintergrund', c.design.backgroundColor || '#F9FAFB', function ( v ) { updDesign( { backgroundColor: v } ); } ),
+					Field( 'Eckenradius (px)', el( 'input', { type: 'number', min: 0, max: 40, value: c.design.borderRadius != null ? c.design.borderRadius : 12, onChange: function ( e ) { updDesign( { borderRadius: parseInt( e.target.value, 10 ) || 0 } ); } } ) )
+				),
+				el( 'div', { className: 'ec-card' },
+					el( 'h3', null, 'Weiterleitungen' ),
+					Field( 'Erfolgs-URL', el( 'input', { type: 'url', value: c.successUrl || '', onChange: function ( e ) { upd( { successUrl: e.target.value } ); } } ) ),
+					Field( 'Abbruch-URL', el( 'input', { type: 'url', value: c.cancelUrl || '', onChange: function ( e ) { upd( { cancelUrl: e.target.value } ); } } ) )
+				),
+				el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.saving }, st.saving ? 'Speichert…' : 'Speichern' ) )
+			)
 		);
 	}
 
-	// --- Shell --------------------------------------------------------------
+	function colorField( label, value, onChange ) {
+		return el( 'label', { className: 'ec-field ec-color' }, el( 'span', null, label ),
+			el( 'span', { className: 'ec-color-row' },
+				el( 'input', { type: 'color', value: ( value && value[ 0 ] === '#' ) ? value : '#000000', onChange: function ( e ) { onChange( e.target.value ); } } ),
+				el( 'input', { type: 'text', value: value || '', onChange: function ( e ) { onChange( e.target.value ); } } )
+			) );
+	}
+
+	function backHead( props, title, extra ) {
+		return el( 'div', { className: 'ec-page-head' },
+			el( 'div', { className: 'ec-head-left' },
+				el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { props.navigate( 'checkouts' ); } }, '← Zurück' ),
+				el( 'h2', null, title ) ),
+			extra || null );
+	}
+
+	// --- Products manager ---------------------------------------------------
+
+	function ProductsManager( props ) {
+		var s = useState( { items: null, error: '', editing: null } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function load() {
+			api( 'GET', '/api/checkouts/' + props.id + '/products' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.products ) || [], error: '' } ); } ); } )
+				.catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } );
+		}
+		useEffect( function () { load(); }, [ props.id ] );
+		function del( p ) { if ( ! window.confirm( 'Produkt löschen?' ) ) { return; } api( 'DELETE', '/api/products/' + p.id ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
+		function emptyProduct() { return { name: '', description: '', price: '', imageUrl: '', isActive: true, maxPerCustomer: '', maxTotal: '' }; }
+
+		return el( 'div', null,
+			backHead( props, 'Produkte' + ( props.name ? ' · ' + props.name : '' ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { editing: emptyProduct() } ) ); } }, '+ Neues Produkt' ) ),
+			ErrorBox( st.error ),
+			st.editing && el( ProductForm, { checkoutId: props.id, product: st.editing, onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
+			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Produkte.' ) :
+				el( 'table', { className: 'ec-table' },
+					el( 'thead', null, el( 'tr', null, el( 'th', null, '' ), el( 'th', null, 'Name' ), el( 'th', null, 'Preis' ), el( 'th', null, 'Status' ), el( 'th', null, '' ) ) ),
+					el( 'tbody', null, st.items.map( function ( p ) {
+						return el( 'tr', { key: p.id },
+							el( 'td', null, p.imageUrl ? el( 'img', { src: p.imageUrl, className: 'ec-thumb' } ) : el( 'span', { className: 'ec-thumb ec-thumb-empty' } ) ),
+							el( 'td', null, el( 'strong', null, p.name ), p.description && el( 'div', { className: 'ec-muted ec-sm' }, p.description ) ),
+							el( 'td', null, fmtMoney( p.price ) ),
+							el( 'td', null, p.isActive === false ? el( 'span', { className: 'ec-badge ec-badge-off' }, 'Inaktiv' ) : el( 'span', { className: 'ec-badge ec-badge-on' }, 'Aktiv' ) ),
+							el( 'td', { className: 'ec-row-actions' },
+								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { editing: Object.assign( {}, p ) } ) ); } }, 'Bearbeiten' ), ' ',
+								el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { del( p ); } }, 'Löschen' ) )
+						);
+					} ) )
+				)
+		);
+	}
+
+	function ProductForm( props ) {
+		var s = useState( Object.assign( { busy: false, error: '' }, props.product ) );
+		var st = s[ 0 ], set = s[ 1 ];
+		function up( o ) { set( Object.assign( {}, st, { error: '' }, o ) ); }
+		function pickImage( e ) { var f = e.target.files[ 0 ]; if ( ! f ) { return; } if ( f.size > 2 * 1024 * 1024 ) { up( { error: 'Bild max. 2 MB' } ); return; } fileToDataUrl( f ).then( function ( d ) { up( { imageUrl: d } ); } ); }
+		function save( e ) {
+			e.preventDefault(); set( Object.assign( {}, st, { busy: true, error: '' } ) );
+			var payload = {
+				name: st.name, description: st.description, price: parseFloat( st.price ) || 0, imageUrl: st.imageUrl || '', isActive: st.isActive !== false,
+				maxPerCustomer: st.maxPerCustomer === '' ? null : parseInt( st.maxPerCustomer, 10 ), maxTotal: st.maxTotal === '' ? null : parseInt( st.maxTotal, 10 ),
+			};
+			var pr = st.id ? api( 'PUT', '/api/products/' + st.id, payload ) : api( 'POST', '/api/checkouts/' + props.checkoutId + '/products', payload );
+			pr.then( function () { props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
+		}
+		return el( 'div', { className: 'ec-modal' }, el( 'form', { className: 'ec-modal-card', onSubmit: save },
+			el( 'h3', null, st.id ? 'Produkt bearbeiten' : 'Neues Produkt' ),
+			ErrorBox( st.error ),
+			Field( 'Name', el( 'input', { required: true, value: st.name || '', onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
+			Field( 'Beschreibung', el( 'textarea', { rows: 2, value: st.description || '', onChange: function ( e ) { up( { description: e.target.value } ); } } ) ),
+			Field( 'Preis', el( 'input', { type: 'number', step: '0.01', required: true, value: st.price, onChange: function ( e ) { up( { price: e.target.value } ); } } ) ),
+			Field( 'Bild', el( 'div', null, st.imageUrl && el( 'img', { src: st.imageUrl, className: 'ec-thumb-lg' } ), el( 'input', { type: 'file', accept: 'image/*', onChange: pickImage } ) ) ),
+			el( 'div', { className: 'ec-two' },
+				Field( 'Max. pro Kunde', el( 'input', { type: 'number', min: 0, value: st.maxPerCustomer != null ? st.maxPerCustomer : '', onChange: function ( e ) { up( { maxPerCustomer: e.target.value } ); } } ), 'leer = unbegrenzt' ),
+				Field( 'Gesamtkontingent', el( 'input', { type: 'number', min: 0, value: st.maxTotal != null ? st.maxTotal : '', onChange: function ( e ) { up( { maxTotal: e.target.value } ); } } ), 'leer = unbegrenzt' ) ),
+			el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.isActive !== false, onChange: function ( e ) { up( { isActive: e.target.checked } ); } } ), ' Aktiv' ),
+			el( 'div', { className: 'ec-form-actions' },
+				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : 'Speichern' ),
+				el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, 'Abbrechen' ) )
+		) );
+	}
+
+	// --- Orders -------------------------------------------------------------
+
+	function OrdersView() {
+		var s = useState( { data: null, error: '', busy: false } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function load() { api( 'GET', '/api/orders?limit=50' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { data: b, error: '' } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { data: { orders: [] }, error: err.message } ); } ); } ); }
+		useEffect( function () { load(); }, [] );
+		function sync() { set( Object.assign( {}, st, { busy: true } ) ); api( 'POST', '/api/orders/sync' ).then( function () { set( Object.assign( {}, st, { busy: false } ) ); load(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
+		function refund( o ) { if ( ! window.confirm( 'Bestellung erstatten?' ) ) { return; } api( 'POST', '/api/orders/' + o.id + '/refund', {} ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
+		var orders = st.data ? ( st.data.orders || [] ) : null;
+		return el( 'div', null,
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Bestellungen' ), el( 'button', { className: 'ec-btn', disabled: st.busy, onClick: sync }, st.busy ? 'Synchronisiert…' : 'Status synchronisieren' ) ),
+			ErrorBox( st.error ),
+			orders === null ? Spinner() : orders.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Bestellungen.' ) :
+				el( 'table', { className: 'ec-table' },
+					el( 'thead', null, el( 'tr', null, el( 'th', null, 'Datum' ), el( 'th', null, 'Kunde' ), el( 'th', null, 'Checkout' ), el( 'th', null, 'Betrag' ), el( 'th', null, 'Status' ), el( 'th', null, '' ) ) ),
+					el( 'tbody', null, orders.map( function ( o ) {
+						return el( 'tr', { key: o.id },
+							el( 'td', null, fmtDate( o.createdAt ) ),
+							el( 'td', null, o.customerName || o.customerEmail || '—' ),
+							el( 'td', null, o.checkoutName || '—' ),
+							el( 'td', null, fmtMoney( o.total, o.currency ) ),
+							el( 'td', null, statusBadge( o.paymentStatus ) ),
+							el( 'td', { className: 'ec-row-actions' }, o.paymentStatus === 'paid' && el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { refund( o ); } }, 'Erstatten' ) )
+						);
+					} ) )
+				)
+		);
+	}
+
+	function statusBadge( s ) {
+		var map = { paid: [ 'ec-badge-on', 'Bezahlt' ], pending: [ 'ec-badge-off', 'Offen' ], pending_qr: [ 'ec-badge-off', 'QR offen' ], failed: [ 'ec-badge-err', 'Fehlgeschlagen' ], refunded: [ 'ec-badge-err', 'Erstattet' ], partially_refunded: [ 'ec-badge-off', 'Teilw. erstattet' ] };
+		var m = map[ s ] || [ 'ec-badge-off', s || '—' ];
+		return el( 'span', { className: 'ec-badge ' + m[ 0 ] }, m[ 1 ] );
+	}
+
+	// --- Customers ----------------------------------------------------------
+
+	function CustomersView() {
+		var s = useState( { items: null, error: '', editing: null } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function load() { api( 'GET', '/api/customers' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.customers ) || [], error: '' } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } ); }
+		useEffect( function () { load(); }, [] );
+		function del( c ) { if ( ! c.isManual ) { window.alert( 'Nur manuell angelegte Kunden können gelöscht werden.' ); return; } if ( ! window.confirm( 'Kunde löschen?' ) ) { return; } api( 'DELETE', '/api/customers/' + c.id ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
+		return el( 'div', null,
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Kunden' ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { editing: { email: '', name: '', phone: '', country: 'CH' } } ) ); } }, '+ Neuer Kunde' ) ),
+			ErrorBox( st.error ),
+			st.editing && el( CustomerForm, { customer: st.editing, onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
+			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Kunden.' ) :
+				el( 'table', { className: 'ec-table' },
+					el( 'thead', null, el( 'tr', null, el( 'th', null, 'Name' ), el( 'th', null, 'E-Mail' ), el( 'th', null, 'Bestellungen' ), el( 'th', null, 'Umsatz' ), el( 'th', null, '' ) ) ),
+					el( 'tbody', null, st.items.map( function ( c ) {
+						return el( 'tr', { key: c.id || c.email },
+							el( 'td', null, el( 'strong', null, c.name || '—' ), c.isManual && el( 'span', { className: 'ec-badge ec-badge-off ec-ml' }, 'manuell' ) ),
+							el( 'td', null, c.email ),
+							el( 'td', null, c.orderCount != null ? c.orderCount : '—' ),
+							el( 'td', null, fmtMoney( c.totalSpent, c.currency ) ),
+							el( 'td', { className: 'ec-row-actions' },
+								c.isManual && el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { editing: Object.assign( {}, c ) } ) ); } }, 'Bearbeiten' ), ' ',
+								c.isManual && el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { del( c ); } }, 'Löschen' ) )
+						);
+					} ) )
+				)
+		);
+	}
+
+	function CustomerForm( props ) {
+		var s = useState( Object.assign( { busy: false, error: '' }, props.customer ) );
+		var st = s[ 0 ], set = s[ 1 ];
+		function up( o ) { set( Object.assign( {}, st, { error: '' }, o ) ); }
+		function save( e ) {
+			e.preventDefault(); set( Object.assign( {}, st, { busy: true, error: '' } ) );
+			var payload = { email: st.email, name: st.name, phone: st.phone, street: st.street, postalCode: st.postalCode, city: st.city, country: st.country || 'CH', notes: st.notes };
+			var pr = st.id ? api( 'PUT', '/api/customers/' + st.id, payload ) : api( 'POST', '/api/customers', payload );
+			pr.then( function () { props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
+		}
+		return el( 'div', { className: 'ec-modal' }, el( 'form', { className: 'ec-modal-card', onSubmit: save },
+			el( 'h3', null, st.id ? 'Kunde bearbeiten' : 'Neuer Kunde' ), ErrorBox( st.error ),
+			Field( 'E-Mail', el( 'input', { type: 'email', required: true, value: st.email || '', onChange: function ( e ) { up( { email: e.target.value } ); } } ) ),
+			Field( 'Name', el( 'input', { value: st.name || '', onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
+			Field( 'Telefon', el( 'input', { value: st.phone || '', onChange: function ( e ) { up( { phone: e.target.value } ); } } ) ),
+			el( 'div', { className: 'ec-two' },
+				Field( 'PLZ', el( 'input', { value: st.postalCode || '', onChange: function ( e ) { up( { postalCode: e.target.value } ); } } ) ),
+				Field( 'Ort', el( 'input', { value: st.city || '', onChange: function ( e ) { up( { city: e.target.value } ); } } ) ) ),
+			Field( 'Strasse', el( 'input', { value: st.street || '', onChange: function ( e ) { up( { street: e.target.value } ); } } ) ),
+			Field( 'Notizen', el( 'textarea', { rows: 2, value: st.notes || '', onChange: function ( e ) { up( { notes: e.target.value } ); } } ) ),
+			el( 'div', { className: 'ec-form-actions' },
+				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : 'Speichern' ),
+				el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, 'Abbrechen' ) )
+		) );
+	}
+
+	function Placeholder( props ) {
+		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, props.title ) ), el( 'div', { className: 'ec-alert' }, 'Dieser Bereich wird gerade nativ gebaut und folgt in Kürze.' ) );
+	}
+
+	// --- Shell + router -----------------------------------------------------
 
 	var NAV = [
 		{ key: 'checkouts', label: 'Checkouts', icon: 'cart' },
@@ -186,30 +406,32 @@
 	];
 
 	function Shell( props ) {
-		var s = useState( 'checkouts' );
-		var view = s[ 0 ], setView = s[ 1 ];
-
-		function logout() {
-			post( 'easycheckout_native_logout', {} ).then( function () { props.onLogout(); } );
-		}
+		var r = useState( { view: 'checkouts', params: {} } );
+		var route = r[ 0 ], setRoute = r[ 1 ];
+		function navigate( view, params ) { setRoute( { view: view, params: params || {} } ); }
+		function logout() { post( 'easycheckout_native_logout', {} ).then( function () { props.onLogout(); } ); }
 
 		var content;
-		if ( view === 'checkouts' ) { content = el( CheckoutsView, null ); }
-		else { content = el( Placeholder, { title: ( NAV.filter( function ( n ) { return n.key === view; } )[ 0 ] || {} ).label } ); }
+		switch ( route.view ) {
+			case 'checkouts': content = el( CheckoutsList, { navigate: navigate } ); break;
+			case 'checkout': content = el( CheckoutEditor, { id: route.params.id, navigate: navigate } ); break;
+			case 'products': content = el( ProductsManager, { id: route.params.id, name: route.params.name, navigate: navigate } ); break;
+			case 'orders': content = el( OrdersView, null ); break;
+			case 'customers': content = el( CustomersView, null ); break;
+			default: content = el( Placeholder, { title: ( NAV.filter( function ( n ) { return n.key === route.view; } )[ 0 ] || { label: route.view } ).label } );
+		}
+		var activeTop = ( route.view === 'checkout' || route.view === 'products' ) ? 'checkouts' : route.view;
 
 		return el( 'div', { className: 'ec-app' },
 			el( 'aside', { className: 'ec-sidebar' },
 				el( 'div', { className: 'ec-brand' }, 'EasyCheckout' ),
 				el( 'nav', null, NAV.map( function ( n ) {
-					return el( 'a', {
-						key: n.key, href: '#', className: 'ec-nav-item' + ( view === n.key ? ' is-active' : '' ),
-						onClick: function ( e ) { e.preventDefault(); setView( n.key ); },
-					}, el( 'span', { className: 'dashicons dashicons-' + n.icon } ), el( 'span', null, n.label ) );
+					return el( 'a', { key: n.key, href: '#', className: 'ec-nav-item' + ( activeTop === n.key ? ' is-active' : '' ), onClick: function ( e ) { e.preventDefault(); navigate( n.key ); } },
+						el( 'span', { className: 'dashicons dashicons-' + n.icon } ), el( 'span', null, n.label ) );
 				} ) ),
 				el( 'div', { className: 'ec-sidebar-foot' },
 					el( 'div', { className: 'ec-merchant' }, ( props.merchant && ( props.merchant.companyName || props.merchant.email ) ) || '' ),
-					el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-block', onClick: logout }, 'Abmelden' )
-				)
+					el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-block', onClick: logout }, 'Abmelden' ) )
 			),
 			el( 'main', { className: 'ec-main' }, content )
 		);
@@ -218,9 +440,7 @@
 	function App() {
 		var s = useState( { authed: !! ecNative.authed, merchant: ecNative.merchant || {} } );
 		var st = s[ 0 ], set = s[ 1 ];
-		if ( ! st.authed ) {
-			return el( LoginView, { onAuthed: function ( m ) { set( { authed: true, merchant: m } ); } } );
-		}
+		if ( ! st.authed ) { return el( LoginView, { onAuthed: function ( m ) { set( { authed: true, merchant: m } ); } } ); }
 		return el( Shell, { merchant: st.merchant, onLogout: function () { set( { authed: false, merchant: {} } ); } } );
 	}
 

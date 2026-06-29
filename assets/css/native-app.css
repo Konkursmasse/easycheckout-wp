@@ -56,3 +56,33 @@
 .ec-badge { font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px; }
 .ec-badge-on { background:#dcfce7; color:#166534; }
 .ec-badge-off { background:#fef9c3; color:#854d0e; }
+
+/* Forms / editor */
+#ec-native-app textarea, #ec-native-app select { width:100%; padding:9px 12px; border:1px solid var(--ec-border); border-radius:8px; font-size:14px; font-family:inherit; }
+#ec-native-app textarea:focus, #ec-native-app select:focus { outline:none; border-color:var(--ec-primary); box-shadow:0 0 0 3px rgba(79,70,229,.15); }
+.ec-hint { display:block; color:var(--ec-muted); font-size:11px; margin-top:4px; font-style:normal; }
+.ec-head-left { display:flex; align-items:center; gap:12px; }
+.ec-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; }
+.ec-card { background:#fff; border:1px solid var(--ec-border); border-radius:12px; padding:16px 18px; }
+.ec-card h3 { margin:0 0 12px; font-size:14px; font-weight:700; }
+.ec-check { display:flex; align-items:center; gap:7px; font-size:13px; margin:8px 0; cursor:pointer; }
+.ec-checks { display:flex; flex-wrap:wrap; gap:6px 16px; }
+.ec-color .ec-color-row { display:flex; gap:8px; align-items:center; }
+.ec-color input[type=color] { width:38px; height:34px; padding:0; border:1px solid var(--ec-border); border-radius:6px; background:#fff; }
+.ec-color input[type=text] { flex:1; }
+.ec-two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.ec-form-actions { grid-column:1 / -1; display:flex; gap:8px; margin-top:4px; }
+
+/* Modal */
+.ec-modal { position:fixed; inset:0; background:rgba(17,24,39,.5); display:flex; align-items:flex-start; justify-content:center; padding:48px 16px; z-index:100000; overflow:auto; }
+.ec-modal-card { background:#fff; width:520px; max-width:96vw; border-radius:14px; padding:22px 24px; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+.ec-modal-card h3 { margin:0 0 14px; font-size:17px; }
+
+/* misc */
+.ec-thumb { width:34px; height:34px; object-fit:cover; border-radius:6px; border:1px solid var(--ec-border); display:inline-block; vertical-align:middle; }
+.ec-thumb-empty { background:#f3f4f6; }
+.ec-thumb-lg { display:block; max-width:120px; max-height:90px; object-fit:contain; border:1px solid var(--ec-border); border-radius:8px; margin-bottom:8px; }
+.ec-sm { font-size:12px; }
+.ec-ml { margin-left:8px; }
+.ec-badge-err { background:#fee2e2; color:#991b1b; }
+@media (max-width:1100px){ .ec-form-grid { grid-template-columns:1fr; } }
