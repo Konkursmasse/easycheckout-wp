@@ -411,6 +411,95 @@
 		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, props.title ) ), el( 'div', { className: 'ec-alert' }, 'Dieser Bereich wird gerade nativ gebaut und folgt in Kürze.' ) );
 	}
 
+	// --- Invoices -----------------------------------------------------------
+
+	function InvoicesView() {
+		var s = useState( { items: null, error: '', editing: null } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function load() { api( 'GET', '/api/invoices' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.invoices ) || [], error: '' } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } ); }
+		useEffect( function () { load(); }, [] );
+		function act( inv, what ) {
+			var p;
+			if ( what === 'send' ) { p = api( 'POST', '/api/invoices/' + inv.id + '/send', {} ); }
+			else if ( what === 'reminder' ) { p = api( 'POST', '/api/invoices/' + inv.id + '/reminder', {} ); }
+			else if ( what === 'delete' ) { if ( ! window.confirm( 'Rechnung löschen?' ) ) { return; } p = api( 'DELETE', '/api/invoices/' + inv.id ); }
+			p.then( function ( b ) { if ( what === 'send' && b && b.invoiceUrl ) { window.alert( 'Rechnung gesendet. Link: ' + b.invoiceUrl ); } load(); } ).catch( function ( err ) { window.alert( err.message ); } );
+		}
+		return el( 'div', null,
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Rechnungen' ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { editing: {} } ) ); } }, '+ Neue Rechnung' ) ),
+			ErrorBox( st.error ),
+			st.editing && el( InvoiceForm, { invoice: st.editing.id ? st.editing : null, onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
+			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Rechnungen.' ) :
+				el( 'table', { className: 'ec-table' },
+					el( 'thead', null, el( 'tr', null, el( 'th', null, 'Nummer' ), el( 'th', null, 'Kunde' ), el( 'th', null, 'Betrag' ), el( 'th', null, 'Fällig' ), el( 'th', null, 'Status' ), el( 'th', null, '' ) ) ),
+					el( 'tbody', null, st.items.map( function ( inv ) {
+						return el( 'tr', { key: inv.id },
+							el( 'td', null, el( 'code', null, inv.invoiceNumber || '—' ) ),
+							el( 'td', null, inv.customerName || inv.customerEmail || '—' ),
+							el( 'td', null, fmtMoney( inv.total, inv.currency ) ),
+							el( 'td', null, fmtDate( inv.dueDate ) ),
+							el( 'td', null, invStatus( inv.status ) ),
+							el( 'td', { className: 'ec-row-actions' },
+								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { editing: Object.assign( {}, inv ) } ) ); } }, 'Bearbeiten' ), ' ',
+								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { act( inv, 'send' ); } }, 'Senden' ), ' ',
+								( inv.status === 'sent' || inv.status === 'overdue' ) && el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { act( inv, 'reminder' ); } }, 'Mahnen' ), ' ',
+								el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { act( inv, 'delete' ); } }, 'Löschen' ) )
+						);
+					} ) )
+				)
+		);
+	}
+
+	function invStatus( s ) {
+		var m = { draft: [ 'ec-badge-off', 'Entwurf' ], sent: [ 'ec-badge-off', 'Gesendet' ], paid: [ 'ec-badge-on', 'Bezahlt' ], overdue: [ 'ec-badge-err', 'Überfällig' ], cancelled: [ 'ec-badge-err', 'Storniert' ] }[ s ] || [ 'ec-badge-off', s || '—' ];
+		return el( 'span', { className: 'ec-badge ' + m[ 0 ] }, m[ 1 ] );
+	}
+
+	function InvoiceForm( props ) {
+		var inv = props.invoice;
+		var init = { customerEmail: '', customerName: '', customerStreet: '', customerPostalCode: '', customerCity: '', customerCountry: 'CH', vatRate: 8.1, dueDate: '', notes: '', currency: 'CHF' };
+		if ( inv ) { Object.keys( init ).forEach( function ( k ) { if ( inv[ k ] != null ) { init[ k ] = inv[ k ]; } } ); }
+		var items0 = ( inv && inv.items && inv.items.length ) ? inv.items.map( function ( i ) { return { quantity: i.quantity || 1, price: i.price != null ? i.price : '', description: i.description || '' }; } ) : [ { quantity: 1, price: '', description: '' } ];
+		var s = useState( Object.assign( { busy: false, error: '', items: items0 }, init ) );
+		var st = s[ 0 ], set = s[ 1 ];
+		function up( o ) { set( Object.assign( {}, st, { error: '' }, o ) ); }
+		function setItem( i, k, v ) { var it = st.items.slice(); it[ i ] = Object.assign( {}, it[ i ] ); it[ i ][ k ] = v; up( { items: it } ); }
+		function addItem() { up( { items: st.items.concat( [ { quantity: 1, price: '', description: '' } ] ) } ); }
+		function rmItem( i ) { var it = st.items.slice(); it.splice( i, 1 ); up( { items: it.length ? it : [ { quantity: 1, price: '', description: '' } ] } ); }
+		function save( e ) {
+			e.preventDefault(); set( Object.assign( {}, st, { busy: true, error: '' } ) );
+			var payload = {
+				customerEmail: st.customerEmail, customerName: st.customerName, customerStreet: st.customerStreet, customerPostalCode: st.customerPostalCode, customerCity: st.customerCity, customerCountry: st.customerCountry || 'CH',
+				items: st.items.map( function ( i ) { return { quantity: parseInt( i.quantity, 10 ) || 1, price: parseFloat( i.price ) || 0, description: i.description }; } ),
+				vatRate: parseFloat( st.vatRate ) || 0, dueDate: st.dueDate || undefined, notes: st.notes, currency: st.currency || 'CHF',
+			};
+			var pr = ( inv && inv.id ) ? api( 'PUT', '/api/invoices/' + inv.id, payload ) : api( 'POST', '/api/invoices', payload );
+			pr.then( function () { props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
+		}
+		return el( 'div', { className: 'ec-modal' }, el( 'form', { className: 'ec-modal-card', onSubmit: save },
+			el( 'h3', null, ( inv && inv.id ) ? 'Rechnung bearbeiten' : 'Neue Rechnung' ), ErrorBox( st.error ),
+			Field( 'Kunden-E-Mail', el( 'input', { type: 'email', required: true, value: st.customerEmail, onChange: function ( e ) { up( { customerEmail: e.target.value } ); } } ) ),
+			Field( 'Kundenname', el( 'input', { required: true, value: st.customerName, onChange: function ( e ) { up( { customerName: e.target.value } ); } } ) ),
+			Field( 'Strasse', el( 'input', { value: st.customerStreet, onChange: function ( e ) { up( { customerStreet: e.target.value } ); } } ) ),
+			el( 'div', { className: 'ec-two' }, Field( 'PLZ', el( 'input', { value: st.customerPostalCode, onChange: function ( e ) { up( { customerPostalCode: e.target.value } ); } } ) ), Field( 'Ort', el( 'input', { value: st.customerCity, onChange: function ( e ) { up( { customerCity: e.target.value } ); } } ) ) ),
+			el( 'div', { className: 'ec-items' }, el( 'div', { className: 'ec-items-head' }, el( 'span', null, 'Positionen' ), el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', onClick: addItem }, '+ Position' ) ),
+				st.items.map( function ( it, i ) {
+					return el( 'div', { key: i, className: 'ec-item-row' },
+						el( 'input', { className: 'ec-item-desc', placeholder: 'Beschreibung', value: it.description, onChange: function ( e ) { setItem( i, 'description', e.target.value ); } } ),
+						el( 'input', { className: 'ec-item-qty', type: 'number', min: 1, value: it.quantity, onChange: function ( e ) { setItem( i, 'quantity', e.target.value ); } } ),
+						el( 'input', { className: 'ec-item-price', type: 'number', step: '0.01', placeholder: 'Preis', value: it.price, onChange: function ( e ) { setItem( i, 'price', e.target.value ); } } ),
+						el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { rmItem( i ); } }, '×' ) );
+				} ) ),
+			el( 'div', { className: 'ec-two' },
+				Field( 'MwSt-Satz (%)', el( 'input', { type: 'number', step: '0.1', value: st.vatRate, onChange: function ( e ) { up( { vatRate: e.target.value } ); } } ) ),
+				Field( 'Fällig am', el( 'input', { type: 'date', value: ( st.dueDate || '' ).slice( 0, 10 ), onChange: function ( e ) { up( { dueDate: e.target.value } ); } } ) ) ),
+			Field( 'Notizen', el( 'textarea', { rows: 2, value: st.notes, onChange: function ( e ) { up( { notes: e.target.value } ); } } ) ),
+			el( 'div', { className: 'ec-form-actions' },
+				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : 'Speichern' ),
+				el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, 'Abbrechen' ) )
+		) );
+	}
+
 	// --- Overview -----------------------------------------------------------
 
 	function OverviewView() {
@@ -539,6 +628,7 @@
 			case 'orders': content = el( OrdersView, null ); break;
 			case 'customers': content = el( CustomersView, null ); break;
 			case 'settings': content = el( SettingsView, null ); break;
+			case 'invoices': content = el( InvoicesView, null ); break;
 			default: content = el( Placeholder, { title: ( NAV.filter( function ( n ) { return n.key === route.view; } )[ 0 ] || { label: route.view } ).label } );
 		}
 		var activeTop = ( route.view === 'checkout' || route.view === 'products' ) ? 'checkouts' : route.view;
