@@ -83,7 +83,7 @@ class EasyCheckout {
         // Admin components
         if (is_admin()) {
             $this->admin = new Admin();
-            new Dashboard_Page();
+            new Native_Dashboard();   // native EasyCheckout dashboard (top-level menu)
             new Checkouts_Page();
         }
 
