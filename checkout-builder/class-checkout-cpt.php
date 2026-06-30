@@ -57,7 +57,11 @@ class Checkout_CPT {
             'public' => true,
             'publicly_queryable' => true,
             'show_ui' => true,
-            'show_in_menu' => true,
+            // Eigenes Top-Level-Menue ausgeblendet: das native EasyCheckout-
+            // Dashboard verwaltet Checkouts. Sonst erschiene ein zweiter,
+            // gleichnamiger "EasyCheckout"-Menuepunkt (CPT menu_name) mit
+            // demselben Warenkorb-Icon direkt neben dem nativen Dashboard.
+            'show_in_menu' => false,
             'query_var' => true,
             'rewrite' => ['slug' => 'checkout', 'with_front' => false],
             'capability_type' => 'post',

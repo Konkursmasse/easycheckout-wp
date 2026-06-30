@@ -30,6 +30,9 @@ class Native_Dashboard {
         $this->api = new Native_API();
         add_action('admin_menu', [$this, 'add_menu'], 5);
         add_action('admin_enqueue_scripts', [$this, 'enqueue']);
+        // Fremde Plugin-Hinweise (WooCommerce/Pinterest/…) auf der nativen
+        // EasyCheckout-Seite ausblenden -> sauberer nativer Screen.
+        add_action('in_admin_header', [$this, 'suppress_foreign_notices'], 1);
         add_action('wp_ajax_easycheckout_native_login', [$this, 'ajax_login']);
         add_action('wp_ajax_easycheckout_native_register', [$this, 'ajax_register']);
         add_action('wp_ajax_easycheckout_native_logout', [$this, 'ajax_logout']);
@@ -80,6 +83,17 @@ class Native_Dashboard {
 
     public function render() {
         echo '<div class="wrap" style="margin:0;"><div id="ec-native-app"></div></div>';
+    }
+
+    /**
+     * Remove other plugins' admin notices on our native dashboard page.
+     */
+    public function suppress_foreign_notices() {
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+        if ($screen && $this->hook && $screen->id === $this->hook) {
+            remove_all_actions('admin_notices');
+            remove_all_actions('all_admin_notices');
+        }
     }
 
     // --- AJAX ---------------------------------------------------------------
