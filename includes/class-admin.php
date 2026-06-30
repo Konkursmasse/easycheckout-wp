@@ -105,7 +105,7 @@ class Admin {
     public function add_menu_page() {
         add_options_page(
             __('EasyCheckout Settings', 'easycheckout'),
-            __('EasyCheckout', 'easycheckout'),
+            __('EasyCheckout Einstellungen', 'easycheckout'),
             'manage_options',
             $this->page_slug,
             [$this, 'render_settings_page']
