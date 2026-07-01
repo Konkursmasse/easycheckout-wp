@@ -75,6 +75,16 @@ class Shortcodes {
             'font' => '',         // '' | 'default' | 'site' (match this site) | a font name e.g. "Poppins"
         ], $atts, 'easycheckout');
 
+        // Lokaler Checkout (Bankueberweisung, ohne Konto) hat Vorrang, wenn der
+        // Slug zu einem lokal gebauten Checkout passt.
+        $want = $atts['slug'] !== '' ? $atts['slug'] : $atts['id'];
+        if ($want !== '' && class_exists('EasyCheckout\\Native_Dashboard')) {
+            $local = \EasyCheckout\Native_Dashboard::get_local_checkout_by_slug($want);
+            if ($local) {
+                return $this->render_local_checkout($local);
+            }
+        }
+
         $slug = $this->resolve_slug($atts['id'], $atts['slug']);
         if (is_wp_error($slug)) {
             return $this->error_for_admin($slug);
@@ -228,6 +238,59 @@ class Shortcodes {
             }
         }
         return new \WP_Error('ec_missing_checkout', __('Bitte gib einen Checkout-Slug an: [easycheckout slug="dein-slug"].', 'easycheckout'));
+    }
+
+    /**
+     * Rendert einen lokal gebauten Checkout (Bankueberweisung, ohne Konto).
+     * Die eigentliche UI baut assets/js/local-checkout.js aus ecLocal.
+     *
+     * @param array $c Lokaler Checkout.
+     * @return string
+     */
+    private function render_local_checkout($c) {
+        $handle = 'easycheckout-local-checkout';
+        wp_register_script($handle, EASYCHECKOUT_PLUGIN_URL . 'assets/js/local-checkout.js', [], EASYCHECKOUT_VERSION, true);
+
+        $primary = (isset($c['design']['primary']) && $c['design']['primary']) ? $c['design']['primary'] : '#4F46E5';
+        $products = [];
+        foreach ((array) (isset($c['products']) ? $c['products'] : []) as $p) {
+            $products[] = [
+                'id'          => $p['id'],
+                'name'        => $p['name'],
+                'description' => isset($p['description']) ? $p['description'] : '',
+                'price'       => (float) $p['price'],
+            ];
+        }
+        wp_localize_script($handle, 'ecLocal', [
+            'ajaxUrl'  => admin_url('admin-ajax.php'),
+            'nonce'    => wp_create_nonce('easycheckout_front'),
+            'checkout' => [
+                'slug'       => $c['slug'],
+                'name'       => $c['name'],
+                'currency'   => isset($c['currency']) ? $c['currency'] : 'CHF',
+                'primary'    => $primary,
+                'vatEnabled' => !empty($c['vatEnabled']),
+                'vatRate'    => isset($c['vatRate']) ? (float) $c['vatRate'] : 0,
+                'products'   => $products,
+            ],
+        ]);
+        wp_enqueue_script($handle);
+
+        $styles = '.ec-local-checkout{--ec-p:' . esc_attr($primary) . ';max-width:640px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#111827}'
+            . '.eclc-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:22px;margin-bottom:16px}'
+            . '.eclc-h{font-size:20px;font-weight:700;margin:0 0 14px}'
+            . '.eclc-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9}'
+            . '.eclc-row:last-child{border-bottom:0}.eclc-pname{font-weight:600}.eclc-pdesc{font-size:12px;color:#6b7280}'
+            . '.eclc-qty{width:64px;padding:7px 8px;border:1px solid #e5e7eb;border-radius:8px}'
+            . '.eclc-field{display:block;margin-bottom:12px}.eclc-field span{display:block;font-size:13px;font-weight:600;margin-bottom:5px}'
+            . '.eclc-field input{width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px}'
+            . '.eclc-total{display:flex;justify-content:space-between;font-size:18px;font-weight:800;margin-top:8px}'
+            . '.eclc-btn{width:100%;padding:12px 16px;border:0;border-radius:10px;background:var(--ec-p);color:#fff;font-size:15px;font-weight:700;cursor:pointer}'
+            . '.eclc-btn[disabled]{opacity:.6;cursor:default}.eclc-err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:10px 12px;border-radius:8px;margin-bottom:12px;font-size:13px}'
+            . '.eclc-iban{font-family:Consolas,Monaco,monospace;font-size:16px;font-weight:700;letter-spacing:.03em}'
+            . '.eclc-ok{text-align:center}.eclc-ok .dashicons-yes,.eclc-badge{color:var(--ec-p)}.eclc-kv{margin:6px 0;font-size:14px}';
+
+        return '<style>' . $styles . '</style><div class="ec-local-checkout" data-ec-local="1"></div>';
     }
 
     /**

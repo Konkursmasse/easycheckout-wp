@@ -1056,6 +1056,42 @@
 		);
 	}
 
+	function LocalSettings( props ) {
+		var s = useState( { iban: '', holder: '', bankName: '', loaded: false, busy: false, saved: false, error: '' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function up( o ) { set( Object.assign( {}, st, o, { saved: false } ) ); }
+		useEffect( function () {
+			post( 'easycheckout_bank_get', {} ).then( function ( j ) {
+				var b = ( j.success && j.data ) || {};
+				set( { iban: b.iban || '', holder: b.holder || '', bankName: b.bankName || '', loaded: true, busy: false, saved: false, error: '' } );
+			} ).catch( function () { set( Object.assign( {}, st, { loaded: true } ) ); } );
+		}, [] );
+		function save() {
+			set( Object.assign( {}, st, { busy: true, error: '' } ) );
+			post( 'easycheckout_bank_save', { data: JSON.stringify( { iban: st.iban, holder: st.holder, bankName: st.bankName } ) } ).then( function ( j ) {
+				if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || 'Fehler' ); }
+				set( Object.assign( {}, st, { busy: false, saved: true } ) );
+			} ).catch( function ( e ) { set( Object.assign( {}, st, { busy: false, error: e.message } ) ); } );
+		}
+		if ( ! st.loaded ) { return Spinner(); }
+		return el( 'div', null,
+			el( 'div', { className: 'ec-banner' },
+				el( 'span', { className: 'dashicons dashicons-info-outline' } ),
+				el( 'span', { className: 'ec-banner-txt' }, 'Diese Bankverbindung wird deinen Kunden bei Banküberweisung angezeigt. Für Online-Zahlungen (Karte/TWINT) verbinde dein Konto.' ),
+				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onConnect }, 'Verbinden' )
+			),
+			el( 'div', { className: 'ec-card', style: { maxWidth: '520px' } },
+				el( 'h3', null, 'Bankverbindung (für Überweisung)' ),
+				st.saved && el( 'div', { className: 'ec-alert' }, 'Gespeichert.' ),
+				ErrorBox( st.error ),
+				Field( 'IBAN', el( 'input', { type: 'text', value: st.iban, placeholder: 'CH00 0000 0000 0000 0000 0', onChange: function ( e ) { up( { iban: e.target.value } ); } } ) ),
+				Field( 'Kontoinhaber', el( 'input', { type: 'text', value: st.holder, onChange: function ( e ) { up( { holder: e.target.value } ); } } ) ),
+				Field( 'Bank (optional)', el( 'input', { type: 'text', value: st.bankName, onChange: function ( e ) { up( { bankName: e.target.value } ); } } ) ),
+				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: save, disabled: st.busy }, st.busy ? 'Speichern…' : 'Speichern' )
+			)
+		);
+	}
+
 	function ConnectModal( props ) {
 		return el( 'div', { className: 'ec-modal', onClick: props.onClose },
 			el( 'div', { className: 'ec-modal-card', onClick: function ( e ) { e.stopPropagation(); } },
@@ -1089,6 +1125,8 @@
 				content = el( LocalCheckouts, { onConnect: props.onOpenConnect } );
 			} else if ( route.view === 'overview' ) {
 				content = el( LocalOverview, { navigate: navigate, onConnect: props.onOpenConnect } );
+			} else if ( route.view === 'settings' ) {
+				content = el( LocalSettings, { onConnect: props.onOpenConnect } );
 			} else if ( DEMO_COLS[ route.view ] ) {
 				content = el( DemoView, { columns: DEMO_COLS[ route.view ], onConnect: props.onOpenConnect } );
 			} else {

@@ -63,9 +63,18 @@ class Native_Dashboard {
         add_action('wp_ajax_easycheckout_local_get', [$this, 'ajax_local_get']);
         add_action('wp_ajax_easycheckout_local_save', [$this, 'ajax_local_save']);
         add_action('wp_ajax_easycheckout_local_delete', [$this, 'ajax_local_delete']);
+        // Bankverbindung (fuer Bankueberweisung) + lokale Bestellungen
+        add_action('wp_ajax_easycheckout_bank_get', [$this, 'ajax_bank_get']);
+        add_action('wp_ajax_easycheckout_bank_save', [$this, 'ajax_bank_save']);
+        add_action('wp_ajax_easycheckout_local_orders', [$this, 'ajax_local_orders_list']);
+        // Oeffentlicher Bestell-Endpunkt (Kunde, auch ausgeloggt)
+        add_action('wp_ajax_easycheckout_place_order', [$this, 'ajax_place_order']);
+        add_action('wp_ajax_nopriv_easycheckout_place_order', [$this, 'ajax_place_order']);
     }
 
     const LOCAL_OPT = 'easycheckout_local_checkouts';
+    const BANK_OPT = 'easycheckout_bank';
+    const ORDERS_OPT = 'easycheckout_local_orders';
 
     public function add_menu() {
         $this->hooks[] = add_menu_page(
@@ -207,6 +216,125 @@ class Native_Dashboard {
         unset($all[$id]);
         update_option(self::LOCAL_OPT, $all, false);
         wp_send_json_success();
+    }
+
+    // --- Bankverbindung + lokale Bestellungen -------------------------------
+
+    public static function get_bank() {
+        $b = (array) get_option(self::BANK_OPT, []);
+        return [
+            'iban'     => isset($b['iban']) ? $b['iban'] : '',
+            'holder'   => isset($b['holder']) ? $b['holder'] : '',
+            'bankName' => isset($b['bankName']) ? $b['bankName'] : '',
+        ];
+    }
+
+    public function ajax_bank_get() {
+        $this->guard();
+        wp_send_json_success(self::get_bank());
+    }
+
+    public function ajax_bank_save() {
+        $this->guard();
+        $data = isset($_POST['data']) ? json_decode(wp_unslash($_POST['data']), true) : [];
+        if (!is_array($data)) { $data = []; }
+        $bank = [
+            'iban'     => isset($data['iban']) ? strtoupper(preg_replace('/\s+/', '', sanitize_text_field($data['iban']))) : '',
+            'holder'   => isset($data['holder']) ? sanitize_text_field($data['holder']) : '',
+            'bankName' => isset($data['bankName']) ? sanitize_text_field($data['bankName']) : '',
+        ];
+        update_option(self::BANK_OPT, $bank, false);
+        wp_send_json_success($bank);
+    }
+
+    public function ajax_local_orders_list() {
+        $this->guard();
+        $orders = array_values((array) get_option(self::ORDERS_OPT, []));
+        usort($orders, function ($a, $b) { return strcmp($b['createdAt'] ?? '', $a['createdAt'] ?? ''); });
+        wp_send_json_success($orders);
+    }
+
+    public static function get_local_checkout_by_slug($slug) {
+        $slug = sanitize_title($slug);
+        if ($slug === '') { return null; }
+        foreach ((array) get_option(self::LOCAL_OPT, []) as $c) {
+            if (isset($c['slug']) && $c['slug'] === $slug) { return $c; }
+        }
+        return null;
+    }
+
+    /**
+     * Oeffentlicher Bestell-Endpunkt fuer den lokalen Bankueberweisungs-Checkout.
+     * Preise werden serverseitig aus dem Checkout abgeleitet (Client nicht vertrauen).
+     */
+    public function ajax_place_order() {
+        if (!check_ajax_referer('easycheckout_front', 'nonce', false)) {
+            wp_send_json_error(['message' => __('Ungültige Anfrage.', 'easycheckout')], 400);
+        }
+        $slug = isset($_POST['slug']) ? sanitize_title(wp_unslash($_POST['slug'])) : '';
+        $checkout = self::get_local_checkout_by_slug($slug);
+        if (!$checkout) { wp_send_json_error(['message' => __('Checkout nicht gefunden.', 'easycheckout')], 404); }
+
+        $itemsIn = isset($_POST['items']) ? json_decode(wp_unslash($_POST['items']), true) : [];
+        if (!is_array($itemsIn)) { $itemsIn = []; }
+        $byId = [];
+        foreach ((array) ($checkout['products'] ?? []) as $p) { $byId[$p['id']] = $p; }
+
+        $lines = [];
+        $total = 0;
+        foreach ($itemsIn as $it) {
+            $pid = isset($it['id']) ? sanitize_text_field($it['id']) : '';
+            $qty = isset($it['qty']) ? max(0, intval($it['qty'])) : 0;
+            if (!$qty || !isset($byId[$pid])) { continue; }
+            $p = $byId[$pid];
+            $lineTotal = round(((float) $p['price']) * $qty, 2);
+            $lines[] = ['id' => $pid, 'name' => $p['name'], 'price' => (float) $p['price'], 'qty' => $qty, 'lineTotal' => $lineTotal];
+            $total += $lineTotal;
+        }
+        if (!$lines) { wp_send_json_error(['message' => __('Warenkorb ist leer.', 'easycheckout')], 400); }
+
+        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
+        $name  = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
+        if (!$name || !is_email($email)) { wp_send_json_error(['message' => __('Bitte Name und gültige E-Mail angeben.', 'easycheckout')], 400); }
+
+        $total = round($total, 2);
+        $ref = 'EC-' . strtoupper(wp_generate_password(6, false, false));
+        $order = [
+            'id'            => 'ord_' . wp_generate_password(10, false, false),
+            'ref'           => $ref,
+            'checkoutSlug'  => $slug,
+            'checkoutName'  => $checkout['name'] ?? '',
+            'customerName'  => $name,
+            'customerEmail' => $email,
+            'items'         => $lines,
+            'total'         => $total,
+            'currency'      => $checkout['currency'] ?? 'CHF',
+            'paymentMethod' => 'bank',
+            'status'        => 'awaiting_transfer',
+            'createdAt'     => current_time('mysql'),
+        ];
+        $orders = (array) get_option(self::ORDERS_OPT, []);
+        $orders[$order['id']] = $order;
+        update_option(self::ORDERS_OPT, $orders, false);
+
+        $bank = self::get_bank();
+        if ($email) {
+            $body = sprintf(
+                "Vielen Dank für deine Bestellung (%s).\n\nBitte überweise %s %s an:\nIBAN: %s\nEmpfänger: %s\n%sVerwendungszweck: %s\n",
+                $ref, $order['currency'], number_format($total, 2, '.', "'"),
+                $bank['iban'] ?: '—', $bank['holder'] ?: '—',
+                $bank['bankName'] ? ('Bank: ' . $bank['bankName'] . "\n") : '',
+                $ref
+            );
+            @wp_mail($email, sprintf(__('Bestellbestätigung %s', 'easycheckout'), $ref), $body);
+        }
+
+        wp_send_json_success([
+            'ref'      => $ref,
+            'total'    => $total,
+            'currency' => $order['currency'],
+            'bank'     => $bank,
+        ]);
     }
 
     // --- AJAX ---------------------------------------------------------------
