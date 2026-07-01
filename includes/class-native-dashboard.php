@@ -59,7 +59,13 @@ class Native_Dashboard {
         add_action('wp_ajax_easycheckout_native_logout', [$this, 'ajax_logout']);
         add_action('wp_ajax_easycheckout_native_proxy', [$this, 'ajax_proxy']);
         add_action('wp_ajax_easycheckout_native_upload', [$this, 'ajax_upload']);
+        // Lokale Checkout-Entwuerfe (nutzbar OHNE Konto; werden bei Verbindung veroeffentlicht)
+        add_action('wp_ajax_easycheckout_local_get', [$this, 'ajax_local_get']);
+        add_action('wp_ajax_easycheckout_local_save', [$this, 'ajax_local_save']);
+        add_action('wp_ajax_easycheckout_local_delete', [$this, 'ajax_local_delete']);
     }
+
+    const LOCAL_OPT = 'easycheckout_local_checkouts';
 
     public function add_menu() {
         $this->hooks[] = add_menu_page(
@@ -128,6 +134,42 @@ class Native_Dashboard {
             remove_all_actions('admin_notices');
             remove_all_actions('all_admin_notices');
         }
+    }
+
+    // --- Lokale Checkout-Entwuerfe (ohne Konto) -----------------------------
+
+    public function ajax_local_get() {
+        $this->guard();
+        wp_send_json_success(array_values((array) get_option(self::LOCAL_OPT, [])));
+    }
+
+    public function ajax_local_save() {
+        $this->guard();
+        $data = isset($_POST['data']) ? json_decode(wp_unslash($_POST['data']), true) : [];
+        if (!is_array($data)) { $data = []; }
+        $all = (array) get_option(self::LOCAL_OPT, []);
+        $id = (!empty($data['id'])) ? sanitize_text_field($data['id']) : ('loc_' . wp_generate_password(8, false, false));
+        $name = isset($data['name']) ? sanitize_text_field($data['name']) : 'Checkout';
+        $item = [
+            'id'        => $id,
+            'name'      => $name !== '' ? $name : 'Checkout',
+            'slug'      => sanitize_title(!empty($data['slug']) ? $data['slug'] : $name),
+            'design'    => (isset($data['design']) && is_array($data['design'])) ? $data['design'] : [],
+            'products'  => (isset($data['products']) && is_array($data['products'])) ? $data['products'] : [],
+            'updatedAt' => current_time('mysql'),
+        ];
+        $all[$id] = $item;
+        update_option(self::LOCAL_OPT, $all, false);
+        wp_send_json_success($item);
+    }
+
+    public function ajax_local_delete() {
+        $this->guard();
+        $id = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])) : '';
+        $all = (array) get_option(self::LOCAL_OPT, []);
+        unset($all[$id]);
+        update_option(self::LOCAL_OPT, $all, false);
+        wp_send_json_success();
     }
 
     // --- AJAX ---------------------------------------------------------------

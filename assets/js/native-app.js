@@ -33,6 +33,14 @@
 		} );
 	}
 
+	// Lokale Checkout-Entwuerfe (ohne Konto). action: 'get' | 'save' | 'delete'
+	function localApi( action, fields ) {
+		return post( 'easycheckout_local_' + action, fields || {} ).then( function ( j ) {
+			if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || 'Fehler' ); }
+			return j.data;
+		} );
+	}
+
 	function uploadFile( method, path, field, file ) {
 		var fd = new FormData();
 		fd.append( 'action', 'easycheckout_native_upload' );
@@ -874,6 +882,79 @@
 		{ key: 'settings', label: 'Einstellungen', icon: 'admin-generic' },
 	];
 
+	// Views, die ein verbundenes Konto brauchen (Zahlungsempfang etc.).
+	var WALL_TITLES = { orders: 'Bestellungen', customers: 'Kunden', invoices: 'Rechnungen', emails: 'E-Mails', marketing: 'Marketing', onboarding: 'Verifizierung', billing: 'Tarif', webhooks: 'Webhooks', support: 'Support', settings: 'Einstellungen' };
+
+	function ConnectWall( props ) {
+		return el( 'div', { className: 'ec-wall' },
+			el( 'span', { className: 'dashicons dashicons-lock ec-wall-ico' } ),
+			el( 'h2', { className: 'ec-wall-title' }, props.title || 'Konto verbinden' ),
+			el( 'p', { className: 'ec-wall-text' }, props.text || 'Registriere dich kostenlos, um Zahlungen zu empfangen und diese Funktion zu nutzen.' ),
+			el( 'button', { className: 'ec-btn ec-btn-primary', onClick: props.onConnect }, 'Konto verbinden' )
+		);
+	}
+
+	function LocalOverview( props ) {
+		return el( 'div', { className: 'ec-hero' },
+			el( 'h2', null, 'Willkommen bei EasyCheckout' ),
+			el( 'p', null, 'Richte deinen Checkout in Ruhe ein und teste alles. Erst wenn du echte Zahlungen empfangen möchtest, verbindest du dein Konto.' ),
+			el( 'div', { className: 'ec-hero-actions' },
+				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { props.navigate( 'checkouts' ); } }, 'Checkout erstellen' ),
+				el( 'button', { className: 'ec-btn', onClick: props.onConnect }, 'Konto verbinden' )
+			)
+		);
+	}
+
+	function LocalCheckouts( props ) {
+		var s = useState( { items: null, error: '', name: '', busy: false } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function up( o ) { set( Object.assign( {}, st, o ) ); }
+		function load() { localApi( 'get' ).then( function ( items ) { up( { items: items } ); } ).catch( function ( e ) { up( { error: e.message } ); } ); }
+		useEffect( function () { load(); }, [] );
+		function create( e ) {
+			e.preventDefault();
+			if ( ! st.name.trim() ) { return; }
+			up( { busy: true, error: '' } );
+			localApi( 'save', { data: JSON.stringify( { name: st.name } ) } ).then( function () {
+				set( { items: null, error: '', name: '', busy: false } ); load();
+			} ).catch( function ( e ) { up( { busy: false, error: e.message } ); } );
+		}
+		function del( id ) { localApi( 'delete', { id: id } ).then( load ); }
+		return el( 'div', null,
+			el( 'div', { className: 'ec-banner' },
+				el( 'span', { className: 'dashicons dashicons-info-outline' } ),
+				el( 'span', { className: 'ec-banner-txt' }, 'Diese Checkouts sind lokal gespeichert. Sobald du dein Konto verbindest, kannst du sie veröffentlichen und Zahlungen empfangen.' ),
+				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onConnect }, 'Verbinden' )
+			),
+			ErrorBox( st.error ),
+			el( 'form', { className: 'ec-inline-form', onSubmit: create },
+				el( 'input', { type: 'text', placeholder: 'Name des Checkouts', value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ),
+				el( 'button', { type: 'submit', className: 'ec-btn ec-btn-primary', disabled: st.busy }, '+ Checkout erstellen' )
+			),
+			st.items === null ? Spinner() :
+				( st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Checkouts. Erstelle deinen ersten oben.' ) :
+					el( 'table', { className: 'ec-table' },
+						el( 'thead', null, el( 'tr', null, el( 'th', null, 'Name' ), el( 'th', null, 'Slug' ), el( 'th', null, '' ) ) ),
+						el( 'tbody', null, st.items.map( function ( c ) {
+							return el( 'tr', { key: c.id },
+								el( 'td', null, c.name ),
+								el( 'td', null, el( 'code', null, c.slug ) ),
+								el( 'td', { style: { textAlign: 'right' } }, el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { del( c.id ); } }, 'Löschen' ) ) );
+						} ) )
+					)
+				)
+		);
+	}
+
+	function ConnectModal( props ) {
+		return el( 'div', { className: 'ec-modal', onClick: props.onClose },
+			el( 'div', { className: 'ec-modal-card', onClick: function ( e ) { e.stopPropagation(); } },
+				el( 'button', { className: 'ec-modal-x', onClick: props.onClose, 'aria-label': 'Schliessen' }, '×' ),
+				el( LoginView, { onAuthed: props.onAuthed } )
+			)
+		);
+	}
+
 	function Shell( props ) {
 		var r = useState( { view: props.initialView || 'overview', params: {} } );
 		var route = r[ 0 ], setRoute = r[ 1 ];
@@ -881,27 +962,43 @@
 		function logout() { post( 'easycheckout_native_logout', {} ).then( function () { props.onLogout(); } ); }
 
 		var content;
-		switch ( route.view ) {
-			case 'overview': content = el( OverviewView, null ); break;
-			case 'checkouts': content = el( CheckoutsList, { navigate: navigate } ); break;
-			case 'checkout': content = el( CheckoutEditor, { id: route.params.id, navigate: navigate } ); break;
-			case 'products': content = el( ProductsManager, { id: route.params.id, name: route.params.name, navigate: navigate } ); break;
-			case 'orders': content = el( OrdersView, null ); break;
-			case 'customers': content = el( CustomersView, null ); break;
-			case 'settings': content = el( SettingsView, null ); break;
-			case 'invoices': content = el( InvoicesView, null ); break;
-			case 'onboarding': content = el( OnboardingView, null ); break;
-			case 'emails': content = el( EmailsView, null ); break;
-			case 'marketing': content = el( MarketingView, null ); break;
-			case 'webhooks': content = el( WebhooksView, null ); break;
-			case 'support': content = el( SupportView, null ); break;
-			case 'billing': content = el( BillingView, null ); break;
-			default: content = el( Placeholder, { title: ( NAV.filter( function ( n ) { return n.key === route.view; } )[ 0 ] || { label: route.view } ).label } );
+		if ( ! props.authed ) {
+			// Ohne Konto: alles sichtbar/benutzbar. Zahlungs-gebundene Bereiche
+			// zeigen die Verbinden-Wall; Checkouts lassen sich lokal anlegen.
+			if ( route.view === 'checkouts' || route.view === 'checkout' || route.view === 'products' ) {
+				content = el( LocalCheckouts, { onConnect: props.onOpenConnect } );
+			} else if ( route.view === 'overview' ) {
+				content = el( LocalOverview, { navigate: navigate, onConnect: props.onOpenConnect } );
+			} else {
+				content = el( ConnectWall, { title: WALL_TITLES[ route.view ] || 'Konto verbinden', onConnect: props.onOpenConnect } );
+			}
+		} else {
+			switch ( route.view ) {
+				case 'overview': content = el( OverviewView, null ); break;
+				case 'checkouts': content = el( CheckoutsList, { navigate: navigate } ); break;
+				case 'checkout': content = el( CheckoutEditor, { id: route.params.id, navigate: navigate } ); break;
+				case 'products': content = el( ProductsManager, { id: route.params.id, name: route.params.name, navigate: navigate } ); break;
+				case 'orders': content = el( OrdersView, null ); break;
+				case 'customers': content = el( CustomersView, null ); break;
+				case 'settings': content = el( SettingsView, null ); break;
+				case 'invoices': content = el( InvoicesView, null ); break;
+				case 'onboarding': content = el( OnboardingView, null ); break;
+				case 'emails': content = el( EmailsView, null ); break;
+				case 'marketing': content = el( MarketingView, null ); break;
+				case 'webhooks': content = el( WebhooksView, null ); break;
+				case 'support': content = el( SupportView, null ); break;
+				case 'billing': content = el( BillingView, null ); break;
+				default: content = el( Placeholder, { title: ( NAV.filter( function ( n ) { return n.key === route.view; } )[ 0 ] || { label: route.view } ).label } );
+			}
 		}
 		var activeTop = ( route.view === 'checkout' || route.view === 'products' ) ? 'checkouts' : route.view;
 		var curNav = NAV.filter( function ( n ) { return n.key === activeTop; } )[ 0 ];
 		var curLabel = curNav ? curNav.label : 'EasyCheckout';
 		var merchantName = ( props.merchant && ( props.merchant.companyName || props.merchant.email ) ) || '';
+
+		var statusEl = props.authed
+			? [ el( 'span', { key: 'm', className: 'ec-merchant' }, merchantName ), el( 'button', { key: 'b', className: 'ec-btn ec-btn-sm', onClick: logout }, 'Abmelden' ) ]
+			: [ el( 'span', { key: 'nb', className: 'ec-conn-badge' }, 'Nicht verbunden' ), el( 'button', { key: 'c', className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onOpenConnect }, 'Konto verbinden' ) ];
 
 		// Navigation laeuft ueber die WordPress-Untermenues; die native App
 		// zeigt nur die aktuelle Sektion + eine schlanke Kopfzeile.
@@ -911,20 +1008,27 @@
 					el( 'div', { className: 'ec-topbar-title' },
 						el( 'span', { className: 'dashicons dashicons-' + ( curNav ? curNav.icon : 'cart' ) } ),
 						el( 'span', null, curLabel ) ),
-					el( 'div', { className: 'ec-topbar-right' },
-						el( 'span', { className: 'ec-merchant' }, merchantName ),
-						el( 'button', { className: 'ec-btn ec-btn-sm', onClick: logout }, 'Abmelden' ) )
+					el( 'div', { className: 'ec-topbar-right' }, statusEl )
 				),
 				content
-			)
+			),
+			props.showConnect && el( ConnectModal, { onClose: props.onCloseConnect, onAuthed: props.onAuthed } )
 		);
 	}
 
 	function App( props ) {
-		var s = useState( { authed: !! ecNative.authed, merchant: ecNative.merchant || {} } );
+		var s = useState( { authed: !! ecNative.authed, merchant: ecNative.merchant || {}, connect: false } );
 		var st = s[ 0 ], set = s[ 1 ];
-		if ( ! st.authed ) { return el( LoginView, { onAuthed: function ( m ) { set( { authed: true, merchant: m } ); } } ); }
-		return el( Shell, { merchant: st.merchant, initialView: props.initialView, onLogout: function () { set( { authed: false, merchant: {} } ); } } );
+		return el( Shell, {
+			authed: st.authed,
+			merchant: st.merchant,
+			initialView: props.initialView,
+			showConnect: st.connect,
+			onOpenConnect: function () { set( Object.assign( {}, st, { connect: true } ) ); },
+			onCloseConnect: function () { set( Object.assign( {}, st, { connect: false } ) ); },
+			onAuthed: function ( m ) { set( { authed: true, merchant: m || {}, connect: false } ); },
+			onLogout: function () { set( { authed: false, merchant: {}, connect: false } ); }
+		} );
 	}
 
 	document.addEventListener( 'DOMContentLoaded', function () {

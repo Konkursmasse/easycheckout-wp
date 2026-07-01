@@ -107,3 +107,23 @@
 .ec-dob { display:flex; gap:6px; }
 .ec-dob input { width:70px; padding:8px 9px; border:1px solid var(--ec-border); border-radius:7px; }
 .ec-dob input:last-child { width:90px; }
+
+/* Verbinden-Wall / lokaler Modus (ohne Konto) */
+.ec-wall { max-width:520px; margin:48px auto; text-align:center; background:#fff; border:1px solid var(--ec-border); border-radius:14px; padding:40px 28px; }
+.ec-wall-ico { color:var(--ec-primary); font-size:40px; width:40px; height:40px; }
+.ec-wall-title { margin:12px 0 6px; font-size:20px; font-weight:700; }
+.ec-wall-text { color:var(--ec-muted); font-size:14px; margin:0 0 20px; line-height:1.5; }
+.ec-hero { background:#fff; border:1px solid var(--ec-border); border-radius:14px; padding:32px; }
+.ec-hero h2 { margin:0 0 8px; font-size:22px; }
+.ec-hero p { color:var(--ec-muted); font-size:14px; max-width:640px; line-height:1.5; }
+.ec-hero-actions { display:flex; gap:10px; margin-top:20px; }
+.ec-banner { display:flex; align-items:center; gap:12px; background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; padding:12px 14px; border-radius:10px; margin-bottom:16px; font-size:13px; }
+.ec-banner .dashicons { flex:0 0 auto; }
+.ec-banner-txt { flex:1; }
+.ec-inline-form { display:flex; gap:8px; margin-bottom:18px; }
+.ec-inline-form input { flex:1; max-width:340px; padding:9px 12px; border:1px solid var(--ec-border); border-radius:8px; font-size:14px; }
+.ec-conn-badge { font-size:12px; font-weight:600; color:#854d0e; background:#fef9c3; padding:4px 10px; border-radius:999px; }
+.ec-modal-x { position:absolute; top:10px; right:12px; border:0; background:transparent; font-size:22px; line-height:1; color:var(--ec-muted); cursor:pointer; }
+.ec-modal-card { position:relative; }
+.ec-modal .ec-auth { padding:0; }
+.ec-modal .ec-auth-card { width:100%; border:0; box-shadow:none; padding:6px 2px 0; }
