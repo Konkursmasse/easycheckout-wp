@@ -19,7 +19,28 @@ defined('ABSPATH') || exit;
 class Native_Dashboard {
 
     private $page_slug = 'easycheckout';
-    private $hook = '';
+    private $hooks = [];
+
+    /**
+     * WP-Untermenues -> native View. slug => [Label, view-key].
+     * Der Parent-Slug 'easycheckout' benennt zugleich den ersten Untereintrag.
+     */
+    private function sections() {
+        return [
+            'easycheckout'  => [__('Übersicht', 'easycheckout'), 'overview'],
+            'ec-checkouts'  => [__('Checkouts', 'easycheckout'), 'checkouts'],
+            'ec-orders'     => [__('Bestellungen', 'easycheckout'), 'orders'],
+            'ec-customers'  => [__('Kunden', 'easycheckout'), 'customers'],
+            'ec-invoices'   => [__('Rechnungen', 'easycheckout'), 'invoices'],
+            'ec-emails'     => [__('E-Mails', 'easycheckout'), 'emails'],
+            'ec-marketing'  => [__('Marketing', 'easycheckout'), 'marketing'],
+            'ec-onboarding' => [__('Verifizierung', 'easycheckout'), 'onboarding'],
+            'ec-billing'    => [__('Tarif', 'easycheckout'), 'billing'],
+            'ec-webhooks'   => [__('Webhooks', 'easycheckout'), 'webhooks'],
+            'ec-support'    => [__('Support', 'easycheckout'), 'support'],
+            'ec-settings'   => [__('Einstellungen', 'easycheckout'), 'settings'],
+        ];
+    }
 
     /**
      * @var Native_API
@@ -41,7 +62,7 @@ class Native_Dashboard {
     }
 
     public function add_menu() {
-        $this->hook = add_menu_page(
+        $this->hooks[] = add_menu_page(
             __('EasyCheckout', 'easycheckout'),
             __('EasyCheckout', 'easycheckout'),
             'manage_options',
@@ -50,10 +71,20 @@ class Native_Dashboard {
             'dashicons-cart',
             55
         );
+        foreach ($this->sections() as $slug => $def) {
+            $this->hooks[] = add_submenu_page(
+                $this->page_slug,
+                $def[0],
+                $def[0],
+                'manage_options',
+                $slug,
+                [$this, 'render']
+            );
+        }
     }
 
     public function enqueue($hook) {
-        if ($hook !== $this->hook) {
+        if (!in_array($hook, $this->hooks, true)) {
             return;
         }
 
@@ -82,15 +113,18 @@ class Native_Dashboard {
     }
 
     public function render() {
-        echo '<div class="wrap" style="margin:0;"><div id="ec-native-app"></div></div>';
+        $page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : $this->page_slug;
+        $sections = $this->sections();
+        $view = isset($sections[$page]) ? $sections[$page][1] : 'overview';
+        echo '<div class="wrap" style="margin:0;"><div id="ec-native-app" data-view="' . esc_attr($view) . '"></div></div>';
     }
 
     /**
-     * Remove other plugins' admin notices on our native dashboard page.
+     * Remove other plugins' admin notices on our native dashboard pages.
      */
     public function suppress_foreign_notices() {
         $screen = function_exists('get_current_screen') ? get_current_screen() : null;
-        if ($screen && $this->hook && $screen->id === $this->hook) {
+        if ($screen && in_array($screen->id, $this->hooks, true)) {
             remove_all_actions('admin_notices');
             remove_all_actions('all_admin_notices');
         }

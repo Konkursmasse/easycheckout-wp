@@ -875,7 +875,7 @@
 	];
 
 	function Shell( props ) {
-		var r = useState( { view: 'overview', params: {} } );
+		var r = useState( { view: props.initialView || 'overview', params: {} } );
 		var route = r[ 0 ], setRoute = r[ 1 ];
 		function navigate( view, params ) { setRoute( { view: view, params: params || {} } ); }
 		function logout() { post( 'easycheckout_native_logout', {} ).then( function () { props.onLogout(); } ); }
@@ -899,31 +899,39 @@
 			default: content = el( Placeholder, { title: ( NAV.filter( function ( n ) { return n.key === route.view; } )[ 0 ] || { label: route.view } ).label } );
 		}
 		var activeTop = ( route.view === 'checkout' || route.view === 'products' ) ? 'checkouts' : route.view;
+		var curNav = NAV.filter( function ( n ) { return n.key === activeTop; } )[ 0 ];
+		var curLabel = curNav ? curNav.label : 'EasyCheckout';
+		var merchantName = ( props.merchant && ( props.merchant.companyName || props.merchant.email ) ) || '';
 
+		// Navigation laeuft ueber die WordPress-Untermenues; die native App
+		// zeigt nur die aktuelle Sektion + eine schlanke Kopfzeile.
 		return el( 'div', { className: 'ec-app' },
-			el( 'aside', { className: 'ec-sidebar' },
-				el( 'div', { className: 'ec-brand' }, 'EasyCheckout' ),
-				el( 'nav', null, NAV.map( function ( n ) {
-					return el( 'a', { key: n.key, href: '#', className: 'ec-nav-item' + ( activeTop === n.key ? ' is-active' : '' ), onClick: function ( e ) { e.preventDefault(); navigate( n.key ); } },
-						el( 'span', { className: 'dashicons dashicons-' + n.icon } ), el( 'span', null, n.label ) );
-				} ) ),
-				el( 'div', { className: 'ec-sidebar-foot' },
-					el( 'div', { className: 'ec-merchant' }, ( props.merchant && ( props.merchant.companyName || props.merchant.email ) ) || '' ),
-					el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-block', onClick: logout }, 'Abmelden' ) )
-			),
-			el( 'main', { className: 'ec-main' }, content )
+			el( 'main', { className: 'ec-main' },
+				el( 'div', { className: 'ec-topbar' },
+					el( 'div', { className: 'ec-topbar-title' },
+						el( 'span', { className: 'dashicons dashicons-' + ( curNav ? curNav.icon : 'cart' ) } ),
+						el( 'span', null, curLabel ) ),
+					el( 'div', { className: 'ec-topbar-right' },
+						el( 'span', { className: 'ec-merchant' }, merchantName ),
+						el( 'button', { className: 'ec-btn ec-btn-sm', onClick: logout }, 'Abmelden' ) )
+				),
+				content
+			)
 		);
 	}
 
-	function App() {
+	function App( props ) {
 		var s = useState( { authed: !! ecNative.authed, merchant: ecNative.merchant || {} } );
 		var st = s[ 0 ], set = s[ 1 ];
 		if ( ! st.authed ) { return el( LoginView, { onAuthed: function ( m ) { set( { authed: true, merchant: m } ); } } ); }
-		return el( Shell, { merchant: st.merchant, onLogout: function () { set( { authed: false, merchant: {} } ); } } );
+		return el( Shell, { merchant: st.merchant, initialView: props.initialView, onLogout: function () { set( { authed: false, merchant: {} } ); } } );
 	}
 
 	document.addEventListener( 'DOMContentLoaded', function () {
 		var node = document.getElementById( 'ec-native-app' );
-		if ( node ) { render( el( App, null ), node ); }
+		if ( node ) {
+			var iv = node.getAttribute( 'data-view' ) || 'overview';
+			render( el( App, { initialView: iv } ), node );
+		}
 	} );
 } )();
