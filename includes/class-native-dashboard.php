@@ -29,6 +29,7 @@ class Native_Dashboard {
         return [
             'easycheckout'  => [__('Übersicht', 'easycheckout'), 'overview'],
             'ec-checkouts'  => [__('Checkouts', 'easycheckout'), 'checkouts'],
+            'ec-embed'      => [__('Einbindung', 'easycheckout'), 'embed'],
             'ec-orders'     => [__('Bestellungen', 'easycheckout'), 'orders'],
             'ec-customers'  => [__('Kunden', 'easycheckout'), 'customers'],
             'ec-invoices'   => [__('Rechnungen', 'easycheckout'), 'invoices'],

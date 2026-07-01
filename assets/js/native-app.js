@@ -883,6 +883,7 @@
 	var NAV = [
 		{ key: 'overview', label: 'Übersicht', icon: 'dashboard' },
 		{ key: 'checkouts', label: 'Checkouts', icon: 'cart' },
+		{ key: 'embed', label: 'Einbindung', icon: 'editor-code' },
 		{ key: 'orders', label: 'Bestellungen', icon: 'list-view' },
 		{ key: 'customers', label: 'Kunden', icon: 'groups' },
 		{ key: 'invoices', label: 'Rechnungen', icon: 'media-document' },
@@ -1126,6 +1127,36 @@
 		);
 	}
 
+	function EmbedView( props ) {
+		var s = useState( { items: null, error: '' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		useEffect( function () { localApi( 'get' ).then( function ( items ) { set( { items: items, error: '' } ); } ).catch( function ( e ) { set( { items: [], error: e.message } ); } ); }, [] );
+		return el( 'div', null,
+			el( 'div', { className: 'ec-card', style: { maxWidth: '760px', marginBottom: '16px' } },
+				el( 'h3', null, 'So bindest du deine Checkouts ein' ),
+				el( 'ol', { style: { margin: '4px 0 0 18px', lineHeight: '1.9', fontSize: '14px' } },
+					el( 'li', null, 'Firmenangaben + IBAN unter „Einstellungen" hinterlegen (erscheinen auf der Rechnung).' ),
+					el( 'li', null, el( 'b', null, 'Einbetten: ' ), 'neue WordPress-Seite anlegen, den Shortcode einfügen, veröffentlichen.' ),
+					el( 'li', null, el( 'b', null, 'Direkter Link: ' ), 'die Link-URL teilen (E-Mail, Social, QR) – ganz ohne Seite.' ),
+					el( 'li', null, 'Vorschau jederzeit über „Ansehen".' )
+				)
+			),
+			ErrorBox( st.error ),
+			st.items === null ? Spinner() :
+				( st.items.length === 0 ? el( 'div', { className: 'ec-card', style: { maxWidth: '760px' } }, el( 'p', { className: 'ec-muted' }, 'Noch keine Checkouts. Lege zuerst unter „Checkouts" einen an.' ) ) :
+					st.items.map( function ( c ) {
+						return el( 'div', { key: c.id, className: 'ec-card', style: { maxWidth: '760px', marginBottom: '14px' } },
+							el( 'div', { className: 'ec-page-head' },
+								el( 'h3', { style: { margin: 0 } }, c.name ),
+								el( 'a', { className: 'ec-btn ec-btn-sm', href: previewUrl( c.slug ), target: '_blank', rel: 'noopener' }, 'Ansehen' ) ),
+							CopyRow( 'Shortcode – in eine WordPress-Seite einfügen', '[easycheckout slug="' + c.slug + '"]' ),
+							CopyRow( 'Direkter Link – teilbar, ohne Seite', previewUrl( c.slug ) )
+						);
+					} )
+				)
+		);
+	}
+
 	function LocalSettings( props ) {
 		var s = useState( { comp: null, bank: null, cBusy: false, cSaved: false, bBusy: false, bSaved: false, error: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
@@ -1260,6 +1291,8 @@
 			};
 			if ( route.view === 'checkouts' || route.view === 'checkout' || route.view === 'products' ) {
 				content = el( LocalCheckouts, { onConnect: props.onOpenConnect } );
+			} else if ( route.view === 'embed' ) {
+				content = el( EmbedView, null );
 			} else if ( route.view === 'overview' ) {
 				content = el( LocalOverview, { navigate: navigate, onConnect: props.onOpenConnect } );
 			} else if ( route.view === 'settings' ) {
@@ -1274,6 +1307,7 @@
 		} else {
 			switch ( route.view ) {
 				case 'overview': content = el( OverviewView, null ); break;
+				case 'embed': content = el( EmbedView, null ); break;
 				case 'checkouts': content = el( CheckoutsList, { navigate: navigate } ); break;
 				case 'checkout': content = el( CheckoutEditor, { id: route.params.id, navigate: navigate } ); break;
 				case 'products': content = el( ProductsManager, { id: route.params.id, name: route.params.name, navigate: navigate } ); break;
