@@ -150,13 +150,50 @@ class Native_Dashboard {
         $all = (array) get_option(self::LOCAL_OPT, []);
         $id = (!empty($data['id'])) ? sanitize_text_field($data['id']) : ('loc_' . wp_generate_password(8, false, false));
         $name = isset($data['name']) ? sanitize_text_field($data['name']) : 'Checkout';
+
+        // Design (nur Farb-/Text-Strings)
+        $design = [];
+        if (isset($data['design']) && is_array($data['design'])) {
+            foreach (['primary', 'text', 'bg', 'button', 'buttonText', 'radius'] as $k) {
+                if (isset($data['design'][$k])) { $design[$k] = sanitize_text_field($data['design'][$k]); }
+            }
+        }
+
+        // Zahlungsarten (Whitelist). 'bank' = Bankueberweisung, funktioniert
+        // lokal OHNE Konto/Stripe; card/twint brauchen ein verbundenes Konto.
+        $pm = [];
+        if (isset($data['paymentMethods']) && is_array($data['paymentMethods'])) {
+            foreach ($data['paymentMethods'] as $m) {
+                $m = sanitize_key($m);
+                if (in_array($m, ['bank', 'card', 'twint', 'qr'], true)) { $pm[] = $m; }
+            }
+        }
+
+        // Produkte
+        $products = [];
+        if (isset($data['products']) && is_array($data['products'])) {
+            foreach ($data['products'] as $p) {
+                if (!is_array($p)) { continue; }
+                $products[] = [
+                    'id'          => (!empty($p['id'])) ? sanitize_text_field($p['id']) : ('p_' . wp_generate_password(6, false, false)),
+                    'name'        => isset($p['name']) ? sanitize_text_field($p['name']) : '',
+                    'description' => isset($p['description']) ? sanitize_textarea_field($p['description']) : '',
+                    'price'       => isset($p['price']) ? round((float) $p['price'], 2) : 0,
+                ];
+            }
+        }
+
         $item = [
-            'id'        => $id,
-            'name'      => $name !== '' ? $name : 'Checkout',
-            'slug'      => sanitize_title(!empty($data['slug']) ? $data['slug'] : $name),
-            'design'    => (isset($data['design']) && is_array($data['design'])) ? $data['design'] : [],
-            'products'  => (isset($data['products']) && is_array($data['products'])) ? $data['products'] : [],
-            'updatedAt' => current_time('mysql'),
+            'id'         => $id,
+            'name'       => $name !== '' ? $name : 'Checkout',
+            'slug'       => sanitize_title(!empty($data['slug']) ? $data['slug'] : $name),
+            'design'     => $design,
+            'paymentMethods' => $pm ? $pm : ['bank'],
+            'vatEnabled' => !empty($data['vatEnabled']),
+            'vatRate'    => isset($data['vatRate']) ? round((float) $data['vatRate'], 2) : 8.1,
+            'currency'   => isset($data['currency']) ? strtoupper(substr(sanitize_text_field($data['currency']), 0, 3)) : 'CHF',
+            'products'   => $products,
+            'updatedAt'  => current_time('mysql'),
         ];
         $all[$id] = $item;
         update_option(self::LOCAL_OPT, $all, false);

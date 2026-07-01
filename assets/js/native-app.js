@@ -905,25 +905,50 @@
 		);
 	}
 
+	function pmLabel( m ) { return { bank: 'Banküberweisung', card: 'Karte', twint: 'TWINT', qr: 'QR-Rechnung' }[ m ] || m; }
+
+	function DemoView( props ) {
+		var cols = props.columns || [ 'Eintrag' ];
+		return el( 'div', null,
+			el( 'div', { className: 'ec-banner' },
+				el( 'span', { className: 'dashicons dashicons-info-outline' } ),
+				el( 'span', { className: 'ec-banner-txt' }, props.hint || 'Diese Daten erscheinen, sobald du dein Konto für den Online-Zahlungsempfang verbindest.' ),
+				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onConnect }, 'Konto verbinden' )
+			),
+			el( 'table', { className: 'ec-table' },
+				el( 'thead', null, el( 'tr', null, cols.map( function ( h, i ) { return el( 'th', { key: i }, h ); } ) ) ),
+				el( 'tbody', null, el( 'tr', null, el( 'td', { colSpan: cols.length, className: 'ec-muted', style: { textAlign: 'center', padding: '28px' } }, 'Noch keine Einträge.' ) ) )
+			)
+		);
+	}
+
 	function LocalCheckouts( props ) {
-		var s = useState( { items: null, error: '', name: '', busy: false } );
+		var s = useState( { items: null, error: '', name: '', busy: false, editId: null } );
 		var st = s[ 0 ], set = s[ 1 ];
 		function up( o ) { set( Object.assign( {}, st, o ) ); }
-		function load() { localApi( 'get' ).then( function ( items ) { up( { items: items } ); } ).catch( function ( e ) { up( { error: e.message } ); } ); }
-		useEffect( function () { load(); }, [] );
+		function reload( extra ) { return localApi( 'get' ).then( function ( items ) { set( Object.assign( {}, st, { items: items }, extra || {} ) ); } ).catch( function ( e ) { up( { error: e.message } ); } ); }
+		useEffect( function () { localApi( 'get' ).then( function ( items ) { up( { items: items } ); } ).catch( function ( e ) { up( { error: e.message } ); } ); }, [] );
 		function create( e ) {
 			e.preventDefault();
 			if ( ! st.name.trim() ) { return; }
 			up( { busy: true, error: '' } );
-			localApi( 'save', { data: JSON.stringify( { name: st.name } ) } ).then( function () {
-				set( { items: null, error: '', name: '', busy: false } ); load();
+			localApi( 'save', { data: JSON.stringify( { name: st.name, paymentMethods: [ 'bank' ] } ) } ).then( function ( item ) {
+				reload( { name: '', busy: false, editId: item.id } );
 			} ).catch( function ( e ) { up( { busy: false, error: e.message } ); } );
 		}
-		function del( id ) { localApi( 'delete', { id: id } ).then( load ); }
+		function del( id ) { localApi( 'delete', { id: id } ).then( function () { reload(); } ); }
+
+		if ( st.editId ) {
+			var current = ( st.items || [] ).filter( function ( c ) { return c.id === st.editId; } )[ 0 ];
+			if ( current ) {
+				return el( LocalCheckoutEditor, { checkout: current, onConnect: props.onConnect, onBack: function () { reload( { editId: null } ); } } );
+			}
+		}
+
 		return el( 'div', null,
 			el( 'div', { className: 'ec-banner' },
 				el( 'span', { className: 'dashicons dashicons-info-outline' } ),
-				el( 'span', { className: 'ec-banner-txt' }, 'Diese Checkouts sind lokal gespeichert. Sobald du dein Konto verbindest, kannst du sie veröffentlichen und Zahlungen empfangen.' ),
+				el( 'span', { className: 'ec-banner-txt' }, 'Checkouts mit Banküberweisung funktionieren ohne Konto. Für Karten-/TWINT-Zahlungen verbinde dein Konto.' ),
 				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onConnect }, 'Verbinden' )
 			),
 			ErrorBox( st.error ),
@@ -934,15 +959,100 @@
 			st.items === null ? Spinner() :
 				( st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Checkouts. Erstelle deinen ersten oben.' ) :
 					el( 'table', { className: 'ec-table' },
-						el( 'thead', null, el( 'tr', null, el( 'th', null, 'Name' ), el( 'th', null, 'Slug' ), el( 'th', null, '' ) ) ),
+						el( 'thead', null, el( 'tr', null, el( 'th', null, 'Name' ), el( 'th', null, 'Produkte' ), el( 'th', null, 'Zahlung' ), el( 'th', null, '' ) ) ),
 						el( 'tbody', null, st.items.map( function ( c ) {
 							return el( 'tr', { key: c.id },
 								el( 'td', null, c.name ),
-								el( 'td', null, el( 'code', null, c.slug ) ),
-								el( 'td', { style: { textAlign: 'right' } }, el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { del( c.id ); } }, 'Löschen' ) ) );
+								el( 'td', null, ( c.products || [] ).length ),
+								el( 'td', null, ( c.paymentMethods || [] ).map( pmLabel ).join( ', ' ) || '—' ),
+								el( 'td', { style: { textAlign: 'right' } },
+									el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { up( { editId: c.id } ); } }, 'Bearbeiten' ),
+									el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger ec-ml', onClick: function () { del( c.id ); } }, 'Löschen' ) ) );
 						} ) )
 					)
 				)
+		);
+	}
+
+	function LocalCheckoutEditor( props ) {
+		var c0 = props.checkout;
+		var s = useState( {
+			name: c0.name || '', slug: c0.slug || '',
+			primary: ( c0.design && c0.design.primary ) || '#4F46E5',
+			bank: ( c0.paymentMethods || [] ).indexOf( 'bank' ) !== -1,
+			vatEnabled: !! c0.vatEnabled, vatRate: c0.vatRate != null ? c0.vatRate : 8.1,
+			currency: c0.currency || 'CHF',
+			products: ( c0.products || [] ).slice(),
+			pName: '', pPrice: '', pDesc: '', busy: false, saved: false, error: ''
+		} );
+		var st = s[ 0 ], set = s[ 1 ];
+		function up( o ) { set( Object.assign( {}, st, o, { saved: false } ) ); }
+		function addProduct() {
+			if ( ! st.pName.trim() ) { return; }
+			var np = st.products.concat( [ { name: st.pName, price: parseFloat( st.pPrice ) || 0, description: st.pDesc } ] );
+			set( Object.assign( {}, st, { products: np, pName: '', pPrice: '', pDesc: '', saved: false } ) );
+		}
+		function delProduct( i ) { var np = st.products.slice(); np.splice( i, 1 ); up( { products: np } ); }
+		function save() {
+			up( { busy: true, error: '' } );
+			var pm = st.bank ? [ 'bank' ] : [];
+			var payload = {
+				id: c0.id, name: st.name, slug: st.slug,
+				design: { primary: st.primary },
+				paymentMethods: pm.length ? pm : [ 'bank' ],
+				vatEnabled: st.vatEnabled, vatRate: st.vatRate, currency: st.currency,
+				products: st.products
+			};
+			localApi( 'save', { data: JSON.stringify( payload ) } ).then( function () {
+				set( Object.assign( {}, st, { busy: false, saved: true } ) );
+			} ).catch( function ( e ) { set( Object.assign( {}, st, { busy: false, error: e.message } ) ); } );
+		}
+		return el( 'div', null,
+			el( 'div', { className: 'ec-page-head' },
+				el( 'div', { className: 'ec-head-left' },
+					el( 'button', { className: 'ec-btn ec-btn-sm', onClick: props.onBack }, '← Zurück' ),
+					el( 'h2', null, st.name || 'Checkout' ) ),
+				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: save, disabled: st.busy }, st.busy ? 'Speichern…' : 'Speichern' ) ),
+			st.saved && el( 'div', { className: 'ec-alert' }, 'Gespeichert.' ),
+			ErrorBox( st.error ),
+			el( 'div', { className: 'ec-form-grid' },
+				el( 'div', { className: 'ec-card' },
+					el( 'h3', null, 'Allgemein' ),
+					Field( 'Name', el( 'input', { type: 'text', value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
+					Field( 'Slug (URL)', el( 'input', { type: 'text', value: st.slug, onChange: function ( e ) { up( { slug: e.target.value } ); } } ) ),
+					Field( 'Primärfarbe', el( 'div', { className: 'ec-color-row' }, el( 'input', { type: 'color', value: st.primary, onChange: function ( e ) { up( { primary: e.target.value } ); } } ), el( 'input', { type: 'text', value: st.primary, onChange: function ( e ) { up( { primary: e.target.value } ); } } ) ) ),
+					Field( 'Währung', el( 'input', { type: 'text', value: st.currency, maxLength: 3, onChange: function ( e ) { up( { currency: e.target.value.toUpperCase() } ); } } ) )
+				),
+				el( 'div', { className: 'ec-card' },
+					el( 'h3', null, 'Zahlungsart' ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.bank, onChange: function ( e ) { up( { bank: e.target.checked } ); } } ), el( 'span', null, 'Banküberweisung (ohne Konto)' ) ),
+					el( 'p', { className: 'ec-hint' }, 'Karte & TWINT benötigen ein verbundenes Konto.' ),
+					el( 'button', { className: 'ec-btn ec-btn-sm', onClick: props.onConnect, style: { marginTop: 8 } }, 'Konto verbinden für Online-Zahlung' ),
+					el( 'h3', { style: { marginTop: 18 } }, 'MwSt.' ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.vatEnabled, onChange: function ( e ) { up( { vatEnabled: e.target.checked } ); } } ), el( 'span', null, 'MwSt. ausweisen' ) ),
+					st.vatEnabled && Field( 'MwSt-Satz (%)', el( 'input', { type: 'number', step: '0.1', value: st.vatRate, onChange: function ( e ) { up( { vatRate: e.target.value } ); } } ) )
+				)
+			),
+			el( 'div', { className: 'ec-card', style: { marginTop: 16 } },
+				el( 'h3', null, 'Produkte' ),
+				st.products.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Produkte.' ) :
+					el( 'table', { className: 'ec-table' },
+						el( 'thead', null, el( 'tr', null, el( 'th', null, 'Produkt' ), el( 'th', null, 'Preis' ), el( 'th', null, '' ) ) ),
+						el( 'tbody', null, st.products.map( function ( p, i ) {
+							return el( 'tr', { key: p.id || i },
+								el( 'td', null, p.name || '—' ),
+								el( 'td', null, fmtMoney( p.price, st.currency ) ),
+								el( 'td', { style: { textAlign: 'right' } }, el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delProduct( i ); } }, 'Entfernen' ) ) );
+						} ) )
+					),
+				el( 'div', { className: 'ec-inline-form', style: { marginTop: 12 } },
+					el( 'input', { type: 'text', placeholder: 'Produktname', value: st.pName, onChange: function ( e ) { up( { pName: e.target.value } ); } } ),
+					el( 'input', { type: 'number', step: '0.05', placeholder: 'Preis', value: st.pPrice, onChange: function ( e ) { up( { pPrice: e.target.value } ); } } ),
+					el( 'input', { type: 'text', placeholder: 'Beschreibung (optional)', value: st.pDesc, onChange: function ( e ) { up( { pDesc: e.target.value } ); } } ),
+					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: addProduct }, '+ Produkt' )
+				),
+				el( 'p', { className: 'ec-hint' }, 'Danach oben rechts „Speichern" nicht vergessen.' )
+			)
 		);
 	}
 
@@ -963,12 +1073,24 @@
 
 		var content;
 		if ( ! props.authed ) {
-			// Ohne Konto: alles sichtbar/benutzbar. Zahlungs-gebundene Bereiche
-			// zeigen die Verbinden-Wall; Checkouts lassen sich lokal anlegen.
+			// Ohne Konto: alles sichtbar/benutzbar. Aufbau (Checkouts/Produkte)
+			// laeuft lokal; datengetriebene Bereiche als sichtbare Demo; nur
+			// Verifizierung/Tarif verlangen echtes Verbinden.
+			var DEMO_COLS = {
+				orders: [ 'Bestellung', 'Kunde', 'Betrag', 'Status', 'Datum' ],
+				customers: [ 'Kunde', 'E-Mail', 'Bestellungen', 'Umsatz' ],
+				invoices: [ 'Nummer', 'Kunde', 'Betrag', 'Status' ],
+				emails: [ 'Vorlage', 'Betreff', 'Status' ],
+				marketing: [ 'Kampagne', 'Betreff', 'Status' ],
+				webhooks: [ 'URL', 'Events', 'Status' ],
+				support: [ 'Betreff', 'Status', 'Datum' ]
+			};
 			if ( route.view === 'checkouts' || route.view === 'checkout' || route.view === 'products' ) {
 				content = el( LocalCheckouts, { onConnect: props.onOpenConnect } );
 			} else if ( route.view === 'overview' ) {
 				content = el( LocalOverview, { navigate: navigate, onConnect: props.onOpenConnect } );
+			} else if ( DEMO_COLS[ route.view ] ) {
+				content = el( DemoView, { columns: DEMO_COLS[ route.view ], onConnect: props.onOpenConnect } );
 			} else {
 				content = el( ConnectWall, { title: WALL_TITLES[ route.view ] || 'Konto verbinden', onConnect: props.onOpenConnect } );
 			}
