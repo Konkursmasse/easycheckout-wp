@@ -51,3 +51,14 @@
 .eclc-kv { display:flex; justify-content:space-between; gap:12px; padding:6px 0; font-size:14px; }
 .eclc-kv b { color:#374151; font-weight:600; }
 .eclc-iban { font-family:Consolas,Monaco,monospace; font-weight:700; }
+
+/* Kundenformular (wie easycheckout.ch) */
+.eclc-sec { margin-top:18px; }
+.eclc-sec-h { font-size:13px; font-weight:600; margin:0 0 8px; color:#374151; }
+.eclc-stack > * { margin-bottom:12px; }
+.eclc-stack > *:last-child { margin-bottom:0; }
+.eclc-input { width:100%; padding:11px 14px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; background:#fff; }
+.eclc-input:focus { outline:none; border-color:var(--ec-p); box-shadow:0 0 0 3px rgba(79,70,229,.12); }
+.eclc-3 { display:grid; grid-template-columns:1fr 2fr; gap:12px; }
+.eclc-check { display:flex; align-items:center; gap:8px; margin-top:12px; cursor:pointer; font-size:14px; color:#374151; }
+.eclc-check input { width:16px; height:16px; }

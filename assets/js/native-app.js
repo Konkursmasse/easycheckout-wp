@@ -1099,37 +1099,68 @@
 	}
 
 	function LocalSettings( props ) {
-		var s = useState( { iban: '', holder: '', bankName: '', loaded: false, busy: false, saved: false, error: '' } );
+		var s = useState( { comp: null, bank: null, cBusy: false, cSaved: false, bBusy: false, bSaved: false, error: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
-		function up( o ) { set( Object.assign( {}, st, o, { saved: false } ) ); }
+		function merge( o ) { set( Object.assign( {}, st, o ) ); }
 		useEffect( function () {
-			post( 'easycheckout_bank_get', {} ).then( function ( j ) {
-				var b = ( j.success && j.data ) || {};
-				set( { iban: b.iban || '', holder: b.holder || '', bankName: b.bankName || '', loaded: true, busy: false, saved: false, error: '' } );
-			} ).catch( function () { set( Object.assign( {}, st, { loaded: true } ) ); } );
+			Promise.all( [ post( 'easycheckout_company_get', {} ), post( 'easycheckout_bank_get', {} ) ] ).then( function ( r ) {
+				set( Object.assign( {}, st, {
+					comp: ( r[ 0 ].success && r[ 0 ].data ) || {},
+					bank: ( r[ 1 ].success && r[ 1 ].data ) || {}
+				} ) );
+			} ).catch( function () { merge( { comp: {}, bank: {} } ); } );
 		}, [] );
-		function save() {
-			set( Object.assign( {}, st, { busy: true, error: '' } ) );
-			post( 'easycheckout_bank_save', { data: JSON.stringify( { iban: st.iban, holder: st.holder, bankName: st.bankName } ) } ).then( function ( j ) {
+		function setComp( k, v ) { var c = Object.assign( {}, st.comp ); c[ k ] = v; set( Object.assign( {}, st, { comp: c, cSaved: false } ) ); }
+		function setBank( k, v ) { var b = Object.assign( {}, st.bank ); b[ k ] = v; set( Object.assign( {}, st, { bank: b, bSaved: false } ) ); }
+		function saveComp() {
+			set( Object.assign( {}, st, { cBusy: true, error: '' } ) );
+			post( 'easycheckout_company_save', { data: JSON.stringify( st.comp ) } ).then( function ( j ) {
 				if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || 'Fehler' ); }
-				set( Object.assign( {}, st, { busy: false, saved: true } ) );
-			} ).catch( function ( e ) { set( Object.assign( {}, st, { busy: false, error: e.message } ) ); } );
+				set( Object.assign( {}, st, { cBusy: false, cSaved: true } ) );
+			} ).catch( function ( e ) { set( Object.assign( {}, st, { cBusy: false, error: e.message } ) ); } );
 		}
-		if ( ! st.loaded ) { return Spinner(); }
+		function saveBank() {
+			set( Object.assign( {}, st, { bBusy: true, error: '' } ) );
+			post( 'easycheckout_bank_save', { data: JSON.stringify( st.bank ) } ).then( function ( j ) {
+				if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || 'Fehler' ); }
+				set( Object.assign( {}, st, { bBusy: false, bSaved: true } ) );
+			} ).catch( function ( e ) { set( Object.assign( {}, st, { bBusy: false, error: e.message } ) ); } );
+		}
+		if ( ! st.comp || ! st.bank ) { return Spinner(); }
+		var c = st.comp, b = st.bank;
 		return el( 'div', null,
 			el( 'div', { className: 'ec-banner' },
 				el( 'span', { className: 'dashicons dashicons-info-outline' } ),
-				el( 'span', { className: 'ec-banner-txt' }, 'Diese Bankverbindung wird deinen Kunden bei Banküberweisung angezeigt. Für Online-Zahlungen (Karte/TWINT) verbinde dein Konto.' ),
+				el( 'span', { className: 'ec-banner-txt' }, 'Firmenangaben und Bankverbindung erscheinen auf der Rechnung/Bestätigung. Für Online-Zahlungen (Karte/TWINT) verbinde dein Konto.' ),
 				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onConnect }, 'Verbinden' )
 			),
-			el( 'div', { className: 'ec-card', style: { maxWidth: '520px' } },
+			ErrorBox( st.error ),
+			el( 'div', { className: 'ec-card', style: { maxWidth: '640px', marginBottom: '16px' } },
+				el( 'h3', null, 'Firmenangaben (für Rechnung)' ),
+				st.cSaved && el( 'div', { className: 'ec-alert' }, 'Gespeichert.' ),
+				Field( 'Firma', el( 'input', { type: 'text', value: c.name || '', onChange: function ( e ) { setComp( 'name', e.target.value ); } } ) ),
+				Field( 'Strasse und Hausnummer', el( 'input', { type: 'text', value: c.street || '', onChange: function ( e ) { setComp( 'street', e.target.value ); } } ) ),
+				el( 'div', { className: 'ec-two' },
+					Field( 'PLZ', el( 'input', { type: 'text', value: c.postalCode || '', onChange: function ( e ) { setComp( 'postalCode', e.target.value ); } } ) ),
+					Field( 'Ort', el( 'input', { type: 'text', value: c.city || '', onChange: function ( e ) { setComp( 'city', e.target.value ); } } ) )
+				),
+				el( 'div', { className: 'ec-two' },
+					Field( 'Land', el( 'input', { type: 'text', value: c.country || '', onChange: function ( e ) { setComp( 'country', e.target.value ); } } ) ),
+					Field( 'MwSt-Nummer', el( 'input', { type: 'text', value: c.vatNumber || '', placeholder: 'CHE-...', onChange: function ( e ) { setComp( 'vatNumber', e.target.value ); } } ) )
+				),
+				el( 'div', { className: 'ec-two' },
+					Field( 'E-Mail', el( 'input', { type: 'email', value: c.email || '', onChange: function ( e ) { setComp( 'email', e.target.value ); } } ) ),
+					Field( 'Telefon', el( 'input', { type: 'text', value: c.phone || '', onChange: function ( e ) { setComp( 'phone', e.target.value ); } } ) )
+				),
+				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: saveComp, disabled: st.cBusy }, st.cBusy ? 'Speichern…' : 'Firmenangaben speichern' )
+			),
+			el( 'div', { className: 'ec-card', style: { maxWidth: '640px' } },
 				el( 'h3', null, 'Bankverbindung (für Überweisung)' ),
-				st.saved && el( 'div', { className: 'ec-alert' }, 'Gespeichert.' ),
-				ErrorBox( st.error ),
-				Field( 'IBAN', el( 'input', { type: 'text', value: st.iban, placeholder: 'CH00 0000 0000 0000 0000 0', onChange: function ( e ) { up( { iban: e.target.value } ); } } ) ),
-				Field( 'Kontoinhaber', el( 'input', { type: 'text', value: st.holder, onChange: function ( e ) { up( { holder: e.target.value } ); } } ) ),
-				Field( 'Bank (optional)', el( 'input', { type: 'text', value: st.bankName, onChange: function ( e ) { up( { bankName: e.target.value } ); } } ) ),
-				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: save, disabled: st.busy }, st.busy ? 'Speichern…' : 'Speichern' )
+				st.bSaved && el( 'div', { className: 'ec-alert' }, 'Gespeichert.' ),
+				Field( 'IBAN', el( 'input', { type: 'text', value: b.iban || '', placeholder: 'CH00 0000 0000 0000 0000 0', onChange: function ( e ) { setBank( 'iban', e.target.value ); } } ) ),
+				Field( 'Kontoinhaber', el( 'input', { type: 'text', value: b.holder || '', onChange: function ( e ) { setBank( 'holder', e.target.value ); } } ) ),
+				Field( 'Bank (optional)', el( 'input', { type: 'text', value: b.bankName || '', onChange: function ( e ) { setBank( 'bankName', e.target.value ); } } ) ),
+				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: saveBank, disabled: st.bBusy }, st.bBusy ? 'Speichern…' : 'Bankverbindung speichern' )
 			)
 		);
 	}

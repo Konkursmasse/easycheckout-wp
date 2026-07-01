@@ -63,9 +63,11 @@ class Native_Dashboard {
         add_action('wp_ajax_easycheckout_local_get', [$this, 'ajax_local_get']);
         add_action('wp_ajax_easycheckout_local_save', [$this, 'ajax_local_save']);
         add_action('wp_ajax_easycheckout_local_delete', [$this, 'ajax_local_delete']);
-        // Bankverbindung (fuer Bankueberweisung) + lokale Bestellungen
+        // Bankverbindung + Firmenangaben (fuer Rechnung) + lokale Bestellungen
         add_action('wp_ajax_easycheckout_bank_get', [$this, 'ajax_bank_get']);
         add_action('wp_ajax_easycheckout_bank_save', [$this, 'ajax_bank_save']);
+        add_action('wp_ajax_easycheckout_company_get', [$this, 'ajax_company_get']);
+        add_action('wp_ajax_easycheckout_company_save', [$this, 'ajax_company_save']);
         add_action('wp_ajax_easycheckout_local_orders', [$this, 'ajax_local_orders_list']);
         add_action('wp_ajax_easycheckout_local_order_update', [$this, 'ajax_local_order_update']);
         add_action('wp_ajax_easycheckout_local_order_delete', [$this, 'ajax_local_order_delete']);
@@ -77,6 +79,7 @@ class Native_Dashboard {
 
     const LOCAL_OPT = 'easycheckout_local_checkouts';
     const BANK_OPT = 'easycheckout_bank';
+    const COMPANY_OPT = 'easycheckout_company';
     const ORDERS_OPT = 'easycheckout_local_orders';
 
     public function add_menu() {
@@ -253,6 +256,42 @@ class Native_Dashboard {
         wp_send_json_success($bank);
     }
 
+    public static function get_company() {
+        $c = (array) get_option(self::COMPANY_OPT, []);
+        $keys = ['name', 'street', 'postalCode', 'city', 'country', 'email', 'phone', 'vatNumber'];
+        $out = [];
+        foreach ($keys as $k) { $out[$k] = isset($c[$k]) ? $c[$k] : ''; }
+        return $out;
+    }
+
+    public function ajax_company_get() {
+        $this->guard();
+        wp_send_json_success(self::get_company());
+    }
+
+    public function ajax_company_save() {
+        $this->guard();
+        $data = isset($_POST['data']) ? json_decode(wp_unslash($_POST['data']), true) : [];
+        if (!is_array($data)) { $data = []; }
+        $c = [];
+        foreach (['name', 'street', 'postalCode', 'city', 'country', 'phone', 'vatNumber'] as $k) {
+            $c[$k] = isset($data[$k]) ? sanitize_text_field($data[$k]) : '';
+        }
+        $c['email'] = isset($data['email']) ? sanitize_email($data['email']) : '';
+        update_option(self::COMPANY_OPT, $c, false);
+        wp_send_json_success($c);
+    }
+
+    private static function sanitize_address($a) {
+        if (!is_array($a)) { $a = []; }
+        return [
+            'street'     => isset($a['street']) ? sanitize_text_field($a['street']) : '',
+            'postalCode' => isset($a['postalCode']) ? sanitize_text_field($a['postalCode']) : '',
+            'city'       => isset($a['city']) ? sanitize_text_field($a['city']) : '',
+            'country'    => isset($a['country']) ? sanitize_text_field($a['country']) : '',
+        ];
+    }
+
     public function ajax_local_orders_list() {
         $this->guard();
         $orders = array_values((array) get_option(self::ORDERS_OPT, []));
@@ -352,6 +391,16 @@ class Native_Dashboard {
         $name  = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
         if (!$name || !is_email($email)) { wp_send_json_error(['message' => __('Bitte Name und gültige E-Mail angeben.', 'easycheckout')], 400); }
 
+        $company    = isset($_POST['company']) ? sanitize_text_field(wp_unslash($_POST['company'])) : '';
+        $phone      = isset($_POST['phone']) ? sanitize_text_field(wp_unslash($_POST['phone'])) : '';
+        $newsletter = !empty($_POST['newsletter']) && $_POST['newsletter'] === '1';
+        $sameAddr   = !isset($_POST['sameAddress']) || $_POST['sameAddress'] === '1';
+        $billing    = self::sanitize_address(isset($_POST['billing']) ? json_decode(wp_unslash($_POST['billing']), true) : []);
+        $delivery   = $sameAddr ? $billing : self::sanitize_address(isset($_POST['delivery']) ? json_decode(wp_unslash($_POST['delivery']), true) : []);
+        if (!$billing['street'] || !$billing['postalCode'] || !$billing['city']) {
+            wp_send_json_error(['message' => __('Bitte vollständige Rechnungsadresse angeben.', 'easycheckout')], 400);
+        }
+
         $total = round($total, 2);
         $ref = 'EC-' . strtoupper(wp_generate_password(6, false, false));
         $order = [
@@ -361,6 +410,12 @@ class Native_Dashboard {
             'checkoutName'  => $checkout['name'] ?? '',
             'customerName'  => $name,
             'customerEmail' => $email,
+            'customerCompany' => $company,
+            'customerPhone' => $phone,
+            'newsletter'    => $newsletter,
+            'billing'       => $billing,
+            'delivery'      => $delivery,
+            'sameAddress'   => $sameAddr,
             'items'         => $lines,
             'total'         => $total,
             'currency'      => $checkout['currency'] ?? 'CHF',
@@ -374,14 +429,37 @@ class Native_Dashboard {
 
         $bank = self::get_bank();
         if ($email) {
-            $body = sprintf(
-                "Vielen Dank für deine Bestellung (%s).\n\nBitte überweise %s %s an:\nIBAN: %s\nEmpfänger: %s\n%sVerwendungszweck: %s\n",
-                $ref, $order['currency'], number_format($total, 2, '.', "'"),
-                $bank['iban'] ?: '—', $bank['holder'] ?: '—',
-                $bank['bankName'] ? ('Bank: ' . $bank['bankName'] . "\n") : '',
-                $ref
-            );
-            @wp_mail($email, sprintf(__('Bestellbestätigung %s', 'easycheckout'), $ref), $body);
+            $cur = $order['currency'];
+            $fmtAddr = function ($a) { return trim($a['street'] . "\n" . trim($a['postalCode'] . ' ' . $a['city']) . ($a['country'] ? "\n" . $a['country'] : '')); };
+            $co = self::get_company();
+            $issuer = '';
+            if ($co['name']) {
+                $issuer = "Rechnungssteller:\n" . $co['name']
+                    . ($co['street'] ? "\n" . $co['street'] : '')
+                    . ( ($co['postalCode'] || $co['city']) ? "\n" . trim($co['postalCode'] . ' ' . $co['city']) : '' )
+                    . ($co['vatNumber'] ? "\nMwSt-Nr: " . $co['vatNumber'] : '')
+                    . ($co['email'] ? "\n" . $co['email'] : '')
+                    . "\n\n";
+            }
+            $itemsTxt = '';
+            foreach ($lines as $l) {
+                $itemsTxt .= sprintf("- %d× %s   %s %s\n", $l['qty'], $l['name'], $cur, number_format($l['lineTotal'], 2, '.', "'"));
+            }
+            $delivTxt = $sameAddr ? '' : ("Lieferadresse:\n" . $name . "\n" . $fmtAddr($delivery) . "\n\n");
+            $body = "Vielen Dank für deine Bestellung ({$ref}).\n\n"
+                . $issuer
+                . "Rechnungsadresse:\n" . $name . ($company ? "\n{$company}" : '') . "\n" . $fmtAddr($billing) . "\n\n"
+                . $delivTxt
+                . "Positionen:\n" . $itemsTxt
+                . "Total: {$cur} " . number_format($total, 2, '.', "'") . "\n\n"
+                . "Bitte überweise den Betrag an:\n"
+                . "IBAN: " . ($bank['iban'] ?: '—') . "\n"
+                . "Empfänger: " . ($bank['holder'] ?: '—') . "\n"
+                . ($bank['bankName'] ? ("Bank: " . $bank['bankName'] . "\n") : '')
+                . "Verwendungszweck: {$ref}\n";
+            $headers = [];
+            if ($co['email']) { $headers[] = 'From: ' . ($co['name'] ?: get_bloginfo('name')) . ' <' . $co['email'] . '>'; }
+            @wp_mail($email, sprintf(__('Bestellbestätigung %s', 'easycheckout'), $ref), $body, $headers);
         }
 
         wp_send_json_success([
