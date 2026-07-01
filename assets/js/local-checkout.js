@@ -143,7 +143,10 @@
 		] );
 
 		var wrap = h( 'div', { class: 'eclc-wrap' }, [
-			h( 'div', { class: 'eclc-header' }, [ h( 'h1', { class: 'eclc-title', text: C.name } ) ] ),
+			h( 'div', { class: 'eclc-header' }, [
+				C.logo ? h( 'img', { class: 'eclc-logo', src: C.logo, alt: C.name } ) : null,
+				h( 'h1', { class: 'eclc-title', text: C.name } )
+			] ),
 			h( 'div', { class: 'eclc-grid' }, [ left, cart ] )
 		] );
 		root.appendChild( wrap );

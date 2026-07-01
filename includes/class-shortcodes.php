@@ -298,6 +298,7 @@ class Shortcodes {
             'checkout' => [
                 'slug'       => $c['slug'],
                 'name'       => $c['name'],
+                'logo'       => (isset($c['design']['logoUrl']) && $c['design']['logoUrl']) ? $c['design']['logoUrl'] : '',
                 'currency'   => isset($c['currency']) ? $c['currency'] : 'CHF',
                 'primary'    => $primary,
                 'vatEnabled' => !empty($c['vatEnabled']),

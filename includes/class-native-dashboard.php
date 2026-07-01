@@ -170,6 +170,7 @@ class Native_Dashboard {
             foreach (['primary', 'text', 'bg', 'button', 'buttonText', 'radius'] as $k) {
                 if (isset($data['design'][$k])) { $design[$k] = sanitize_text_field($data['design'][$k]); }
             }
+            if (isset($data['design']['logoUrl'])) { $design['logoUrl'] = esc_url_raw($data['design']['logoUrl']); }
         }
 
         // Zahlungsarten (Whitelist). 'bank' = Bankueberweisung, funktioniert

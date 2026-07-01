@@ -1000,6 +1000,7 @@
 		var s = useState( {
 			name: c0.name || '', slug: c0.slug || '',
 			primary: ( c0.design && c0.design.primary ) || '#4F46E5',
+			logoUrl: ( c0.design && c0.design.logoUrl ) || '',
 			bank: ( c0.paymentMethods || [] ).indexOf( 'bank' ) !== -1,
 			vatEnabled: !! c0.vatEnabled, vatRate: c0.vatRate != null ? c0.vatRate : 8.1,
 			currency: c0.currency || 'CHF',
@@ -1025,7 +1026,7 @@
 			var pm = st.bank ? [ 'bank' ] : [];
 			var payload = {
 				id: c0.id, name: st.name, slug: st.slug,
-				design: { primary: st.primary },
+				design: { primary: st.primary, logoUrl: st.logoUrl },
 				paymentMethods: pm.length ? pm : [ 'bank' ],
 				vatEnabled: st.vatEnabled, vatRate: st.vatRate, currency: st.currency,
 				products: st.products
@@ -1050,7 +1051,14 @@
 					Field( 'Name', el( 'input', { type: 'text', value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
 					Field( 'Slug (URL)', el( 'input', { type: 'text', value: st.slug, onChange: function ( e ) { up( { slug: e.target.value } ); } } ) ),
 					Field( 'Primärfarbe', el( 'div', { className: 'ec-color-row' }, el( 'input', { type: 'color', value: st.primary, onChange: function ( e ) { up( { primary: e.target.value } ); } } ), el( 'input', { type: 'text', value: st.primary, onChange: function ( e ) { up( { primary: e.target.value } ); } } ) ) ),
-					Field( 'Währung', el( 'input', { type: 'text', value: st.currency, maxLength: 3, onChange: function ( e ) { up( { currency: e.target.value.toUpperCase() } ); } } ) )
+					Field( 'Währung', el( 'input', { type: 'text', value: st.currency, maxLength: 3, onChange: function ( e ) { up( { currency: e.target.value.toUpperCase() } ); } } ) ),
+					Field( 'Logo', el( 'div', null,
+						st.logoUrl ? el( 'img', { src: st.logoUrl, className: 'ec-thumb-lg' } ) : null,
+						el( 'div', { style: { display: 'flex', gap: '8px', marginTop: st.logoUrl ? '8px' : '0' } },
+							FilePick( st.logoUrl ? 'Logo ändern' : 'Logo hochladen', function ( f ) { localUpload( f ).then( function ( d ) { up( { logoUrl: d.url } ); } ).catch( function ( e ) { up( { error: e.message } ); } ); } ),
+							st.logoUrl ? el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { up( { logoUrl: '' } ); } }, 'Entfernen' ) : null
+						)
+					) )
 				),
 				el( 'div', { className: 'ec-card' },
 					el( 'h3', null, 'Zahlungsart' ),
