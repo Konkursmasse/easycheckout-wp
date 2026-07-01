@@ -67,6 +67,9 @@ class Native_Dashboard {
         add_action('wp_ajax_easycheckout_bank_get', [$this, 'ajax_bank_get']);
         add_action('wp_ajax_easycheckout_bank_save', [$this, 'ajax_bank_save']);
         add_action('wp_ajax_easycheckout_local_orders', [$this, 'ajax_local_orders_list']);
+        add_action('wp_ajax_easycheckout_local_order_update', [$this, 'ajax_local_order_update']);
+        add_action('wp_ajax_easycheckout_local_order_delete', [$this, 'ajax_local_order_delete']);
+        add_action('wp_ajax_easycheckout_local_upload', [$this, 'ajax_local_upload']);
         // Oeffentlicher Bestell-Endpunkt (Kunde, auch ausgeloggt)
         add_action('wp_ajax_easycheckout_place_order', [$this, 'ajax_place_order']);
         add_action('wp_ajax_nopriv_easycheckout_place_order', [$this, 'ajax_place_order']);
@@ -122,6 +125,7 @@ class Native_Dashboard {
             'ajaxUrl'  => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('easycheckout_native'),
             'appUrl'   => $this->api->base_url(),
+            'siteUrl'  => home_url('/'),
             'authed'   => $this->api->is_authenticated(),
             'merchant' => $this->api->get_merchant(),
         ]);
@@ -188,6 +192,7 @@ class Native_Dashboard {
                     'name'        => isset($p['name']) ? sanitize_text_field($p['name']) : '',
                     'description' => isset($p['description']) ? sanitize_textarea_field($p['description']) : '',
                     'price'       => isset($p['price']) ? round((float) $p['price'], 2) : 0,
+                    'imageUrl'    => (isset($p['imageUrl']) && $p['imageUrl']) ? esc_url_raw($p['imageUrl']) : '',
                 ];
             }
         }
@@ -252,6 +257,55 @@ class Native_Dashboard {
         $orders = array_values((array) get_option(self::ORDERS_OPT, []));
         usort($orders, function ($a, $b) { return strcmp($b['createdAt'] ?? '', $a['createdAt'] ?? ''); });
         wp_send_json_success($orders);
+    }
+
+    public function ajax_local_order_update() {
+        $this->guard();
+        $id = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])) : '';
+        $status = isset($_POST['status']) ? sanitize_key(wp_unslash($_POST['status'])) : '';
+        $orders = (array) get_option(self::ORDERS_OPT, []);
+        if (!isset($orders[$id])) { wp_send_json_error(['message' => 'Nicht gefunden.'], 404); }
+        if (in_array($status, ['awaiting_transfer', 'paid', 'cancelled'], true)) {
+            $orders[$id]['status'] = $status;
+            update_option(self::ORDERS_OPT, $orders, false);
+        }
+        wp_send_json_success($orders[$id]);
+    }
+
+    public function ajax_local_order_delete() {
+        $this->guard();
+        $id = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])) : '';
+        $orders = (array) get_option(self::ORDERS_OPT, []);
+        unset($orders[$id]);
+        update_option(self::ORDERS_OPT, $orders, false);
+        wp_send_json_success();
+    }
+
+    /**
+     * Lokaler Bild-Upload in die WP-Mediathek (fuer Produktbilder, ohne Konto).
+     */
+    public function ajax_local_upload() {
+        $this->guard();
+        if (empty($_FILES['file']) || !is_uploaded_file($_FILES['file']['tmp_name'])) {
+            wp_send_json_error(['message' => 'Keine Datei.'], 400);
+        }
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/media.php';
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+        $overrides = ['test_form' => false, 'mimes' => ['jpg|jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp']];
+        $moved = wp_handle_upload($_FILES['file'], $overrides);
+        if (isset($moved['error'])) { wp_send_json_error(['message' => $moved['error']], 400); }
+        // In die Mediathek eintragen (damit es verwaltbar ist)
+        $attachment = [
+            'post_mime_type' => $moved['type'],
+            'post_title'     => sanitize_file_name(basename($moved['file'])),
+            'post_status'    => 'inherit',
+        ];
+        $attach_id = wp_insert_attachment($attachment, $moved['file']);
+        if (!is_wp_error($attach_id)) {
+            wp_update_attachment_metadata($attach_id, wp_generate_attachment_metadata($attach_id, $moved['file']));
+        }
+        wp_send_json_success(['url' => $moved['url']]);
     }
 
     public static function get_local_checkout_by_slug($slug) {

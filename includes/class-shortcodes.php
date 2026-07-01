@@ -32,6 +32,34 @@ class Shortcodes {
         add_shortcode('easycheckout', [$this, 'render_checkout']);
         add_shortcode('easycheckout_button', [$this, 'render_button']);
         add_shortcode('easycheckout_product', [$this, 'render_product']);
+        // Eigenstaendige Vorschau-/Checkout-URL: /?ec_local=<slug>
+        add_action('template_redirect', [$this, 'maybe_render_standalone']);
+    }
+
+    /**
+     * Rendert einen lokalen Checkout als eigenstaendige Seite unter
+     * ?ec_local=<slug> — praktisch fuer „Ansehen" aus dem Dashboard und als
+     * teilbarer Link, ohne erst eine WP-Seite anzulegen.
+     */
+    public function maybe_render_standalone() {
+        if (empty($_GET['ec_local'])) { return; }
+        $slug = sanitize_title(wp_unslash($_GET['ec_local']));
+        if (!class_exists('EasyCheckout\\Native_Dashboard')) { return; }
+        $local = \EasyCheckout\Native_Dashboard::get_local_checkout_by_slug($slug);
+        if (!$local) { return; }
+
+        nocache_headers();
+        $html = $this->render_local_checkout($local); // registriert+enqueued das Script
+        $title = esc_html($local['name'] . ' – Checkout');
+        echo '<!DOCTYPE html><html ' . get_language_attributes() . '><head><meta charset="' . esc_attr(get_bloginfo('charset')) . '">';
+        echo '<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">';
+        echo '<title>' . $title . '</title>';
+        wp_print_head_scripts();
+        echo '</head><body style="margin:0;background:#f6f7f9;min-height:100vh;padding:32px 12px;">';
+        echo $html;
+        wp_print_footer_scripts();
+        echo '</body></html>';
+        exit;
     }
 
     /**

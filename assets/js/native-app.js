@@ -41,6 +41,19 @@
 		} );
 	}
 
+	// Lokaler Bild-Upload in die WP-Mediathek -> gibt { url } zurueck.
+	function localUpload( file ) {
+		var fd = new FormData();
+		fd.append( 'action', 'easycheckout_local_upload' );
+		fd.append( 'nonce', ecNative.nonce );
+		fd.append( 'file', file );
+		return fetch( ecNative.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd } )
+			.then( function ( r ) { return r.json(); } )
+			.then( function ( j ) { if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || 'Upload fehlgeschlagen' ); } return j.data; } );
+	}
+
+	function previewUrl( slug ) { return ( ecNative.siteUrl || '/' ) + '?ec_local=' + encodeURIComponent( slug ); }
+
 	function uploadFile( method, path, field, file ) {
 		var fd = new FormData();
 		fd.append( 'action', 'easycheckout_native_upload' );
@@ -966,11 +979,19 @@
 								el( 'td', null, ( c.products || [] ).length ),
 								el( 'td', null, ( c.paymentMethods || [] ).map( pmLabel ).join( ', ' ) || '—' ),
 								el( 'td', { style: { textAlign: 'right' } },
-									el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { up( { editId: c.id } ); } }, 'Bearbeiten' ),
+									el( 'a', { className: 'ec-btn ec-btn-sm', href: previewUrl( c.slug ), target: '_blank', rel: 'noopener' }, 'Ansehen' ),
+									el( 'button', { className: 'ec-btn ec-btn-sm ec-ml', onClick: function () { up( { editId: c.id } ); } }, 'Bearbeiten' ),
 									el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger ec-ml', onClick: function () { del( c.id ); } }, 'Löschen' ) ) );
 						} ) )
 					)
 				)
+		);
+	}
+
+	function FilePick( label, onFile ) {
+		return el( 'label', { className: 'ec-btn ec-btn-sm', style: { cursor: 'pointer', marginBottom: 0 } },
+			label,
+			el( 'input', { type: 'file', accept: 'image/*', style: { display: 'none' }, onChange: function ( e ) { var f = e.target.files && e.target.files[ 0 ]; if ( f ) { onFile( f ); } e.target.value = ''; } } )
 		);
 	}
 
@@ -983,16 +1004,22 @@
 			vatEnabled: !! c0.vatEnabled, vatRate: c0.vatRate != null ? c0.vatRate : 8.1,
 			currency: c0.currency || 'CHF',
 			products: ( c0.products || [] ).slice(),
-			pName: '', pPrice: '', pDesc: '', busy: false, saved: false, error: ''
+			pName: '', pPrice: '', pDesc: '', pImage: '', pImgBusy: false, busy: false, saved: false, error: ''
 		} );
 		var st = s[ 0 ], set = s[ 1 ];
 		function up( o ) { set( Object.assign( {}, st, o, { saved: false } ) ); }
 		function addProduct() {
 			if ( ! st.pName.trim() ) { return; }
-			var np = st.products.concat( [ { name: st.pName, price: parseFloat( st.pPrice ) || 0, description: st.pDesc } ] );
-			set( Object.assign( {}, st, { products: np, pName: '', pPrice: '', pDesc: '', saved: false } ) );
+			var np = st.products.concat( [ { name: st.pName, price: parseFloat( st.pPrice ) || 0, description: st.pDesc, imageUrl: st.pImage } ] );
+			set( Object.assign( {}, st, { products: np, pName: '', pPrice: '', pDesc: '', pImage: '', saved: false } ) );
 		}
 		function delProduct( i ) { var np = st.products.slice(); np.splice( i, 1 ); up( { products: np } ); }
+		function setProductImage( i, url ) { var np = st.products.slice(); np[ i ] = Object.assign( {}, np[ i ], { imageUrl: url } ); up( { products: np } ); }
+		function uploadNewImage( f ) {
+			set( Object.assign( {}, st, { pImgBusy: true, error: '' } ) );
+			localUpload( f ).then( function ( d ) { set( Object.assign( {}, st, { pImage: d.url, pImgBusy: false } ) ); } )
+				.catch( function ( e ) { set( Object.assign( {}, st, { pImgBusy: false, error: e.message } ) ); } );
+		}
 		function save() {
 			up( { busy: true, error: '' } );
 			var pm = st.bank ? [ 'bank' ] : [];
@@ -1012,8 +1039,10 @@
 				el( 'div', { className: 'ec-head-left' },
 					el( 'button', { className: 'ec-btn ec-btn-sm', onClick: props.onBack }, '← Zurück' ),
 					el( 'h2', null, st.name || 'Checkout' ) ),
-				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: save, disabled: st.busy }, st.busy ? 'Speichern…' : 'Speichern' ) ),
-			st.saved && el( 'div', { className: 'ec-alert' }, 'Gespeichert.' ),
+				el( 'div', { className: 'ec-topbar-right' },
+					el( 'a', { className: 'ec-btn ec-btn-sm', href: previewUrl( st.slug ), target: '_blank', rel: 'noopener' }, 'Ansehen' ),
+					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: save, disabled: st.busy }, st.busy ? 'Speichern…' : 'Speichern' ) ) ),
+			st.saved && el( 'div', { className: 'ec-alert' }, 'Gespeichert. (Vorschau zeigt den gespeicherten Stand.)' ),
 			ErrorBox( st.error ),
 			el( 'div', { className: 'ec-form-grid' },
 				el( 'div', { className: 'ec-card' },
@@ -1037,18 +1066,23 @@
 				el( 'h3', null, 'Produkte' ),
 				st.products.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Produkte.' ) :
 					el( 'table', { className: 'ec-table' },
-						el( 'thead', null, el( 'tr', null, el( 'th', null, 'Produkt' ), el( 'th', null, 'Preis' ), el( 'th', null, '' ) ) ),
+						el( 'thead', null, el( 'tr', null, el( 'th', null, 'Bild' ), el( 'th', null, 'Produkt' ), el( 'th', null, 'Preis' ), el( 'th', null, '' ) ) ),
 						el( 'tbody', null, st.products.map( function ( p, i ) {
 							return el( 'tr', { key: p.id || i },
+								el( 'td', null, p.imageUrl ? el( 'img', { src: p.imageUrl, className: 'ec-thumb' } ) : el( 'span', { className: 'ec-thumb ec-thumb-empty' } ) ),
 								el( 'td', null, p.name || '—' ),
 								el( 'td', null, fmtMoney( p.price, st.currency ) ),
-								el( 'td', { style: { textAlign: 'right' } }, el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delProduct( i ); } }, 'Entfernen' ) ) );
+								el( 'td', { style: { textAlign: 'right' } },
+									FilePick( p.imageUrl ? 'Bild ändern' : 'Bild', function ( f ) { localUpload( f ).then( function ( d ) { setProductImage( i, d.url ); } ).catch( function ( e ) { up( { error: e.message } ); } ); } ),
+									el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger ec-ml', onClick: function () { delProduct( i ); } }, 'Entfernen' ) ) );
 						} ) )
 					),
-				el( 'div', { className: 'ec-inline-form', style: { marginTop: 12 } },
+				el( 'div', { className: 'ec-inline-form', style: { marginTop: 12, alignItems: 'center' } },
+					st.pImage ? el( 'img', { src: st.pImage, className: 'ec-thumb' } ) : null,
 					el( 'input', { type: 'text', placeholder: 'Produktname', value: st.pName, onChange: function ( e ) { up( { pName: e.target.value } ); } } ),
 					el( 'input', { type: 'number', step: '0.05', placeholder: 'Preis', value: st.pPrice, onChange: function ( e ) { up( { pPrice: e.target.value } ); } } ),
 					el( 'input', { type: 'text', placeholder: 'Beschreibung (optional)', value: st.pDesc, onChange: function ( e ) { up( { pDesc: e.target.value } ); } } ),
+					FilePick( st.pImgBusy ? 'Lädt…' : ( st.pImage ? 'Bild ✓' : 'Bild' ), uploadNewImage ),
 					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: addProduct }, '+ Produkt' )
 				),
 				el( 'p', { className: 'ec-hint' }, 'Danach oben rechts „Speichern" nicht vergessen.' )
@@ -1092,6 +1126,42 @@
 		);
 	}
 
+	function LocalOrders( props ) {
+		var s = useState( { items: null, error: '' } );
+		var st = s[ 0 ], set = s[ 1 ];
+		function load() { post( 'easycheckout_local_orders', {} ).then( function ( j ) { if ( j.success ) { set( { items: j.data, error: '' } ); } else { set( { items: [], error: ( j.data && j.data.message ) || 'Fehler' } ); } } ); }
+		useEffect( function () { load(); }, [] );
+		function setStatus( id, status ) { post( 'easycheckout_local_order_update', { id: id, status: status } ).then( load ); }
+		function del( id ) { post( 'easycheckout_local_order_delete', { id: id } ).then( load ); }
+		var STAT = { awaiting_transfer: [ 'Wartet auf Zahlung', 'ec-badge-off' ], paid: [ 'Bezahlt', 'ec-badge-on' ], cancelled: [ 'Storniert', 'ec-badge-err' ] };
+		return el( 'div', null,
+			el( 'div', { className: 'ec-banner' },
+				el( 'span', { className: 'dashicons dashicons-info-outline' } ),
+				el( 'span', { className: 'ec-banner-txt' }, 'Bestellungen per Banküberweisung (lokal). Für Online-Zahlungen verbinde dein Konto.' ),
+				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onConnect }, 'Verbinden' )
+			),
+			ErrorBox( st.error ),
+			st.items === null ? Spinner() :
+				( st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Bestellungen.' ) :
+					el( 'table', { className: 'ec-table' },
+						el( 'thead', null, el( 'tr', null, el( 'th', null, 'Ref' ), el( 'th', null, 'Kunde' ), el( 'th', null, 'Betrag' ), el( 'th', null, 'Status' ), el( 'th', null, 'Datum' ), el( 'th', null, '' ) ) ),
+						el( 'tbody', null, st.items.map( function ( o ) {
+							var stat = STAT[ o.status ] || [ o.status, 'ec-badge-off' ];
+							return el( 'tr', { key: o.id },
+								el( 'td', null, el( 'code', null, o.ref ) ),
+								el( 'td', null, ( o.customerName || '' ) + ( o.customerEmail ? ( ' · ' + o.customerEmail ) : '' ) ),
+								el( 'td', null, fmtMoney( o.total, o.currency ) ),
+								el( 'td', null, el( 'span', { className: 'ec-badge ' + stat[ 1 ] }, stat[ 0 ] ) ),
+								el( 'td', null, fmtDate( o.createdAt ) ),
+								el( 'td', { style: { textAlign: 'right' } },
+									o.status !== 'paid' && el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { setStatus( o.id, 'paid' ); } }, 'Als bezahlt' ),
+									el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger ec-ml', onClick: function () { del( o.id ); } }, 'Löschen' ) ) );
+						} ) )
+					)
+				)
+		);
+	}
+
 	function ConnectModal( props ) {
 		return el( 'div', { className: 'ec-modal', onClick: props.onClose },
 			el( 'div', { className: 'ec-modal-card', onClick: function ( e ) { e.stopPropagation(); } },
@@ -1127,6 +1197,8 @@
 				content = el( LocalOverview, { navigate: navigate, onConnect: props.onOpenConnect } );
 			} else if ( route.view === 'settings' ) {
 				content = el( LocalSettings, { onConnect: props.onOpenConnect } );
+			} else if ( route.view === 'orders' ) {
+				content = el( LocalOrders, { onConnect: props.onOpenConnect } );
 			} else if ( DEMO_COLS[ route.view ] ) {
 				content = el( DemoView, { columns: DEMO_COLS[ route.view ], onConnect: props.onOpenConnect } );
 			} else {
