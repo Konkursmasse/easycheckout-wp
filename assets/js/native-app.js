@@ -988,6 +988,22 @@
 		);
 	}
 
+	function CopyRow( label, value ) {
+		return el( 'div', { style: { marginBottom: '12px' } },
+			el( 'div', { style: { fontSize: '13px', fontWeight: 600, marginBottom: '5px' } }, label ),
+			el( 'div', { style: { display: 'flex', gap: '8px' } },
+				el( 'input', { type: 'text', readOnly: true, value: value, onFocus: function ( e ) { e.target.select(); }, style: { flex: 1, minWidth: 0, padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontFamily: 'Consolas,Monaco,monospace', fontSize: '13px' } } ),
+				el( 'button', { className: 'ec-btn ec-btn-sm', type: 'button', onClick: function ( e ) {
+					var inp = e.target.parentNode.querySelector( 'input' );
+					if ( inp ) { inp.select(); }
+					if ( navigator.clipboard && navigator.clipboard.writeText ) { navigator.clipboard.writeText( value ); }
+					else if ( inp ) { try { document.execCommand( 'copy' ); } catch ( x ) {} }
+					var b = e.target; b.textContent = 'Kopiert ✓'; setTimeout( function () { b.textContent = 'Kopieren'; }, 1500 );
+				} }, 'Kopieren' )
+			)
+		);
+	}
+
 	function FilePick( label, onFile ) {
 		return el( 'label', { className: 'ec-btn ec-btn-sm', style: { cursor: 'pointer', marginBottom: 0 } },
 			label,
@@ -1094,6 +1110,18 @@
 					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: addProduct }, '+ Produkt' )
 				),
 				el( 'p', { className: 'ec-hint' }, 'Danach oben rechts „Speichern" nicht vergessen.' )
+			),
+			el( 'div', { className: 'ec-card', style: { marginTop: 16 } },
+				el( 'h3', null, 'Einbindung' ),
+				el( 'p', { className: 'ec-hint', style: { marginBottom: 12 } }, 'So bindest du diesen Checkout auf deiner Website ein (bitte zuerst speichern):' ),
+				CopyRow( 'Shortcode – in eine WordPress-Seite einfügen', '[easycheckout slug="' + ( st.slug || '' ) + '"]' ),
+				CopyRow( 'Direkter Link – ohne Seite, teilbar', previewUrl( st.slug || '' ) ),
+				el( 'ol', { style: { margin: '10px 0 0 18px', fontSize: '13px', color: '#6b7280', lineHeight: '1.8' } },
+					el( 'li', null, 'Firma + IBAN unter „Einstellungen" hinterlegen (erscheinen auf der Rechnung).' ),
+					el( 'li', null, 'Einbetten: neue WP-Seite anlegen, Shortcode einfügen, veröffentlichen.' ),
+					el( 'li', null, 'Oder einfach den direkten Link teilen (E-Mail, Social, QR).' ),
+					el( 'li', null, 'Testen: oben rechts „Ansehen".' )
+				)
 			)
 		);
 	}
