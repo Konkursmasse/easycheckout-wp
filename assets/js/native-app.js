@@ -966,10 +966,19 @@
 				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onConnect }, 'Verbinden' )
 			),
 			ErrorBox( st.error ),
-			el( 'form', { className: 'ec-inline-form', onSubmit: create },
-				el( 'input', { type: 'text', placeholder: 'Name des Checkouts', value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ),
-				el( 'button', { type: 'submit', className: 'ec-btn ec-btn-primary', disabled: st.busy }, '+ Checkout erstellen' )
-			),
+			( st.items && st.items.length >= 1 ) ?
+				el( 'div', { className: 'ec-card', style: { maxWidth: '640px', marginBottom: '16px' } },
+					el( 'h3', null, 'Weitere Checkouts & Online-Zahlung' ),
+					el( 'p', { className: 'ec-muted', style: { marginTop: 0 } }, 'Im kostenlosen Modus betreibst du einen Checkout mit Banküberweisung. Für weitere Checkouts sowie Karten-/TWINT-Zahlungen erstelle ein Konto auf easycheckout.ch – dein gebuchter Plan wird nach dem Verbinden hier übernommen.' ),
+					el( 'div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
+						el( 'a', { className: 'ec-btn ec-btn-primary', href: ( ecNative.appUrl || 'https://www.easycheckout.ch' ) + '/#preise', target: '_blank', rel: 'noopener' }, 'Preise ansehen (easycheckout.ch)' ),
+						el( 'button', { className: 'ec-btn', onClick: props.onConnect }, 'Konto verbinden' )
+					)
+				) :
+				el( 'form', { className: 'ec-inline-form', onSubmit: create },
+					el( 'input', { type: 'text', placeholder: 'Name des Checkouts', value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ),
+					el( 'button', { type: 'submit', className: 'ec-btn ec-btn-primary', disabled: st.busy }, '+ Checkout erstellen' )
+				),
 			st.items === null ? Spinner() :
 				( st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Checkouts. Erstelle deinen ersten oben.' ) :
 					el( 'table', { className: 'ec-table' },
