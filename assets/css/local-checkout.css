@@ -1,0 +1,53 @@
+/* EasyCheckout – lokaler Checkout, Design an easycheckout.ch angelehnt */
+.ec-local-checkout { --ec-p:#4F46E5; --ec-text:#111827; --ec-muted:#6B7280; background:#F9FAFB; min-height:100vh; padding:32px 16px; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:var(--ec-text); box-sizing:border-box; }
+.ec-local-checkout *, .ec-local-checkout *::before, .ec-local-checkout *::after { box-sizing:border-box; }
+.eclc-wrap { max-width:896px; margin:0 auto; }
+.eclc-header { text-align:center; margin-bottom:32px; }
+.eclc-logo { height:96px; max-width:320px; margin:0 auto 20px; object-fit:contain; display:block; }
+.eclc-title { font-size:24px; line-height:1.25; font-weight:700; margin:0; color:var(--ec-text); }
+.eclc-sub { margin:8px 0 0; color:var(--ec-muted); }
+
+.eclc-grid { display:grid; grid-template-columns:3fr 2fr; gap:32px; align-items:start; }
+@media (max-width:820px){ .eclc-grid { grid-template-columns:1fr; } }
+.eclc-col-h { font-size:18px; font-weight:600; margin:0 0 16px; }
+
+.eclc-prod { background:#fff; border:1px solid #f3f4f6; border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,.05); padding:16px; margin-bottom:16px; }
+.eclc-prod-in { display:flex; align-items:center; gap:16px; }
+.eclc-img { width:80px; height:80px; object-fit:cover; border-radius:6px; flex:0 0 auto; }
+.eclc-img-empty { width:80px; height:80px; border-radius:6px; background:#f3f4f6; flex:0 0 auto; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:26px; }
+.eclc-pinfo { flex:1; min-width:0; }
+.eclc-pname { font-weight:500; margin:0; }
+.eclc-pdesc { font-size:14px; color:#6b7280; margin:4px 0 0; }
+.eclc-pprice { font-weight:600; margin:4px 0 0; color:var(--ec-p); }
+.eclc-pprice .eclc-vat { font-size:12px; color:#9ca3af; font-weight:400; margin-left:4px; }
+.eclc-qty { display:flex; align-items:center; gap:8px; flex:0 0 auto; }
+.eclc-qbtn { width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1px solid #d1d5db; border-radius:8px; background:#fff; cursor:pointer; font-size:18px; line-height:1; color:#374151; padding:0; }
+.eclc-qbtn:hover { background:#f9fafb; }
+.eclc-qbtn:disabled { opacity:.4; cursor:default; }
+.eclc-qnum { width:32px; text-align:center; font-weight:500; }
+
+.eclc-cart { background:#fff; border:1px solid #f3f4f6; border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,.05); padding:24px; position:sticky; top:32px; }
+.eclc-line { display:flex; justify-content:space-between; gap:12px; font-size:14px; margin-bottom:12px; }
+.eclc-line .eclc-lname { color:var(--ec-text); }
+.eclc-line .eclc-lval { font-weight:500; }
+.eclc-divider { border-top:1px solid #f3f4f6; margin:4px 0 16px; padding-top:16px; }
+.eclc-total { display:flex; justify-content:space-between; font-size:18px; font-weight:700; margin-bottom:16px; }
+.eclc-empty { color:#6b7280; font-size:14px; margin-bottom:16px; }
+.eclc-vatnote { font-size:13px; color:#6b7280; margin:-6px 0 14px; }
+
+.eclc-field { display:block; margin-bottom:12px; }
+.eclc-field span { display:block; font-size:13px; font-weight:500; margin-bottom:6px; color:#374151; }
+.eclc-field input { width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; }
+.eclc-field input:focus { outline:none; border-color:var(--ec-p); box-shadow:0 0 0 3px rgba(79,70,229,.12); }
+.eclc-btn { width:100%; padding:12px 16px; border:0; border-radius:12px; background:var(--ec-p); color:#fff; font-size:15px; font-weight:600; cursor:pointer; margin-top:4px; }
+.eclc-btn:hover { filter:brightness(.95); }
+.eclc-btn:disabled { opacity:.6; cursor:default; }
+.eclc-err { background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; padding:10px 12px; border-radius:8px; margin-bottom:12px; font-size:13px; }
+.eclc-pay-hint { font-size:12px; color:#9ca3af; text-align:center; margin-top:10px; }
+
+.eclc-ok { text-align:center; }
+.eclc-ok-ico { width:56px; height:56px; border-radius:50%; background:#dcfce7; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:30px; margin:0 auto 12px; }
+.eclc-kvs { background:#f9fafb; border:1px solid #f3f4f6; border-radius:10px; padding:14px 16px; margin-top:16px; text-align:left; }
+.eclc-kv { display:flex; justify-content:space-between; gap:12px; padding:6px 0; font-size:14px; }
+.eclc-kv b { color:#374151; font-weight:600; }
+.eclc-iban { font-family:Consolas,Monaco,monospace; font-weight:700; }

@@ -1,5 +1,6 @@
 /* global ecLocal */
-/* EasyCheckout – lokaler Bankueberweisungs-Checkout (Frontend, ohne Konto). */
+/* EasyCheckout – lokaler Bankueberweisungs-Checkout (Frontend, ohne Konto).
+   Layout/Design an die easycheckout.ch-Checkout-Seiten angelehnt. */
 ( function () {
 	'use strict';
 	if ( typeof ecLocal === 'undefined' || ! ecLocal.checkout ) { return; }
@@ -32,41 +33,78 @@
 
 	function confirmation( d ) {
 		root.innerHTML = '';
-		function kv( k, v, cls ) { return h( 'div', { class: 'eclc-kv' }, [ h( 'strong', { text: k + ': ' } ), h( 'span', { class: cls || '', text: v } ) ] ); }
-		root.appendChild( h( 'div', { class: 'eclc-card eclc-ok' }, [
-			h( 'h2', { class: 'eclc-h', text: 'Bestellung erhalten – bitte überweisen' } ),
-			h( 'p', { text: 'Vielen Dank! Bitte überweise den Betrag mit dem Verwendungszweck unten. Deine Bestellung ist reserviert, bis die Zahlung eingeht.' } ),
-			kv( 'Betrag', d.currency + ' ' + Number( d.total ).toFixed( 2 ) ),
-			kv( 'IBAN', ( d.bank && d.bank.iban ) || '—', 'eclc-iban' ),
-			kv( 'Empfänger', ( d.bank && d.bank.holder ) || '—' ),
-			( d.bank && d.bank.bankName ) ? kv( 'Bank', d.bank.bankName ) : null,
-			kv( 'Verwendungszweck', d.ref )
-		] ) );
+		function kv( k, v, cls ) { return h( 'div', { class: 'eclc-kv' }, [ h( 'b', { text: k } ), h( 'span', { class: cls || '', text: v } ) ] ); }
+		var card = h( 'div', { class: 'eclc-cart eclc-ok', style: 'max-width:520px;margin:0 auto;' }, [
+			h( 'div', { class: 'eclc-ok-ico', text: '✓' } ),
+			h( 'h1', { class: 'eclc-title', text: 'Bestellung erhalten' } ),
+			h( 'p', { class: 'eclc-sub', text: 'Vielen Dank! Bitte überweise den Betrag mit dem Verwendungszweck unten. Deine Bestellung ist reserviert, bis die Zahlung eingeht.' } ),
+			h( 'div', { class: 'eclc-kvs' }, [
+				kv( 'Betrag', d.currency + ' ' + Number( d.total ).toFixed( 2 ) ),
+				kv( 'IBAN', ( d.bank && d.bank.iban ) || '—', 'eclc-iban' ),
+				kv( 'Empfänger', ( d.bank && d.bank.holder ) || '—' ),
+				( d.bank && d.bank.bankName ) ? kv( 'Bank', d.bank.bankName ) : null,
+				kv( 'Verwendungszweck', d.ref )
+			] )
+		] );
+		root.appendChild( h( 'div', { class: 'eclc-wrap' }, [ card ] ) );
 	}
 
 	function render() {
 		root.innerHTML = '';
-		var totalEl = h( 'span', { text: money( total() ) } );
+		var qnums = {};
+		var summaryBox = h( 'div', {} );
+		var totalEl = h( 'span', { text: money( 0 ) } );
 
-		var productRows = ( C.products || [] ).map( function ( p ) {
-			var q = h( 'input', { class: 'eclc-qty', type: 'number', min: '0', value: '0', onInput: function ( e ) {
-				qty[ p.id ] = Math.max( 0, parseInt( e.target.value, 10 ) || 0 );
-				totalEl.textContent = money( total() );
-			} } );
-			return h( 'div', { class: 'eclc-row' }, [
-				h( 'div', {}, [ h( 'div', { class: 'eclc-pname', text: p.name } ), p.description ? h( 'div', { class: 'eclc-pdesc', text: p.description } ) : null ] ),
-				h( 'span', { class: 'eclc-badge', text: money( p.price ) } ),
-				q
-			] );
+		function updateSummary() {
+			summaryBox.innerHTML = '';
+			var any = false;
+			( C.products || [] ).forEach( function ( p ) {
+				var q = qty[ p.id ] || 0;
+				if ( ! q ) { return; }
+				any = true;
+				summaryBox.appendChild( h( 'div', { class: 'eclc-line' }, [
+					h( 'span', { class: 'eclc-lname', text: q + '× ' + p.name } ),
+					h( 'span', { class: 'eclc-lval', text: money( q * p.price ) } )
+				] ) );
+			} );
+			if ( ! any ) { summaryBox.appendChild( h( 'p', { class: 'eclc-empty', text: 'Noch keine Produkte ausgewählt' } ) ); }
+			totalEl.textContent = money( total() );
+		}
+		function setQty( id, v ) {
+			qty[ id ] = Math.max( 0, v );
+			if ( qnums[ id ] ) { qnums[ id ].textContent = String( qty[ id ] ); }
+			updateSummary();
+		}
+
+		// Left: products
+		var left = h( 'div', {}, [ h( 'h2', { class: 'eclc-col-h', text: 'Produkte' } ) ] );
+		( C.products || [] ).forEach( function ( p ) {
+			var num = h( 'span', { class: 'eclc-qnum', text: '0' } );
+			qnums[ p.id ] = num;
+			var minus = h( 'button', { class: 'eclc-qbtn', type: 'button', text: '−', onClick: function () { setQty( p.id, ( qty[ p.id ] || 0 ) - 1 ); } } );
+			var plus = h( 'button', { class: 'eclc-qbtn', type: 'button', text: '+', onClick: function () { setQty( p.id, ( qty[ p.id ] || 0 ) + 1 ); } } );
+			var price = h( 'p', { class: 'eclc-pprice' }, [ money( p.price ) ] );
+			if ( C.vatEnabled && C.vatRate ) { price.appendChild( h( 'span', { class: 'eclc-vat', text: 'zzgl. ' + C.vatRate + '% MwSt' } ) ); }
+			left.appendChild( h( 'div', { class: 'eclc-prod' }, [
+				h( 'div', { class: 'eclc-prod-in' }, [
+					p.imageUrl ? h( 'img', { class: 'eclc-img', src: p.imageUrl, alt: p.name } ) : h( 'div', { class: 'eclc-img-empty', text: '🛍' } ),
+					h( 'div', { class: 'eclc-pinfo' }, [
+						h( 'h3', { class: 'eclc-pname', text: p.name } ),
+						p.description ? h( 'p', { class: 'eclc-pdesc', text: p.description } ) : null,
+						price
+					] ),
+					h( 'div', { class: 'eclc-qty' }, [ minus, num, plus ] )
+				] )
+			] ) );
 		} );
-		if ( ! ( C.products || [] ).length ) { productRows = [ h( 'p', { text: 'Keine Produkte verfügbar.' } ) ]; }
+		if ( ! ( C.products || [] ).length ) { left.appendChild( h( 'p', { class: 'eclc-empty', text: 'Keine Produkte verfügbar.' } ) ); }
 
+		// Right: cart
 		var nameI = h( 'input', { type: 'text' } );
 		var mailI = h( 'input', { type: 'email' } );
 		var errEl = h( 'div', { class: 'eclc-err' } );
 		errEl.style.display = 'none';
 		var btn = h( 'button', { class: 'eclc-btn', type: 'button', text: 'Jetzt bestellen (Banküberweisung)' } );
-
 		btn.addEventListener( 'click', function () {
 			errEl.style.display = 'none';
 			var items = ( C.products || [] ).filter( function ( p ) { return ( qty[ p.id ] || 0 ) > 0; } ).map( function ( p ) { return { id: p.id, qty: qty[ p.id ] }; } );
@@ -93,16 +131,23 @@
 				} );
 		} );
 
-		root.appendChild( h( 'div', { class: 'eclc-card' },
-			[ h( 'h2', { class: 'eclc-h', text: C.name } ) ].concat( productRows ).concat( [ h( 'div', { class: 'eclc-total' }, [ h( 'span', { text: 'Total' } ), totalEl ] ) ] )
-		) );
-		root.appendChild( h( 'div', { class: 'eclc-card' }, [
-			h( 'h2', { class: 'eclc-h', text: 'Deine Angaben' } ),
+		var cart = h( 'div', { class: 'eclc-cart' }, [
+			h( 'h2', { class: 'eclc-col-h', text: 'Bestellung' } ),
+			summaryBox,
+			h( 'div', { class: 'eclc-divider' }, [ h( 'div', { class: 'eclc-total' }, [ h( 'span', { text: 'Total' } ), totalEl ] ) ] ),
 			errEl,
 			h( 'label', { class: 'eclc-field' }, [ h( 'span', { text: 'Name' } ), nameI ] ),
 			h( 'label', { class: 'eclc-field' }, [ h( 'span', { text: 'E-Mail' } ), mailI ] ),
-			btn
-		] ) );
+			btn,
+			h( 'p', { class: 'eclc-pay-hint', text: 'Zahlung per Banküberweisung – du erhältst die Kontodaten nach der Bestellung.' } )
+		] );
+
+		var wrap = h( 'div', { class: 'eclc-wrap' }, [
+			h( 'div', { class: 'eclc-header' }, [ h( 'h1', { class: 'eclc-title', text: C.name } ) ] ),
+			h( 'div', { class: 'eclc-grid' }, [ left, cart ] )
+		] );
+		root.appendChild( wrap );
+		updateSummary();
 	}
 
 	render();

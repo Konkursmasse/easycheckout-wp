@@ -54,8 +54,9 @@ class Shortcodes {
         echo '<!DOCTYPE html><html ' . get_language_attributes() . '><head><meta charset="' . esc_attr(get_bloginfo('charset')) . '">';
         echo '<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">';
         echo '<title>' . $title . '</title>';
+        wp_print_styles();
         wp_print_head_scripts();
-        echo '</head><body style="margin:0;background:#f6f7f9;min-height:100vh;padding:32px 12px;">';
+        echo '</head><body style="margin:0;">';
         echo $html;
         wp_print_footer_scripts();
         echo '</body></html>';
@@ -277,6 +278,8 @@ class Shortcodes {
      */
     private function render_local_checkout($c) {
         $handle = 'easycheckout-local-checkout';
+        wp_register_style($handle, EASYCHECKOUT_PLUGIN_URL . 'assets/css/local-checkout.css', [], EASYCHECKOUT_VERSION);
+        wp_enqueue_style($handle);
         wp_register_script($handle, EASYCHECKOUT_PLUGIN_URL . 'assets/js/local-checkout.js', [], EASYCHECKOUT_VERSION, true);
 
         $primary = (isset($c['design']['primary']) && $c['design']['primary']) ? $c['design']['primary'] : '#4F46E5';
@@ -304,21 +307,7 @@ class Shortcodes {
         ]);
         wp_enqueue_script($handle);
 
-        $styles = '.ec-local-checkout{--ec-p:' . esc_attr($primary) . ';max-width:640px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#111827}'
-            . '.eclc-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:22px;margin-bottom:16px}'
-            . '.eclc-h{font-size:20px;font-weight:700;margin:0 0 14px}'
-            . '.eclc-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9}'
-            . '.eclc-row:last-child{border-bottom:0}.eclc-pname{font-weight:600}.eclc-pdesc{font-size:12px;color:#6b7280}'
-            . '.eclc-qty{width:64px;padding:7px 8px;border:1px solid #e5e7eb;border-radius:8px}'
-            . '.eclc-field{display:block;margin-bottom:12px}.eclc-field span{display:block;font-size:13px;font-weight:600;margin-bottom:5px}'
-            . '.eclc-field input{width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px}'
-            . '.eclc-total{display:flex;justify-content:space-between;font-size:18px;font-weight:800;margin-top:8px}'
-            . '.eclc-btn{width:100%;padding:12px 16px;border:0;border-radius:10px;background:var(--ec-p);color:#fff;font-size:15px;font-weight:700;cursor:pointer}'
-            . '.eclc-btn[disabled]{opacity:.6;cursor:default}.eclc-err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:10px 12px;border-radius:8px;margin-bottom:12px;font-size:13px}'
-            . '.eclc-iban{font-family:Consolas,Monaco,monospace;font-size:16px;font-weight:700;letter-spacing:.03em}'
-            . '.eclc-ok{text-align:center}.eclc-ok .dashicons-yes,.eclc-badge{color:var(--ec-p)}.eclc-kv{margin:6px 0;font-size:14px}';
-
-        return '<style>' . $styles . '</style><div class="ec-local-checkout" data-ec-local="1"></div>';
+        return '<div class="ec-local-checkout" data-ec-local="1" style="--ec-p:' . esc_attr($primary) . ';"></div>';
     }
 
     /**
