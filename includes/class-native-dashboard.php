@@ -472,11 +472,36 @@ class Native_Dashboard {
             @wp_mail($email, sprintf(__('Bestellbestätigung %s', 'easycheckout'), $ref), $body, $headers);
         }
 
+        // Swiss-QR-Rechnung (nur wenn IBAN hinterlegt)
+        $qr = null;
+        if ($bank['iban']) {
+            $co = self::get_company();
+            $qr = [
+                'iban'     => $bank['iban'],
+                'amount'   => number_format($total, 2, '.', ''),
+                'currency' => $order['currency'],
+                'message'  => 'Bestellung ' . $ref,
+                'creditor' => [
+                    'name'       => $co['name'] ?: $bank['holder'],
+                    'street'     => $co['street'],
+                    'postalCode' => $co['postalCode'],
+                    'city'       => $co['city'],
+                ],
+                'debtor'   => [
+                    'name'       => $name,
+                    'street'     => $billing['street'],
+                    'postalCode' => $billing['postalCode'],
+                    'city'       => $billing['city'],
+                ],
+            ];
+        }
+
         wp_send_json_success([
             'ref'      => $ref,
             'total'    => $total,
             'currency' => $order['currency'],
             'bank'     => $bank,
+            'qr'       => $qr,
         ]);
     }
 

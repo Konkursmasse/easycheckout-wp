@@ -62,3 +62,9 @@
 .eclc-3 { display:grid; grid-template-columns:1fr 2fr; gap:12px; }
 .eclc-check { display:flex; align-items:center; gap:8px; margin-top:12px; cursor:pointer; font-size:14px; color:#374151; }
 .eclc-check input { width:16px; height:16px; }
+
+/* Swiss-QR-Rechnung */
+.eclc-qr { margin-top:20px; text-align:center; }
+.eclc-qr-h { font-size:14px; font-weight:700; margin-bottom:10px; }
+.eclc-qr-img { width:220px; height:220px; image-rendering:pixelated; border:1px solid #f3f4f6; border-radius:8px; padding:8px; background:#fff; }
+.eclc-qr-hint { font-size:12px; color:#9ca3af; margin-top:8px; }

@@ -280,7 +280,8 @@ class Shortcodes {
         $handle = 'easycheckout-local-checkout';
         wp_register_style($handle, EASYCHECKOUT_PLUGIN_URL . 'assets/css/local-checkout.css', [], EASYCHECKOUT_VERSION);
         wp_enqueue_style($handle);
-        wp_register_script($handle, EASYCHECKOUT_PLUGIN_URL . 'assets/js/local-checkout.js', [], EASYCHECKOUT_VERSION, true);
+        wp_register_script('easycheckout-qrgen', EASYCHECKOUT_PLUGIN_URL . 'assets/js/qrcode-generator.js', [], '1.4.4', true);
+        wp_register_script($handle, EASYCHECKOUT_PLUGIN_URL . 'assets/js/local-checkout.js', ['easycheckout-qrgen'], EASYCHECKOUT_VERSION, true);
 
         $primary = (isset($c['design']['primary']) && $c['design']['primary']) ? $c['design']['primary'] : '#4F46E5';
         $products = [];

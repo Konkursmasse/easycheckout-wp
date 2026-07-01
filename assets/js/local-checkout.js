@@ -31,10 +31,39 @@
 		return e;
 	}
 
+	// Swiss-QR-Payload (SPC) im offiziellen QR-Rechnung-Format.
+	function swissSpc( q ) {
+		var cr = q.creditor || {}, db = q.debtor || {};
+		return [
+			'SPC', '0200', '1',
+			( q.iban || '' ).replace( /\s/g, '' ),
+			'S', cr.name || '', cr.street || '', '', cr.postalCode || '', cr.city || '', 'CH',
+			'', '', '', '', '', '', '',
+			q.amount || '', q.currency || 'CHF',
+			db.name ? 'S' : '', db.name || '', db.street || '', '', db.postalCode || '', db.city || '', db.name ? 'CH' : '',
+			'NON', '', q.message || '',
+			'EPD', ''
+		].join( '\n' );
+	}
+	function makeQrImg( text ) {
+		try {
+			if ( typeof qrcode === 'undefined' ) { return null; }
+			if ( qrcode.stringToBytesFuncs && qrcode.stringToBytesFuncs[ 'UTF-8' ] ) { qrcode.stringToBytes = qrcode.stringToBytesFuncs[ 'UTF-8' ]; }
+			var qr = qrcode( 0, 'M' );
+			qr.addData( text );
+			qr.make();
+			var img = new Image();
+			img.src = qr.createDataURL( 4, 8 );
+			img.className = 'eclc-qr-img';
+			img.alt = 'QR-Rechnung';
+			return img;
+		} catch ( e ) { return null; }
+	}
+
 	function confirmation( d ) {
 		root.innerHTML = '';
 		function kv( k, v, cls ) { return h( 'div', { class: 'eclc-kv' }, [ h( 'b', { text: k } ), h( 'span', { class: cls || '', text: v } ) ] ); }
-		var card = h( 'div', { class: 'eclc-cart eclc-ok', style: 'max-width:520px;margin:0 auto;' }, [
+		var children = [
 			h( 'div', { class: 'eclc-ok-ico', text: '✓' } ),
 			h( 'h1', { class: 'eclc-title', text: 'Bestellung erhalten' } ),
 			h( 'p', { class: 'eclc-sub', text: 'Vielen Dank! Bitte überweise den Betrag mit dem Verwendungszweck unten. Deine Bestellung ist reserviert, bis die Zahlung eingeht.' } ),
@@ -45,7 +74,18 @@
 				( d.bank && d.bank.bankName ) ? kv( 'Bank', d.bank.bankName ) : null,
 				kv( 'Verwendungszweck', d.ref )
 			] )
-		] );
+		];
+		if ( d.qr && d.qr.iban ) {
+			var img = makeQrImg( swissSpc( d.qr ) );
+			if ( img ) {
+				children.push( h( 'div', { class: 'eclc-qr' }, [
+					h( 'div', { class: 'eclc-qr-h', text: 'QR-Rechnung' } ),
+					img,
+					h( 'div', { class: 'eclc-qr-hint', text: 'Mit deiner Banking-App scannen und bezahlen.' } )
+				] ) );
+			}
+		}
+		var card = h( 'div', { class: 'eclc-cart eclc-ok', style: 'max-width:520px;margin:0 auto;' }, children );
 		root.appendChild( h( 'div', { class: 'eclc-wrap' }, [ card ] ) );
 	}
 
