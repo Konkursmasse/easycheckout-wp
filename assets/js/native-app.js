@@ -127,14 +127,35 @@
 	// --- Checkouts list -----------------------------------------------------
 
 	function CheckoutsList( props ) {
-		var s = useState( { items: null, error: '', creating: false, name: '', slug: '', busy: false } );
+		var s = useState( { items: null, error: '', creating: false, name: '', slug: '', busy: false, locals: null, migrating: false } );
 		var st = s[ 0 ], set = s[ 1 ];
 		function load() {
 			api( 'GET', '/api/checkouts' ).then( function ( b ) {
 				set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.checkouts ) || [], error: '' } ); } );
 			} ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } );
 		}
-		useEffect( function () { load(); }, [] );
+		function loadLocals() {
+			localApi( 'get' ).then( function ( items ) { set( function ( p ) { return Object.assign( {}, p, { locals: items || [] } ); } ); } ).catch( function () { set( function ( p ) { return Object.assign( {}, p, { locals: [] } ); } ); } );
+		}
+		useEffect( function () { load(); loadLocals(); }, [] );
+		// Lokalen Checkout ins Konto veroeffentlichen (Name/Slug/Produkte) und lokal loeschen.
+		function publishOne( local ) {
+			return api( 'POST', '/api/checkouts', { name: local.name, slug: local.slug } ).then( function ( b ) {
+				var id = b && b.checkout && b.checkout.id;
+				if ( ! id ) { throw new Error( 'Checkout „' + ( local.name || local.slug ) + '" konnte nicht erstellt werden (Slug evtl. bereits vergeben)' ); }
+				return ( local.products || [] ).reduce( function ( ch, p ) {
+					return ch.then( function () { return api( 'POST', '/api/checkouts/' + id + '/products', { name: p.name, description: p.description || '', price: p.price || 0 } ); } );
+				}, Promise.resolve() ).then( function () { return localApi( 'delete', { id: local.id } ); } );
+			} );
+		}
+		function migrate() {
+			var locals = st.locals || [];
+			if ( ! locals.length ) { return; }
+			set( Object.assign( {}, st, { migrating: true, error: '' } ) );
+			locals.reduce( function ( ch, l ) { return ch.then( function () { return publishOne( l ); } ); }, Promise.resolve() )
+				.then( function () { set( function ( p ) { return Object.assign( {}, p, { migrating: false } ); } ); load(); loadLocals(); } )
+				.catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { migrating: false, error: 'Übernahme fehlgeschlagen: ' + err.message } ); } ); load(); loadLocals(); } );
+		}
 		function create( e ) {
 			e.preventDefault(); set( Object.assign( {}, st, { busy: true, error: '' } ) );
 			api( 'POST', '/api/checkouts', { name: st.name, slug: st.slug } ).then( function ( b ) {
@@ -150,6 +171,11 @@
 			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Checkouts' ),
 				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { creating: true } ) ); } }, '+ Neuer Checkout' ) ),
 			ErrorBox( st.error ),
+			st.locals && st.locals.length > 0 && el( 'div', { className: 'ec-banner' },
+				el( 'span', { className: 'dashicons dashicons-upload' } ),
+				el( 'span', { className: 'ec-banner-txt' }, 'Du hast ' + st.locals.length + ' lokale(n) Checkout(s) aus dem Free-Modus. Ins Konto übernehmen — dann nehmen sie Online-Zahlungen an und ersetzen die lokale Version (gleicher Slug/Link).' ),
+				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: migrate, disabled: st.migrating }, st.migrating ? 'Übernehme…' : 'Ins Konto übernehmen' )
+			),
 			st.creating && el( 'form', { className: 'ec-inline-form', onSubmit: create },
 				el( 'input', { placeholder: 'Name', required: true, value: st.name, onChange: function ( e ) { set( Object.assign( {}, st, { name: e.target.value } ) ); } } ),
 				el( 'input', { placeholder: 'Slug (z. B. mein-shop)', required: true, value: st.slug, onChange: function ( e ) { set( Object.assign( {}, st, { slug: e.target.value } ) ); } } ),
