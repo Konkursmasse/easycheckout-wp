@@ -53,6 +53,8 @@
 	}
 
 	function previewUrl( slug ) { return ( ecNative.siteUrl || '/' ) + '?ec_local=' + encodeURIComponent( slug ); }
+	// Gehostete URL eines KONTO-Checkouts (easycheckout.ch/c/<slug>).
+	function hostedUrl( slug ) { return ( ecNative.appUrl || 'https://www.easycheckout.ch' ).replace( /\/$/, '' ) + '/c/' + encodeURIComponent( slug ); }
 
 	function uploadFile( method, path, field, file ) {
 		var fd = new FormData();
@@ -164,6 +166,8 @@
 							el( 'td', null, ( c._count && c._count.orders != null ) ? c._count.orders : '—' ),
 							el( 'td', null, c.isActive === false ? el( 'span', { className: 'ec-badge ec-badge-off' }, 'Inaktiv' ) : el( 'span', { className: 'ec-badge ec-badge-on' }, 'Aktiv' ) ),
 							el( 'td', { className: 'ec-row-actions' },
+								el( 'a', { className: 'ec-btn ec-btn-sm', href: hostedUrl( c.slug ), target: '_blank', rel: 'noopener' }, 'Ansehen' ),
+								' ',
 								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { props.navigate( 'products', { id: c.id, name: c.name } ); } }, 'Produkte' ),
 								' ',
 								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { props.navigate( 'checkout', { id: c.id } ); } }, 'Bearbeiten' ),
@@ -1134,15 +1138,26 @@
 	function EmbedView( props ) {
 		var s = useState( { items: null, error: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
-		useEffect( function () { localApi( 'get' ).then( function ( items ) { set( { items: items, error: '' } ); } ).catch( function ( e ) { set( { items: [], error: e.message } ); } ); }, [] );
+		var authed = !! props.authed;
+		// Verbunden -> Konto-Checkouts (/api/checkouts); sonst lokale Checkouts.
+		useEffect( function () {
+			if ( authed ) {
+				api( 'GET', '/api/checkouts' ).then( function ( b ) { set( { items: ( b && b.checkouts ) || [], error: '' } ); } ).catch( function ( e ) { set( { items: [], error: e.message } ); } );
+			} else {
+				localApi( 'get' ).then( function ( items ) { set( { items: items, error: '' } ); } ).catch( function ( e ) { set( { items: [], error: e.message } ); } );
+			}
+		}, [] );
+		function linkFor( slug ) { return authed ? hostedUrl( slug ) : previewUrl( slug ); }
 		return el( 'div', null,
 			el( 'div', { className: 'ec-card', style: { maxWidth: '760px', marginBottom: '16px' } },
 				el( 'h3', null, 'So bindest du deine Checkouts ein' ),
 				el( 'ol', { style: { margin: '4px 0 0 18px', lineHeight: '1.9', fontSize: '14px' } },
-					el( 'li', null, 'Firmenangaben + IBAN unter „Einstellungen" hinterlegen (erscheinen auf der Rechnung).' ),
 					el( 'li', null, el( 'b', null, 'Einbetten: ' ), 'neue WordPress-Seite anlegen, den Shortcode einfügen, veröffentlichen.' ),
-					el( 'li', null, el( 'b', null, 'Direkter Link: ' ), 'die Link-URL teilen (E-Mail, Social, QR) – ganz ohne Seite.' ),
-					el( 'li', null, 'Vorschau jederzeit über „Ansehen".' )
+					el( 'li', null, el( 'b', null, 'Direkter Link: ' ), 'die Link-URL teilen (E-Mail, Social, QR).' ),
+					el( 'li', null, 'Vorschau jederzeit über „Ansehen".' ),
+					authed
+						? el( 'li', null, 'Diese Checkouts stammen aus deinem verbundenen easyCheckout-Konto – Name, Link und Shortcode gehen automatisch mit.' )
+						: el( 'li', null, 'Firmenangaben + IBAN unter „Einstellungen" hinterlegen (erscheinen auf der Rechnung).' )
 				)
 			),
 			ErrorBox( st.error ),
@@ -1152,9 +1167,9 @@
 						return el( 'div', { key: c.id, className: 'ec-card', style: { maxWidth: '760px', marginBottom: '14px' } },
 							el( 'div', { className: 'ec-page-head' },
 								el( 'h3', { style: { margin: 0 } }, c.name ),
-								el( 'a', { className: 'ec-btn ec-btn-sm', href: previewUrl( c.slug ), target: '_blank', rel: 'noopener' }, 'Ansehen' ) ),
+								el( 'a', { className: 'ec-btn ec-btn-sm', href: linkFor( c.slug ), target: '_blank', rel: 'noopener' }, 'Ansehen' ) ),
 							CopyRow( 'Shortcode – in eine WordPress-Seite einfügen', '[easycheckout slug="' + c.slug + '"]' ),
-							CopyRow( 'Direkter Link – teilbar, ohne Seite', previewUrl( c.slug ) )
+							CopyRow( 'Direkter Link – teilbar', linkFor( c.slug ) )
 						);
 					} )
 				)
@@ -1326,7 +1341,7 @@
 			if ( route.view === 'checkouts' || route.view === 'checkout' || route.view === 'products' ) {
 				content = el( LocalCheckouts, { onConnect: props.onOpenConnect } );
 			} else if ( route.view === 'embed' ) {
-				content = el( EmbedView, null );
+				content = el( EmbedView, { authed: false } );
 			} else if ( route.view === 'overview' ) {
 				content = el( LocalOverview, { navigate: navigate, onConnect: props.onOpenConnect } );
 			} else if ( route.view === 'settings' ) {
@@ -1341,7 +1356,7 @@
 		} else {
 			switch ( route.view ) {
 				case 'overview': content = el( OverviewView, null ); break;
-				case 'embed': content = el( EmbedView, null ); break;
+				case 'embed': content = el( EmbedView, { authed: true } ); break;
 				case 'checkouts': content = el( CheckoutsList, { navigate: navigate } ); break;
 				case 'checkout': content = el( CheckoutEditor, { id: route.params.id, navigate: navigate } ); break;
 				case 'products': content = el( ProductsManager, { id: route.params.id, name: route.params.name, navigate: navigate } ); break;
