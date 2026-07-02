@@ -34,6 +34,47 @@ class Shortcodes {
         add_shortcode('easycheckout_product', [$this, 'render_product']);
         // Eigenstaendige Vorschau-/Checkout-URL: /?ec_local=<slug>
         add_action('template_redirect', [$this, 'maybe_render_standalone']);
+        // Public-Proxies (server-seitig -> kein CORS) fuer den nativen Konto-Checkout.
+        add_action('wp_ajax_easycheckout_pub_checkout', [$this, 'ajax_pub_checkout']);
+        add_action('wp_ajax_nopriv_easycheckout_pub_checkout', [$this, 'ajax_pub_checkout']);
+        add_action('wp_ajax_easycheckout_pub_pay', [$this, 'ajax_pub_pay']);
+        add_action('wp_ajax_nopriv_easycheckout_pub_pay', [$this, 'ajax_pub_pay']);
+    }
+
+    /** Basis-URL der easyCheckout-API. */
+    private function api_base() {
+        return rtrim(get_option('easycheckout_api_url', 'https://www.easycheckout.ch'), '/');
+    }
+
+    /** Proxy: oeffentliche Checkout-Daten (Produkte/Preise/Design) holen. */
+    public function ajax_pub_checkout() {
+        if (!check_ajax_referer('easycheckout_front', 'nonce', false)) { wp_send_json_error(['message' => 'Ungültige Anfrage.'], 400); }
+        $slug = isset($_REQUEST['slug']) ? sanitize_title(wp_unslash($_REQUEST['slug'])) : '';
+        if ($slug === '') { wp_send_json_error(['message' => 'Kein Slug.'], 400); }
+        $resp = wp_remote_get($this->api_base() . '/api/public/checkout/' . rawurlencode($slug), ['timeout' => 20]);
+        if (is_wp_error($resp)) { wp_send_json_error(['message' => $resp->get_error_message()], 502); }
+        wp_send_json_success([
+            'status' => wp_remote_retrieve_response_code($resp),
+            'body'   => json_decode(wp_remote_retrieve_body($resp), true),
+        ]);
+    }
+
+    /** Proxy: Zahlung anlegen (PaymentIntent) fuer den nativen Konto-Checkout. */
+    public function ajax_pub_pay() {
+        if (!check_ajax_referer('easycheckout_front', 'nonce', false)) { wp_send_json_error(['message' => 'Ungültige Anfrage.'], 400); }
+        $slug    = isset($_POST['slug']) ? sanitize_title(wp_unslash($_POST['slug'])) : '';
+        $payload = isset($_POST['payload']) ? json_decode(wp_unslash($_POST['payload']), true) : null;
+        if ($slug === '' || !is_array($payload)) { wp_send_json_error(['message' => 'Ungültige Daten.'], 400); }
+        $resp = wp_remote_post($this->api_base() . '/api/public/checkout/' . rawurlencode($slug) . '/pay', [
+            'timeout' => 25,
+            'headers' => ['Content-Type' => 'application/json'],
+            'body'    => wp_json_encode($payload),
+        ]);
+        if (is_wp_error($resp)) { wp_send_json_error(['message' => $resp->get_error_message()], 502); }
+        wp_send_json_success([
+            'status' => wp_remote_retrieve_response_code($resp),
+            'body'   => json_decode(wp_remote_retrieve_body($resp), true),
+        ]);
     }
 
     /**
@@ -138,58 +179,36 @@ class Shortcodes {
                 . esc_url($base) . '"' . $target . '>' . esc_html($atts['button_text']) . '</a></div>';
         }
 
-        // Inline iframe of the hosted checkout — visually identical to
-        // easycheckout.ch and fully functional (payment happens inside).
-        list($src, $match_site_font) = $this->build_embed_url($base, $atts);
-        $mw = max(320, intval($atts['max_width']));
-        $fixed_h = intval($atts['height']);
-        $uid = 'ecf-' . substr(md5($slug . wp_rand()), 0, 8);
+        // NATIVER Konto-Checkout: Produkte/Preise/Design nativ im Plugin gerendert
+        // (gleiches, anpassbares CSS wie der lokale Checkout), Bezahlung per Stripe
+        // Elements white-label. KEIN iFrame mehr.
+        return $this->render_account_checkout($slug, $atts);
+    }
 
-        ob_start();
-        ?>
-        <div class="easycheckout-embed" style="width:100vw;max-width:100vw;margin-left:calc(50% - 50vw);">
-            <div style="max-width:<?php echo esc_attr($mw); ?>px;margin:0 auto;padding:0 16px;box-sizing:border-box;">
-                <iframe id="<?php echo esc_attr($uid); ?>" class="easycheckout-frame"
-                        title="<?php esc_attr_e('Checkout', 'easycheckout'); ?>"
-                        <?php if ($match_site_font) : ?>data-ecsrc="<?php echo esc_url($src); ?>"<?php else : ?>src="<?php echo esc_url($src); ?>"<?php endif; ?>
-                        style="width:100%;border:0;display:block;background:transparent;<?php echo $fixed_h ? 'height:' . esc_attr($fixed_h) . 'px;' : ''; ?>"
-                        allow="payment *" referrerpolicy="origin"></iframe>
-            </div>
-        </div>
-        <?php if (!$fixed_h) : ?>
-        <style>
-            #<?php echo $uid; ?>{height:1250px;}
-            @media (max-width:980px){#<?php echo $uid; ?>{height:1700px;}}
-            @media (max-width:600px){#<?php echo $uid; ?>{height:1980px;}}
-        </style>
-        <?php endif; ?>
-        <script>
-        (function(){
-            var f = document.getElementById('<?php echo $uid; ?>');
-            if (!f) { return; }
-            <?php if ($match_site_font) : ?>
-            // Match the surrounding site's font: detect it and pass it to the checkout.
-            try {
-                var fam = (getComputedStyle(document.body).fontFamily || '').trim();
-                var base = f.getAttribute('data-ecsrc') || '';
-                var sep = base.indexOf('?') === -1 ? '?' : '&';
-                f.src = (fam && base) ? (base + sep + 'ec_font=' + encodeURIComponent(fam)) : base;
-            } catch (err) {
-                var b = f.getAttribute('data-ecsrc'); if (b) { f.src = b; }
-            }
-            <?php endif; ?>
-            // Auto-size when the hosted page reports its height (graceful no-op otherwise).
-            window.addEventListener('message', function(e){
-                if (typeof e.origin !== 'string' || e.origin.indexOf('easycheckout.ch') === -1) { return; }
-                var d = e.data;
-                if (d && d.type === 'easycheckout:height' && d.height) {
-                    f.style.height = (parseInt(d.height, 10) + 24) + 'px';
-                }
-            });
-        })();
-        </script>
-        <?php
-        return ob_get_clean();
+    /**
+     * Nativer Konto-Checkout (Daten via Public-Proxy, Zahlung via Stripe Elements).
+     *
+     * @param string $slug
+     * @param array  $atts
+     * @return string
+     */
+    private function render_account_checkout($slug, $atts) {
+        wp_register_style('easycheckout-local-checkout', EASYCHECKOUT_PLUGIN_URL . 'assets/css/local-checkout.css', [], EASYCHECKOUT_VERSION);
+        wp_enqueue_style('easycheckout-local-checkout');
+        // Stripe.js (unsichtbar/white-label) fuer die native Kartenzahlung.
+        wp_register_script('stripe-js', 'https://js.stripe.com/v3/', [], null, true);
+        wp_enqueue_script('stripe-js');
+        wp_register_script('easycheckout-account-checkout', EASYCHECKOUT_PLUGIN_URL . 'assets/js/account-checkout.js', ['stripe-js'], EASYCHECKOUT_VERSION, true);
+        $primary = (isset($atts['primary']) && $atts['primary']) ? $atts['primary'] : '';
+        wp_localize_script('easycheckout-account-checkout', 'ecAccount', [
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce'   => wp_create_nonce('easycheckout_front'),
+            'slug'    => $slug,
+            'primary' => $primary,
+        ]);
+        wp_enqueue_script('easycheckout-account-checkout');
+        $style = $primary ? ' style="--ec-p:' . esc_attr($primary) . ';"' : '';
+        return '<div class="ec-local-checkout ec-account-checkout" data-ec-account="1"' . $style . '></div>';
     }
 
     /**
