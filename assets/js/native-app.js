@@ -56,6 +56,42 @@
 	// Gehostete URL eines KONTO-Checkouts (easycheckout.ch/c/<slug>).
 	function hostedUrl( slug ) { return ( ecNative.appUrl || 'https://www.easycheckout.ch' ).replace( /\/$/, '' ) + '/c/' + encodeURIComponent( slug ); }
 
+	// Einen lokalen Checkout ins verbundene Konto veroeffentlichen (Name/Slug/
+	// Produkte inkl. Bild) und danach lokal loeschen -> Konto-Checkout ersetzt den
+	// lokalen (gleicher Slug/Link/Shortcode, ab dann online-zahlungsfaehig).
+	function publishLocalToAccount( local ) {
+		return api( 'POST', '/api/checkouts', { name: local.name, slug: local.slug } ).then( function ( b ) {
+			var id = b && b.checkout && b.checkout.id;
+			if ( ! id ) { throw new Error( 'Erstellen fehlgeschlagen (Slug evtl. bereits vergeben)' ); }
+			return ( local.products || [] ).reduce( function ( ch, p ) {
+				return ch.then( function () {
+					return api( 'POST', '/api/checkouts/' + id + '/products', { name: p.name, description: p.description || '', price: p.price || 0 } ).then( function ( pr ) {
+						var prod = pr && pr.product;
+						if ( p.imageUrl && prod && prod.id ) {
+							return fetch( p.imageUrl ).then( function ( r ) { return r.blob(); } ).then( function ( blob ) {
+								var file = new File( [ blob ], 'produkt.jpg', { type: blob.type || 'image/jpeg' } );
+								return uploadFile( 'POST', '/api/products/' + prod.id + '/image', 'image', file );
+							} ).catch( function () {} ); // Bild optional -> Fehler ignorieren
+						}
+					} );
+				} );
+			}, Promise.resolve() ).then( function () { return localApi( 'delete', { id: local.id } ); } );
+		} );
+	}
+
+	// Alle lokalen Checkouts uebernehmen; Fehler pro Checkout werden gesammelt,
+	// der Rest laeuft weiter. Gibt ein Array von Fehlermeldungen zurueck.
+	function migrateLocalsToAccount() {
+		var errors = [];
+		return localApi( 'get' ).then( function ( locals ) {
+			return ( locals || [] ).reduce( function ( chain, local ) {
+				return chain.then( function () {
+					return publishLocalToAccount( local ).catch( function ( e ) { errors.push( ( local.name || local.slug ) + ': ' + e.message ); } );
+				} );
+			}, Promise.resolve() );
+		} ).then( function () { return errors; } );
+	}
+
 	function uploadFile( method, path, field, file ) {
 		var fd = new FormData();
 		fd.append( 'action', 'easycheckout_native_upload' );
@@ -138,23 +174,13 @@
 			localApi( 'get' ).then( function ( items ) { set( function ( p ) { return Object.assign( {}, p, { locals: items || [] } ); } ); } ).catch( function () { set( function ( p ) { return Object.assign( {}, p, { locals: [] } ); } ); } );
 		}
 		useEffect( function () { load(); loadLocals(); }, [] );
-		// Lokalen Checkout ins Konto veroeffentlichen (Name/Slug/Produkte) und lokal loeschen.
-		function publishOne( local ) {
-			return api( 'POST', '/api/checkouts', { name: local.name, slug: local.slug } ).then( function ( b ) {
-				var id = b && b.checkout && b.checkout.id;
-				if ( ! id ) { throw new Error( 'Checkout „' + ( local.name || local.slug ) + '" konnte nicht erstellt werden (Slug evtl. bereits vergeben)' ); }
-				return ( local.products || [] ).reduce( function ( ch, p ) {
-					return ch.then( function () { return api( 'POST', '/api/checkouts/' + id + '/products', { name: p.name, description: p.description || '', price: p.price || 0 } ); } );
-				}, Promise.resolve() ).then( function () { return localApi( 'delete', { id: local.id } ); } );
-			} );
-		}
 		function migrate() {
-			var locals = st.locals || [];
-			if ( ! locals.length ) { return; }
+			if ( ! ( st.locals && st.locals.length ) ) { return; }
 			set( Object.assign( {}, st, { migrating: true, error: '' } ) );
-			locals.reduce( function ( ch, l ) { return ch.then( function () { return publishOne( l ); } ); }, Promise.resolve() )
-				.then( function () { set( function ( p ) { return Object.assign( {}, p, { migrating: false } ); } ); load(); loadLocals(); } )
-				.catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { migrating: false, error: 'Übernahme fehlgeschlagen: ' + err.message } ); } ); load(); loadLocals(); } );
+			migrateLocalsToAccount().then( function ( errs ) {
+				set( function ( p ) { return Object.assign( {}, p, { migrating: false, error: ( errs && errs.length ) ? ( 'Teilweise nicht übernommen: ' + errs.join( '; ' ) ) : '' } ); } );
+				load(); loadLocals();
+			} );
 		}
 		function create( e ) {
 			e.preventDefault(); set( Object.assign( {}, st, { busy: true, error: '' } ) );
@@ -1436,7 +1462,7 @@
 			showConnect: st.connect,
 			onOpenConnect: function () { set( Object.assign( {}, st, { connect: true } ) ); },
 			onCloseConnect: function () { set( Object.assign( {}, st, { connect: false } ) ); },
-			onAuthed: function ( m ) { set( { authed: true, merchant: m || {}, connect: false } ); },
+			onAuthed: function ( m ) { set( { authed: true, merchant: m || {}, connect: false } ); try { migrateLocalsToAccount(); } catch ( e ) {} },
 			onLogout: function () { set( { authed: false, merchant: {}, connect: false } ); }
 		} );
 	}
