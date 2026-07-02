@@ -457,6 +457,14 @@
 			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Verifizierung (Stripe)' ),
 				el( 'button', { className: 'ec-btn', onClick: hosted }, 'Bei Stripe abschließen ↗' ) ),
 			ErrorBox( st.error ),
+			el( 'div', { className: 'ec-card', style: { marginBottom: '16px', borderColor: '#c7d2fe', background: '#eef2ff' } },
+				el( 'h3', null, 'Konto & Verifizierung auf easycheckout.ch abschließen' ),
+				el( 'p', { className: 'ec-muted', style: { marginTop: 0 } }, 'Dein easyCheckout-Konto ist mit deiner E-Mail angelegt. Schließe die vollständige Verifizierung direkt auf easycheckout.ch ab — dort gibst du fehlende Angaben (z. B. Eigentumsverhältnisse, Dokumente) genau gleich ein. Melde dich mit derselben E-Mail an.' ),
+				el( 'div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
+					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { window.open( ( ecNative.appUrl || 'https://www.easycheckout.ch' ).replace( /\/$/, '' ) + '/onboarding', '_blank', 'noopener' ); } }, 'Verifizierung auf easycheckout.ch ↗' ),
+					el( 'button', { className: 'ec-btn', onClick: function () { window.open( ( ecNative.appUrl || 'https://www.easycheckout.ch' ).replace( /\/$/, '' ) + '/login', '_blank', 'noopener' ); } }, 'Einloggen ↗' )
+				)
+			),
 			el( 'div', { className: 'ec-card', style: { marginBottom: '16px' } },
 				el( 'h3', null, 'Status' ),
 				el( 'p', null, charges ? el( 'span', { className: 'ec-badge ec-badge-on' }, 'Zahlungen aktiv' ) : el( 'span', { className: 'ec-badge ec-badge-off' }, ( st.acct && st.acct.status && ( st.acct.status.summary || st.acct.status.label ) ) || 'Verifizierung erforderlich' ) ),
