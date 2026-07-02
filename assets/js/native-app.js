@@ -454,8 +454,7 @@
 		var charges = st.status.chargesEnabled || ( st.acct && st.acct.chargesEnabled );
 
 		return el( 'div', null,
-			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Verifizierung (Stripe)' ),
-				el( 'button', { className: 'ec-btn', onClick: hosted }, 'Bei Stripe abschließen ↗' ) ),
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Verifizierung' ) ),
 			ErrorBox( st.error ),
 			el( 'div', { className: 'ec-card', style: { marginBottom: '16px', borderColor: '#c7d2fe', background: '#eef2ff' } },
 				el( 'h3', null, 'Konto & Verifizierung auf easycheckout.ch abschließen' ),
@@ -469,15 +468,7 @@
 				el( 'h3', null, 'Status' ),
 				el( 'p', null, charges ? el( 'span', { className: 'ec-badge ec-badge-on' }, 'Zahlungen aktiv' ) : el( 'span', { className: 'ec-badge ec-badge-off' }, ( st.acct && st.acct.status && ( st.acct.status.summary || st.acct.status.label ) ) || 'Verifizierung erforderlich' ) ),
 				st.acct && st.acct.tasks && st.acct.tasks.length > 0 && el( 'ul', { className: 'ec-tasklist' }, st.acct.tasks.map( function ( t, i ) { return el( 'li', { key: i }, el( 'strong', null, t.title ), t.description && el( 'span', { className: 'ec-muted' }, ' — ' + t.description ) ); } ) ),
-				! hasAccount && el( 'button', { className: 'ec-btn ec-btn-primary', onClick: start }, 'Verifizierung starten' )
-			),
-			hasAccount && el( 'div', { className: 'ec-form-grid' },
-				el( BusinessForm, { onSaved: load } ),
-				el( PersonForm, { onSaved: load } ),
-				el( PersonsCard, null ),
-				el( BankForm, { onSaved: load } ),
-				el( DocsCard, null ),
-				el( TermsCard, { onSaved: load } )
+				el( 'p', { className: 'ec-hint', style: { marginTop: '10px' } }, 'Firmendaten, Eigentumsverhältnisse, Dokumente und Bankverbindung gibst du direkt auf easycheckout.ch ein (Buttons oben).' )
 			)
 		);
 	}
