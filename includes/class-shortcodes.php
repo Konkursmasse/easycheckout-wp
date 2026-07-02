@@ -42,15 +42,24 @@ class Shortcodes {
      * teilbarer Link, ohne erst eine WP-Seite anzulegen.
      */
     public function maybe_render_standalone() {
-        if (empty($_GET['ec_local'])) { return; }
-        $slug = sanitize_title(wp_unslash($_GET['ec_local']));
-        if (!class_exists('EasyCheckout\\Native_Dashboard')) { return; }
-        $local = \EasyCheckout\Native_Dashboard::get_local_checkout_by_slug($slug);
-        if (!$local) { return; }
+        $localSlug   = !empty($_GET['ec_local']) ? sanitize_title(wp_unslash($_GET['ec_local'])) : '';
+        $previewSlug = !empty($_GET['ec_preview']) ? sanitize_title(wp_unslash($_GET['ec_preview'])) : '';
+        if ($localSlug === '' && $previewSlug === '') { return; }
+
+        if ($previewSlug !== '') {
+            // Vorschau der EINBETTUNG auf der eigenen Domain (lokal ODER Konto-Checkout).
+            $html = $this->render_checkout(['slug' => $previewSlug]);
+            $titleSlug = $previewSlug;
+        } else {
+            if (!class_exists('EasyCheckout\\Native_Dashboard')) { return; }
+            $local = \EasyCheckout\Native_Dashboard::get_local_checkout_by_slug($localSlug);
+            if (!$local) { return; }
+            $html = $this->render_local_checkout($local);
+            $titleSlug = $local['name'];
+        }
 
         nocache_headers();
-        $html = $this->render_local_checkout($local); // registriert+enqueued das Script
-        $title = esc_html($local['name'] . ' – Checkout');
+        $title = esc_html($titleSlug . ' – Checkout');
         echo '<!DOCTYPE html><html ' . get_language_attributes() . '><head><meta charset="' . esc_attr(get_bloginfo('charset')) . '">';
         echo '<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">';
         echo '<title>' . $title . '</title>';
@@ -507,7 +516,13 @@ class Shortcodes {
      */
     private function hosted_checkout_url($slug) {
         $base = rtrim(get_option('easycheckout_api_url', 'https://www.easycheckout.ch'), '/');
-        $url = $base . '/c/' . rawurlencode($slug);
+        // Checkouts werden IMMER als Subdomain adressiert (<slug>.easycheckout.ch),
+        // nie als /c/<slug>. Host aus der API-URL ableiten, www entfernen.
+        $parts  = wp_parse_url($base);
+        $scheme = isset($parts['scheme']) ? $parts['scheme'] : 'https';
+        $host   = isset($parts['host']) ? preg_replace('/^www\./', '', $parts['host']) : 'easycheckout.ch';
+        $safe   = preg_replace('/[^a-z0-9\-]/', '', strtolower($slug));
+        $url    = $scheme . '://' . $safe . '.' . $host;
 
         /**
          * Filter the hosted checkout URL (e.g. to use a custom checkout domain).

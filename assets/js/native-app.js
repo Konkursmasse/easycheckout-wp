@@ -52,9 +52,9 @@
 			.then( function ( j ) { if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || 'Upload fehlgeschlagen' ); } return j.data; } );
 	}
 
-	function previewUrl( slug ) { return ( ecNative.siteUrl || '/' ) + '?ec_local=' + encodeURIComponent( slug ); }
-	// Gehostete URL eines KONTO-Checkouts (easycheckout.ch/c/<slug>).
-	function hostedUrl( slug ) { return ( ecNative.appUrl || 'https://www.easycheckout.ch' ).replace( /\/$/, '' ) + '/c/' + encodeURIComponent( slug ); }
+	// Vorschau der Einbettung auf der EIGENEN Domain (lokal ODER Konto-Checkout).
+	// Fuehrt NIE auf easycheckout.ch — der Checkout wird auf der Haendler-Seite gezeigt.
+	function previewUrl( slug ) { return ( ecNative.siteUrl || '/' ) + '?ec_preview=' + encodeURIComponent( slug ); }
 
 	// Einen lokalen Checkout ins verbundene Konto veroeffentlichen (Name/Slug/
 	// Produkte inkl. Bild) und danach lokal loeschen -> Konto-Checkout ersetzt den
@@ -91,6 +91,10 @@
 			}, Promise.resolve() );
 		} ).then( function () { return errors; } );
 	}
+
+	// Einmalig pro Seitenaufruf: lokale Checkouts still ins verbundene Konto uebernehmen.
+	var _localsMigrated = false;
+	function migrateLocalsIfNeeded() { if ( _localsMigrated ) { return; } _localsMigrated = true; try { migrateLocalsToAccount(); } catch ( e ) {} }
 
 	function uploadFile( method, path, field, file ) {
 		var fd = new FormData();
@@ -163,25 +167,14 @@
 	// --- Checkouts list -----------------------------------------------------
 
 	function CheckoutsList( props ) {
-		var s = useState( { items: null, error: '', creating: false, name: '', slug: '', busy: false, locals: null, migrating: false } );
+		var s = useState( { items: null, error: '', creating: false, name: '', slug: '', busy: false } );
 		var st = s[ 0 ], set = s[ 1 ];
 		function load() {
 			api( 'GET', '/api/checkouts' ).then( function ( b ) {
 				set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.checkouts ) || [], error: '' } ); } );
 			} ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } );
 		}
-		function loadLocals() {
-			localApi( 'get' ).then( function ( items ) { set( function ( p ) { return Object.assign( {}, p, { locals: items || [] } ); } ); } ).catch( function () { set( function ( p ) { return Object.assign( {}, p, { locals: [] } ); } ); } );
-		}
-		useEffect( function () { load(); loadLocals(); }, [] );
-		function migrate() {
-			if ( ! ( st.locals && st.locals.length ) ) { return; }
-			set( Object.assign( {}, st, { migrating: true, error: '' } ) );
-			migrateLocalsToAccount().then( function ( errs ) {
-				set( function ( p ) { return Object.assign( {}, p, { migrating: false, error: ( errs && errs.length ) ? ( 'Teilweise nicht übernommen: ' + errs.join( '; ' ) ) : '' } ); } );
-				load(); loadLocals();
-			} );
-		}
+		useEffect( function () { load(); }, [] );
 		function create( e ) {
 			e.preventDefault(); set( Object.assign( {}, st, { busy: true, error: '' } ) );
 			api( 'POST', '/api/checkouts', { name: st.name, slug: st.slug } ).then( function ( b ) {
@@ -197,11 +190,6 @@
 			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Checkouts' ),
 				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { creating: true } ) ); } }, '+ Neuer Checkout' ) ),
 			ErrorBox( st.error ),
-			st.locals && st.locals.length > 0 && el( 'div', { className: 'ec-banner' },
-				el( 'span', { className: 'dashicons dashicons-upload' } ),
-				el( 'span', { className: 'ec-banner-txt' }, 'Du hast ' + st.locals.length + ' lokale(n) Checkout(s) aus dem Free-Modus. Ins Konto übernehmen — dann nehmen sie Online-Zahlungen an und ersetzen die lokale Version (gleicher Slug/Link).' ),
-				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: migrate, disabled: st.migrating }, st.migrating ? 'Übernehme…' : 'Ins Konto übernehmen' )
-			),
 			st.creating && el( 'form', { className: 'ec-inline-form', onSubmit: create },
 				el( 'input', { placeholder: 'Name', required: true, value: st.name, onChange: function ( e ) { set( Object.assign( {}, st, { name: e.target.value } ) ); } } ),
 				el( 'input', { placeholder: 'Slug (z. B. mein-shop)', required: true, value: st.slug, onChange: function ( e ) { set( Object.assign( {}, st, { slug: e.target.value } ) ); } } ),
@@ -218,7 +206,7 @@
 							el( 'td', null, ( c._count && c._count.orders != null ) ? c._count.orders : '—' ),
 							el( 'td', null, c.isActive === false ? el( 'span', { className: 'ec-badge ec-badge-off' }, 'Inaktiv' ) : el( 'span', { className: 'ec-badge ec-badge-on' }, 'Aktiv' ) ),
 							el( 'td', { className: 'ec-row-actions' },
-								el( 'a', { className: 'ec-btn ec-btn-sm', href: hostedUrl( c.slug ), target: '_blank', rel: 'noopener' }, 'Ansehen' ),
+								el( 'a', { className: 'ec-btn ec-btn-sm', href: previewUrl( c.slug ), target: '_blank', rel: 'noopener' }, 'Ansehen' ),
 								' ',
 								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { props.navigate( 'products', { id: c.id, name: c.name } ); } }, 'Produkte' ),
 								' ',
@@ -1199,7 +1187,7 @@
 				localApi( 'get' ).then( function ( items ) { set( { items: items, error: '' } ); } ).catch( function ( e ) { set( { items: [], error: e.message } ); } );
 			}
 		}, [] );
-		function linkFor( slug ) { return authed ? hostedUrl( slug ) : previewUrl( slug ); }
+		function linkFor( slug ) { return previewUrl( slug ); }
 		return el( 'div', null,
 			el( 'div', { className: 'ec-card', style: { maxWidth: '760px', marginBottom: '16px' } },
 				el( 'h3', null, 'So bindest du deine Checkouts ein' ),
@@ -1373,6 +1361,7 @@
 	function Shell( props ) {
 		var r = useState( { view: props.initialView || 'overview', params: {} } );
 		var route = r[ 0 ], setRoute = r[ 1 ];
+		useEffect( function () { if ( props.authed ) { migrateLocalsIfNeeded(); } }, [ props.authed ] );
 		function navigate( view, params ) { setRoute( { view: view, params: params || {} } ); }
 		function logout() { post( 'easycheckout_native_logout', {} ).then( function () { props.onLogout(); } ); }
 
@@ -1462,7 +1451,7 @@
 			showConnect: st.connect,
 			onOpenConnect: function () { set( Object.assign( {}, st, { connect: true } ) ); },
 			onCloseConnect: function () { set( Object.assign( {}, st, { connect: false } ) ); },
-			onAuthed: function ( m ) { set( { authed: true, merchant: m || {}, connect: false } ); try { migrateLocalsToAccount(); } catch ( e ) {} },
+			onAuthed: function ( m ) { set( { authed: true, merchant: m || {}, connect: false } ); },
 			onLogout: function () { set( { authed: false, merchant: {}, connect: false } ); }
 		} );
 	}
