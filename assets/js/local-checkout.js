@@ -60,6 +60,10 @@
 		} catch ( e ) { return null; }
 	}
 
+	function powered() {
+		return h( 'div', { class: 'eclc-powered' }, [ h( 'a', { href: 'https://easycheckout.ch', target: '_blank', rel: 'noopener', text: 'Powered by easyCheckout' } ) ] );
+	}
+
 	function confirmation( d ) {
 		root.innerHTML = '';
 		function kv( k, v, cls ) { return h( 'div', { class: 'eclc-kv' }, [ h( 'b', { text: k } ), h( 'span', { class: cls || '', text: v } ) ] ); }
@@ -86,7 +90,7 @@
 			}
 		}
 		var card = h( 'div', { class: 'eclc-cart eclc-ok', style: 'max-width:520px;margin:0 auto;' }, children );
-		root.appendChild( h( 'div', { class: 'eclc-wrap' }, [ card ] ) );
+		root.appendChild( h( 'div', { class: 'eclc-wrap' }, [ card, powered() ] ) );
 	}
 
 	function render() {
@@ -234,7 +238,8 @@
 				C.logo ? h( 'img', { class: 'eclc-logo', src: C.logo, alt: C.name } ) : null,
 				h( 'h1', { class: 'eclc-title', text: C.name } )
 			] ),
-			h( 'div', { class: 'eclc-grid' }, [ left, cart ] )
+			h( 'div', { class: 'eclc-grid' }, [ left, cart ] ),
+			powered()
 		] );
 		root.appendChild( wrap );
 		updateSummary();

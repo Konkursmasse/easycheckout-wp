@@ -44,6 +44,10 @@
 		sel.value = val || 'CH'; return sel;
 	}
 
+	function powered() {
+		return h( 'div', { class: 'eclc-powered' }, [ h( 'a', { href: 'https://easycheckout.ch', target: '_blank', rel: 'noopener', text: 'Powered by easyCheckout' } ) ] );
+	}
+
 	function loadingView( msg ) { root.innerHTML = ''; root.appendChild( h( 'div', { class: 'eclc-wrap' }, [ h( 'div', { class: 'eclc-cart', style: 'max-width:520px;margin:0 auto;text-align:center' }, [ h( 'p', { class: 'eclc-empty', text: msg || 'Lädt…' } ) ] ) ] ) ); }
 	function errorView( msg ) { root.innerHTML = ''; root.appendChild( h( 'div', { class: 'eclc-wrap' }, [ h( 'div', { class: 'eclc-cart', style: 'max-width:520px;margin:0 auto' }, [ h( 'div', { class: 'eclc-err', text: msg } ) ] ) ] ) ); }
 
@@ -122,7 +126,8 @@
 				( C.merchantLogoUrl || ( C.design && C.design.logoUrl ) ) ? h( 'img', { class: 'eclc-logo', src: C.merchantLogoUrl || C.design.logoUrl, alt: C.name } ) : null,
 				h( 'h1', { class: 'eclc-title', text: C.name || 'Checkout' } )
 			] ),
-			h( 'div', { class: 'eclc-grid' }, [ left, cart ] )
+			h( 'div', { class: 'eclc-grid' }, [ left, cart ] ),
+			powered()
 		] );
 		root.appendChild( wrap );
 		updateTotal();
@@ -160,7 +165,7 @@
 			h( 'div', { class: 'eclc-ok-ico', text: '✓' } ),
 			h( 'h1', { class: 'eclc-title', text: 'Zahlung erfolgreich' } ),
 			h( 'p', { class: 'eclc-sub', text: 'Vielen Dank für deine Bestellung! Du erhältst eine Bestätigung per E-Mail.' } )
-		] ) ] ) );
+		] ), powered() ] ) );
 		if ( window.scrollTo ) { window.scrollTo( 0, 0 ); }
 	}
 
