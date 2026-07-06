@@ -82,6 +82,17 @@
 		var bZip = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'PLZ *' } );
 		var bCity = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'Ort *' } );
 		var bCountry = countrySel( 'CH' );
+		var sameCb = h( 'input', { type: 'checkbox' } ); sameCb.checked = true;
+		var dStreet = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'Strasse und Hausnummer *' } );
+		var dZip = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'PLZ *' } );
+		var dCity = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'Ort *' } );
+		var dCountry = countrySel( 'CH' );
+		var deliveryWrap = h( 'div', { class: 'eclc-sec' }, [
+			h( 'h3', { class: 'eclc-sec-h', text: 'Lieferadresse' } ),
+			h( 'div', { class: 'eclc-stack' }, [ dStreet, h( 'div', { class: 'eclc-3' }, [ dZip, dCity ] ), dCountry ] )
+		] );
+		deliveryWrap.style.display = 'none';
+		sameCb.addEventListener( 'change', function () { deliveryWrap.style.display = sameCb.checked ? 'none' : 'block'; } );
 		var errEl = h( 'div', { class: 'eclc-err' } ); errEl.style.display = 'none';
 		var payWrap = h( 'div', {} ); // hier kommt spaeter das Stripe Payment Element rein
 		var btn = h( 'button', { class: 'eclc-btn', type: 'button', text: 'Weiter zur Zahlung' } );
@@ -95,19 +106,24 @@
 			if ( ! emailI.value.trim() ) { return fail( 'Bitte E-Mail-Adresse eingeben.' ); }
 			if ( ! nameI.value.trim() ) { return fail( 'Bitte Namen eingeben.' ); }
 			if ( ! bStreet.value.trim() || ! bZip.value.trim() || ! bCity.value.trim() ) { return fail( 'Bitte vollständige Rechnungsadresse eingeben.' ); }
+			if ( ! sameCb.checked && ( ! dStreet.value.trim() || ! dZip.value.trim() || ! dCity.value.trim() ) ) { return fail( 'Bitte vollständige Lieferadresse eingeben.' ); }
 			btn.disabled = true; btn.textContent = 'Zahlung wird vorbereitet…';
+			var billing = { street: bStreet.value, postalCode: bZip.value, city: bCity.value, country: bCountry.value };
+			var delivery = sameCb.checked ? billing : { street: dStreet.value, postalCode: dZip.value, city: dCity.value, country: dCountry.value };
 			var payload = {
 				items: items,
 				customerEmail: emailI.value, customerName: nameI.value,
 				customerCompany: companyI.value, customerPhone: phoneI.value,
-				customerAddress: { street: bStreet.value, postalCode: bZip.value, city: bCity.value, country: bCountry.value },
+				customerAddress: billing,
+				deliveryAddress: delivery,
+				sameAddress: sameCb.checked,
 				newsletterOptIn: false
 			};
 			post( 'easycheckout_pub_pay', { slug: ecAccount.slug, payload: JSON.stringify( payload ) } ).then( function ( d ) {
 				var body = d.body || {};
 				if ( ( d.status && d.status >= 400 ) || body.error ) { throw new Error( body.error || ( 'Fehler ' + d.status ) ); }
 				if ( ! body.clientSecret || ! body.publishableKey ) { throw new Error( 'Zahlung konnte nicht initialisiert werden.' ); }
-				mountPayment( body, btn, errEl, payWrap, [ emailI, nameI, companyI, phoneI, bStreet, bZip, bCity, bCountry ] );
+				mountPayment( body, btn, errEl, payWrap, [ emailI, nameI, companyI, phoneI, bStreet, bZip, bCity, bCountry, sameCb, dStreet, dZip, dCity, dCountry ] );
 			} ).catch( function ( e ) { fail( e.message ); btn.disabled = false; btn.textContent = 'Weiter zur Zahlung'; } );
 		} );
 
@@ -117,6 +133,8 @@
 			errEl,
 			h( 'div', { class: 'eclc-sec' }, [ h( 'h3', { class: 'eclc-sec-h', text: 'Kontaktdaten' } ), h( 'div', { class: 'eclc-stack' }, [ emailI, nameI, companyI, phoneI ] ) ] ),
 			h( 'div', { class: 'eclc-sec' }, [ h( 'h3', { class: 'eclc-sec-h', text: 'Rechnungsadresse' } ), h( 'div', { class: 'eclc-stack' }, [ bStreet, h( 'div', { class: 'eclc-3' }, [ bZip, bCity ] ), bCountry ] ) ] ),
+			h( 'label', { class: 'eclc-check' }, [ sameCb, h( 'span', { text: 'Lieferadresse entspricht Rechnungsadresse' } ) ] ),
+			deliveryWrap,
 			payWrap,
 			h( 'div', { style: 'margin-top:18px;' }, [ btn ] )
 		] );
