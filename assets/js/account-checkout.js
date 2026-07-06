@@ -64,7 +64,7 @@
 			var minus = h( 'button', { class: 'eclc-qbtn', type: 'button', text: '−', onClick: function () { setQty( p.id, ( qty[ p.id ] || 0 ) - 1 ); } } );
 			var plus = h( 'button', { class: 'eclc-qbtn', type: 'button', text: '+', onClick: function () { setQty( p.id, ( qty[ p.id ] || 0 ) + 1 ); } } );
 			var price = h( 'p', { class: 'eclc-pprice' }, [ money( p.price ) ] );
-			if ( C.vatEnabled && C.vatRate ) { price.appendChild( h( 'span', { class: 'eclc-vat', text: 'zzgl. ' + C.vatRate + '% MwSt' } ) ); }
+			if ( C.vatEnabled && C.vatRate ) { price.appendChild( h( 'span', { class: 'eclc-vat', text: ( C.vatInclusive ? 'inkl. ' : 'zzgl. ' ) + C.vatRate + '% MwSt' } ) ); }
 			left.appendChild( h( 'div', { class: 'eclc-prod' }, [ h( 'div', { class: 'eclc-prod-in' }, [
 				p.imageUrl ? h( 'img', { class: 'eclc-img', src: p.imageUrl, alt: p.name } ) : h( 'div', { class: 'eclc-img-empty', text: '🛍' } ),
 				h( 'div', { class: 'eclc-pinfo' }, [ h( 'h3', { class: 'eclc-pname', text: p.name } ), p.description ? h( 'p', { class: 'eclc-pdesc', text: p.description } ) : null, price ] ),
@@ -175,6 +175,8 @@
 		var body = d.body || {};
 		if ( ( d.status && d.status >= 400 ) || ! body.checkout ) { throw new Error( ( body && body.error ) || 'Checkout nicht gefunden.' ); }
 		C = body.checkout;
+		// Design des Konto-Checkouts uebernehmen (Primaerfarbe) -> stylable.
+		if ( C.design && C.design.primaryColor ) { root.style.setProperty( '--ec-p', C.design.primaryColor ); }
 		( C.products || [] ).forEach( function ( p ) { qty[ p.id ] = 0; } );
 		render();
 	} ).catch( function ( e ) { errorView( e.message ); } );
