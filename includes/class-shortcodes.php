@@ -319,6 +319,18 @@ class Shortcodes {
                 'name'        => $p['name'],
                 'description' => isset($p['description']) ? $p['description'] : '',
                 'price'       => (float) $p['price'],
+                'imageUrl'    => isset($p['imageUrl']) ? $p['imageUrl'] : '',
+                'categoryId'  => (isset($p['categoryId']) && $p['categoryId'] !== '') ? $p['categoryId'] : null,
+            ];
+        }
+        $categories = [];
+        foreach ((array) (isset($c['categories']) ? $c['categories'] : []) as $cat) {
+            $categories[] = [
+                'id'            => $cat['id'],
+                'name'          => isset($cat['name']) ? $cat['name'] : '',
+                'description'   => isset($cat['description']) ? $cat['description'] : '',
+                'singleProduct' => !empty($cat['singleProduct']),
+                'allowQuantity' => !isset($cat['allowQuantity']) || $cat['allowQuantity'],
             ];
         }
         wp_localize_script($handle, 'ecLocal', [
@@ -332,6 +344,8 @@ class Shortcodes {
                 'primary'    => $primary,
                 'vatEnabled' => !empty($c['vatEnabled']),
                 'vatRate'    => isset($c['vatRate']) ? (float) $c['vatRate'] : 0,
+                'categorySelection' => isset($c['categorySelection']) ? $c['categorySelection'] : 'multiple',
+                'categories' => $categories,
                 'products'   => $products,
             ],
         ]);

@@ -206,9 +206,26 @@ class Native_Dashboard {
                     'description' => isset($p['description']) ? sanitize_textarea_field($p['description']) : '',
                     'price'       => isset($p['price']) ? round((float) $p['price'], 2) : 0,
                     'imageUrl'    => (isset($p['imageUrl']) && $p['imageUrl']) ? esc_url_raw($p['imageUrl']) : '',
+                    'categoryId'  => (isset($p['categoryId']) && $p['categoryId'] !== '' && $p['categoryId'] !== null) ? sanitize_text_field($p['categoryId']) : null,
                 ];
             }
         }
+
+        // Kategorien
+        $categories = [];
+        if (isset($data['categories']) && is_array($data['categories'])) {
+            foreach ($data['categories'] as $cat) {
+                if (!is_array($cat)) { continue; }
+                $categories[] = [
+                    'id'            => (!empty($cat['id'])) ? sanitize_text_field($cat['id']) : ('c_' . wp_generate_password(6, false, false)),
+                    'name'          => isset($cat['name']) ? sanitize_text_field($cat['name']) : '',
+                    'description'   => isset($cat['description']) ? sanitize_textarea_field($cat['description']) : '',
+                    'singleProduct' => !empty($cat['singleProduct']),
+                    'allowQuantity' => !isset($cat['allowQuantity']) || !empty($cat['allowQuantity']),
+                ];
+            }
+        }
+        $categorySelection = (isset($data['categorySelection']) && $data['categorySelection'] === 'single') ? 'single' : 'multiple';
 
         $item = [
             'id'         => $id,
@@ -219,6 +236,8 @@ class Native_Dashboard {
             'vatEnabled' => !empty($data['vatEnabled']),
             'vatRate'    => isset($data['vatRate']) ? round((float) $data['vatRate'], 2) : 8.1,
             'currency'   => isset($data['currency']) ? strtoupper(substr(sanitize_text_field($data['currency']), 0, 3)) : 'CHF',
+            'categorySelection' => $categorySelection,
+            'categories' => $categories,
             'products'   => $products,
             'updatedAt'  => current_time('mysql'),
         ];

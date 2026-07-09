@@ -114,34 +114,106 @@
 			if ( ! any ) { summaryBox.appendChild( h( 'p', { class: 'eclc-empty', text: 'Noch keine Produkte ausgewählt' } ) ); }
 			totalEl.textContent = money( total() );
 		}
+		// --- Kategorien-Helfer ---
+		function catById( id ) { return ( C.categories || [] ).find( function ( c ) { return c.id === id; } ) || null; }
+		function pMax( p ) { var cat = catById( p.categoryId ); return ( cat && cat.allowQuantity === false ) ? 1 : Infinity; }
+		function activeGroup() {
+			var ids = Object.keys( qty ).filter( function ( id ) { return qty[ id ] > 0; } );
+			if ( ! ids.length ) { return null; }
+			var p = ( C.products || [] ).find( function ( x ) { return String( x.id ) === String( ids[ 0 ] ); } );
+			return p ? ( p.categoryId != null ? p.categoryId : 'none' ) : null;
+		}
+
 		function setQty( id, v ) {
-			qty[ id ] = Math.max( 0, v );
-			if ( qnums[ id ] ) { qnums[ id ].textContent = String( qty[ id ] ); }
+			var p = ( C.products || [] ).find( function ( x ) { return String( x.id ) === String( id ); } );
+			var cat = p ? catById( p.categoryId ) : null;
+			var nv = Math.max( 0, v );
+			if ( nv > 0 ) {
+				nv = Math.min( nv, pMax( p ) );
+				// Regel 1: nur eine Kategorie gleichzeitig
+				if ( C.categorySelection === 'single' ) {
+					var ag = activeGroup();
+					var tg = ( p && p.categoryId != null ) ? p.categoryId : 'none';
+					if ( ag !== null && ag !== tg ) { return; }
+				}
+				// Regel 2: Kategorie erlaubt nur EIN Produkt (Radio)
+				if ( cat && cat.singleProduct ) {
+					( C.products || [] ).forEach( function ( o ) { if ( o.categoryId === p.categoryId && String( o.id ) !== String( id ) ) { qty[ o.id ] = 0; } } );
+				}
+			}
+			qty[ id ] = nv;
+			renderProducts();
 			updateSummary();
 		}
 
-		// Left: products
-		var left = h( 'div', {}, [ h( 'h2', { class: 'eclc-col-h', text: 'Produkte' } ) ] );
-		( C.products || [] ).forEach( function ( p ) {
-			var num = h( 'span', { class: 'eclc-qnum', text: '0' } );
-			qnums[ p.id ] = num;
-			var minus = h( 'button', { class: 'eclc-qbtn', type: 'button', text: '−', onClick: function () { setQty( p.id, ( qty[ p.id ] || 0 ) - 1 ); } } );
-			var plus = h( 'button', { class: 'eclc-qbtn', type: 'button', text: '+', onClick: function () { setQty( p.id, ( qty[ p.id ] || 0 ) + 1 ); } } );
+		var productsWrap = h( 'div', {} );
+		function prodCard( p ) {
+			var cat = catById( p.categoryId );
+			var q = qty[ p.id ] || 0;
+			var selected = q > 0;
+			var asToggle = !! ( cat && cat.allowQuantity === false );
+			var ag = activeGroup();
+			var locked = C.categorySelection === 'single' && ! selected && ag !== null && ag !== ( p.categoryId != null ? p.categoryId : 'none' );
 			var price = h( 'p', { class: 'eclc-pprice' }, [ money( p.price ) ] );
 			if ( C.vatEnabled && C.vatRate ) { price.appendChild( h( 'span', { class: 'eclc-vat', text: 'zzgl. ' + C.vatRate + '% MwSt' } ) ); }
-			left.appendChild( h( 'div', { class: 'eclc-prod' }, [
+			var ctrl;
+			if ( asToggle ) {
+				var battrs = { class: 'eclc-qbtn' + ( selected ? ' eclc-selected' : '' ), type: 'button', text: selected ? '✓' : ( cat && cat.singleProduct ? 'Wählen' : '+' ), onClick: function () { setQty( p.id, selected ? 0 : 1 ); } };
+				if ( locked ) { battrs.disabled = 'disabled'; }
+				ctrl = h( 'div', { class: 'eclc-qty' }, [ h( 'button', battrs ) ] );
+			} else {
+				var minus = h( 'button', { class: 'eclc-qbtn', type: 'button', text: '−', onClick: function () { setQty( p.id, ( qty[ p.id ] || 0 ) - 1 ); } } );
+				var num = h( 'span', { class: 'eclc-qnum', text: String( q ) } );
+				var plusAttrs = { class: 'eclc-qbtn', type: 'button', text: '+', onClick: function () { setQty( p.id, ( qty[ p.id ] || 0 ) + 1 ); } };
+				if ( locked ) { plusAttrs.disabled = 'disabled'; }
+				ctrl = h( 'div', { class: 'eclc-qty' }, [ minus, num, h( 'button', plusAttrs ) ] );
+			}
+			return h( 'div', { class: 'eclc-prod' + ( locked ? ' eclc-locked' : '' ) }, [
 				h( 'div', { class: 'eclc-prod-in' }, [
 					p.imageUrl ? h( 'img', { class: 'eclc-img', src: p.imageUrl, alt: p.name } ) : h( 'div', { class: 'eclc-img-empty', text: '🛍' } ),
 					h( 'div', { class: 'eclc-pinfo' }, [
 						h( 'h3', { class: 'eclc-pname', text: p.name } ),
 						p.description ? h( 'p', { class: 'eclc-pdesc', text: p.description } ) : null,
-						price
+						price,
+						locked ? h( 'p', { class: 'eclc-pdesc', text: 'Nur aus einer Kategorie wählbar' } ) : null
 					] ),
-					h( 'div', { class: 'eclc-qty' }, [ minus, num, plus ] )
+					ctrl
 				] )
-			] ) );
-		} );
-		if ( ! ( C.products || [] ).length ) { left.appendChild( h( 'p', { class: 'eclc-empty', text: 'Keine Produkte verfügbar.' } ) ); }
+			] );
+		}
+		function renderProducts() {
+			productsWrap.innerHTML = '';
+			var prods = C.products || [];
+			if ( ! prods.length ) { productsWrap.appendChild( h( 'p', { class: 'eclc-empty', text: 'Keine Produkte verfügbar.' } ) ); return; }
+			var cats = C.categories || [];
+			if ( ! cats.length ) { prods.forEach( function ( p ) { productsWrap.appendChild( prodCard( p ) ); } ); return; }
+			cats.forEach( function ( cat ) {
+				var items = prods.filter( function ( p ) { return p.categoryId === cat.id; } );
+				if ( ! items.length ) { return; }
+				productsWrap.appendChild( h( 'div', { class: 'eclc-cat-h' }, [
+					h( 'h3', { class: 'eclc-cat-name', text: cat.name } ),
+					cat.description ? h( 'p', { class: 'eclc-cat-desc', text: cat.description } ) : null,
+					cat.singleProduct ? h( 'p', { class: 'eclc-cat-hint', text: 'Nur ein Produkt wählbar' } ) : null
+				] ) );
+				items.forEach( function ( p ) { productsWrap.appendChild( prodCard( p ) ); } );
+			} );
+			var catIds = cats.map( function ( c ) { return c.id; } );
+			var unc = prods.filter( function ( p ) { return ! p.categoryId || catIds.indexOf( p.categoryId ) === -1; } );
+			if ( unc.length ) {
+				if ( cats.some( function ( c ) { return prods.some( function ( p ) { return p.categoryId === c.id; } ); } ) ) {
+					productsWrap.appendChild( h( 'div', { class: 'eclc-cat-h' }, [ h( 'h3', { class: 'eclc-cat-name', text: 'Weitere' } ) ] ) );
+				}
+				unc.forEach( function ( p ) { productsWrap.appendChild( prodCard( p ) ); } );
+			}
+		}
+
+		// Left: products (gruppiert nach Kategorie)
+		var left = h( 'div', {}, [ h( 'h2', { class: 'eclc-col-h', text: 'Produkte' } ) ] );
+		if ( C.categorySelection === 'single' && ( C.categories || [] ).length ) {
+			left.appendChild( h( 'p', { class: 'eclc-cat-hint', text: 'Bitte nur Produkte aus einer Kategorie wählen.' } ) );
+		}
+		left.appendChild( productsWrap );
+		renderProducts();
 
 		// Right: cart + Kundenformular (Felder wie easycheckout.ch)
 		function countrySel( val ) {
