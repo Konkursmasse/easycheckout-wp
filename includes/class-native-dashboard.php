@@ -195,7 +195,7 @@ class Native_Dashboard {
             }
         }
 
-        // Produkte
+        // Produkte (inkl. Optionen, Infofeldern, Liefer-/Abholpreisen)
         $products = [];
         if (isset($data['products']) && is_array($data['products'])) {
             foreach ($data['products'] as $p) {
@@ -207,6 +207,12 @@ class Native_Dashboard {
                     'price'       => isset($p['price']) ? round((float) $p['price'], 2) : 0,
                     'imageUrl'    => (isset($p['imageUrl']) && $p['imageUrl']) ? esc_url_raw($p['imageUrl']) : '',
                     'categoryId'  => (isset($p['categoryId']) && $p['categoryId'] !== '' && $p['categoryId'] !== null) ? sanitize_text_field($p['categoryId']) : null,
+                    // Fulfillment-Preise (null = Standardpreis gilt) + Liefergebuehr.
+                    'pickupPrice'   => self::opt_num($p, 'pickupPrice'),
+                    'deliveryPrice' => self::opt_num($p, 'deliveryPrice'),
+                    'deliveryFee'   => self::opt_num($p, 'deliveryFee'),
+                    'optionGroups'  => self::sanitize_option_groups(isset($p['optionGroups']) ? $p['optionGroups'] : []),
+                    'customFields'  => self::sanitize_custom_fields(isset($p['customFields']) ? $p['customFields'] : []),
                 ];
             }
         }
@@ -236,6 +242,11 @@ class Native_Dashboard {
             'vatEnabled' => !empty($data['vatEnabled']),
             'vatRate'    => isset($data['vatRate']) ? round((float) $data['vatRate'], 2) : 8.1,
             'currency'   => isset($data['currency']) ? strtoupper(substr(sanitize_text_field($data['currency']), 0, 3)) : 'CHF',
+            // Dynamischer Produkt-Obertitel (z.B. „Tickets"); leer = „Produkte".
+            'productsTitle' => isset($data['productsTitle']) ? sanitize_text_field($data['productsTitle']) : '',
+            // Fulfillment: Abholung standardmaessig an, Lieferung opt-in.
+            'pickupEnabled'   => !isset($data['pickupEnabled']) || !empty($data['pickupEnabled']),
+            'deliveryEnabled' => !empty($data['deliveryEnabled']),
             'categorySelection' => $categorySelection,
             'categories' => $categories,
             'products'   => $products,
@@ -320,6 +331,85 @@ class Native_Dashboard {
         ];
     }
 
+    /** Optionaler Geldbetrag: leer/nicht gesetzt -> null (Standardpreis gilt). */
+    private static function opt_num($arr, $key) {
+        if (!isset($arr[$key]) || $arr[$key] === '' || $arr[$key] === null) { return null; }
+        return round((float) $arr[$key], 2);
+    }
+
+    /** Optionsgruppen bereinigen: [{id,name,options:[{id,label,priceModifier}]}]. */
+    private static function sanitize_option_groups($groups) {
+        $out = [];
+        if (!is_array($groups)) { return $out; }
+        foreach ($groups as $g) {
+            if (!is_array($g)) { continue; }
+            $name = isset($g['name']) ? sanitize_text_field($g['name']) : '';
+            $opts = [];
+            foreach ((array) (isset($g['options']) ? $g['options'] : []) as $o) {
+                if (!is_array($o)) { continue; }
+                $label = isset($o['label']) ? sanitize_text_field($o['label']) : '';
+                if ($label === '') { continue; }
+                $opts[] = [
+                    'id'            => (!empty($o['id'])) ? sanitize_text_field($o['id']) : ('o_' . wp_generate_password(6, false, false)),
+                    'label'         => $label,
+                    'priceModifier' => isset($o['priceModifier']) ? round((float) $o['priceModifier'], 2) : 0,
+                ];
+            }
+            if ($name === '' || !$opts) { continue; }
+            $out[] = [
+                'id'      => (!empty($g['id'])) ? sanitize_text_field($g['id']) : ('g_' . wp_generate_password(6, false, false)),
+                'name'    => $name,
+                'options' => $opts,
+            ];
+        }
+        return $out;
+    }
+
+    /** Infofelder bereinigen: [{id,label,fieldType,required,options[]}]. */
+    private static function sanitize_custom_fields($fields) {
+        $out = [];
+        if (!is_array($fields)) { return $out; }
+        foreach ($fields as $f) {
+            if (!is_array($f)) { continue; }
+            $label = isset($f['label']) ? sanitize_text_field($f['label']) : '';
+            if ($label === '') { continue; }
+            $type = (isset($f['fieldType']) && $f['fieldType'] === 'checkbox') ? 'checkbox' : 'text';
+            $opts = [];
+            if ($type === 'checkbox') {
+                foreach ((array) (isset($f['options']) ? $f['options'] : []) as $opt) {
+                    $opt = sanitize_text_field($opt);
+                    if ($opt !== '') { $opts[] = $opt; }
+                }
+                if (!$opts) { continue; } // Checkbox ohne Auswahl ergibt keinen Sinn
+            }
+            $out[] = [
+                'id'        => (!empty($f['id'])) ? sanitize_text_field($f['id']) : ('f_' . wp_generate_password(6, false, false)),
+                'label'     => $label,
+                'fieldType' => $type,
+                'required'  => !empty($f['required']),
+                'options'   => $opts,
+            ];
+        }
+        return $out;
+    }
+
+    /** Basis-Stueckpreis je Modus (null-Override -> Standardpreis). */
+    private static function base_unit($p, $mode) {
+        if ($mode === 'delivery' && isset($p['deliveryPrice']) && $p['deliveryPrice'] !== null && $p['deliveryPrice'] !== '') {
+            return (float) $p['deliveryPrice'];
+        }
+        if ($mode === 'pickup' && isset($p['pickupPrice']) && $p['pickupPrice'] !== null && $p['pickupPrice'] !== '') {
+            return (float) $p['pickupPrice'];
+        }
+        return (float) $p['price'];
+    }
+
+    /** Liefergebuehr einer Zeile – nur im Liefermodus, EINMAL pro Zeile. */
+    private static function line_delivery_fee($p, $mode) {
+        if ($mode !== 'delivery') { return 0.0; }
+        return round((float) (isset($p['deliveryFee']) && $p['deliveryFee'] !== null ? $p['deliveryFee'] : 0), 2);
+    }
+
     public function ajax_local_orders_list() {
         $this->guard();
         $orders = array_values((array) get_option(self::ORDERS_OPT, []));
@@ -397,23 +487,78 @@ class Native_Dashboard {
         $checkout = self::get_local_checkout_by_slug($slug);
         if (!$checkout) { wp_send_json_error(['message' => __('Checkout nicht gefunden.', 'easycheckout')], 404); }
 
+        // Fulfillment-Modus: 'delivery' nur, wenn der Checkout Lieferung anbietet,
+        // sonst Abholung (= Standardpreis, keine Liefergebuehr). SERVER entscheidet.
+        $deliveryEnabled = !empty($checkout['deliveryEnabled']);
+        $requestedMode = isset($_POST['fulfillmentMode']) ? sanitize_key(wp_unslash($_POST['fulfillmentMode'])) : '';
+        $mode = ($requestedMode === 'delivery' && $deliveryEnabled) ? 'delivery' : 'pickup';
+
         $itemsIn = isset($_POST['items']) ? json_decode(wp_unslash($_POST['items']), true) : [];
         if (!is_array($itemsIn)) { $itemsIn = []; }
         $byId = [];
         foreach ((array) ($checkout['products'] ?? []) as $p) { $byId[$p['id']] = $p; }
 
         $lines = [];
-        $total = 0;
+        $subtotal = 0;
+        $deliveryFeeTotal = 0;
         foreach ($itemsIn as $it) {
             $pid = isset($it['id']) ? sanitize_text_field($it['id']) : '';
             $qty = isset($it['qty']) ? max(0, intval($it['qty'])) : 0;
             if (!$qty || !isset($byId[$pid])) { continue; }
             $p = $byId[$pid];
-            $lineTotal = round(((float) $p['price']) * $qty, 2);
-            $lines[] = ['id' => $pid, 'name' => $p['name'], 'price' => (float) $p['price'], 'qty' => $qty, 'lineTotal' => $lineTotal];
-            $total += $lineTotal;
+
+            // --- Optionen validieren + Aufschlag (pro Gruppe genau eine Option) ---
+            $selectedIds = (isset($it['optionIds']) && is_array($it['optionIds'])) ? array_map('strval', $it['optionIds']) : [];
+            $chosenOpts = [];
+            foreach ((array) (isset($p['optionGroups']) ? $p['optionGroups'] : []) as $g) {
+                $match = null;
+                foreach ((array) $g['options'] as $o) {
+                    if (in_array((string) $o['id'], $selectedIds, true)) { $match = $o; break; }
+                }
+                if (!$match) {
+                    wp_send_json_error(['message' => sprintf(__('Bitte eine Auswahl für „%1$s" bei „%2$s" treffen.', 'easycheckout'), $g['name'], $p['name'])], 400);
+                }
+                $chosenOpts[] = ['group' => $g['name'], 'label' => $match['label'], 'priceModifier' => (float) $match['priceModifier']];
+            }
+
+            // --- Infofelder validieren (Pflichtfelder) ---
+            $answers = [];
+            $fieldValues = (isset($it['fieldValues']) && is_array($it['fieldValues'])) ? $it['fieldValues'] : [];
+            foreach ((array) (isset($p['customFields']) ? $p['customFields'] : []) as $f) {
+                $raw = isset($fieldValues[$f['id']]) ? $fieldValues[$f['id']] : null;
+                if ($f['fieldType'] === 'checkbox') {
+                    $allowed = (array) $f['options'];
+                    $arr = is_array($raw) ? array_map('sanitize_text_field', $raw) : ($raw !== null && $raw !== '' ? [sanitize_text_field($raw)] : []);
+                    $val = array_values(array_filter($arr, function ($x) use ($allowed) { return in_array($x, $allowed, true); }));
+                    $empty = count($val) === 0;
+                } else {
+                    $val = $raw !== null ? sanitize_text_field($raw) : '';
+                    $empty = ($val === '');
+                }
+                if (!empty($f['required']) && $empty) {
+                    wp_send_json_error(['message' => sprintf(__('Bitte „%1$s" bei „%2$s" ausfüllen.', 'easycheckout'), $f['label'], $p['name'])], 400);
+                }
+                if (!$empty) { $answers[] = ['label' => $f['label'], 'value' => $val]; }
+            }
+
+            // --- Preis (Modus-Preis + Options-Aufschlag), Liefergebuehr pro Zeile ---
+            $surcharge = 0;
+            foreach ($chosenOpts as $c) { $surcharge += $c['priceModifier']; }
+            $unit = round(self::base_unit($p, $mode) + $surcharge, 2);
+            $lineTotal = round($unit * $qty, 2);
+            $lineFee = self::line_delivery_fee($p, $mode);
+            $subtotal += $lineTotal;
+            $deliveryFeeTotal += $lineFee;
+
+            $line = ['id' => $pid, 'name' => $p['name'], 'price' => $unit, 'qty' => $qty, 'lineTotal' => $lineTotal];
+            if ($chosenOpts) { $line['options'] = $chosenOpts; }
+            if ($answers) { $line['customFields'] = $answers; }
+            if ($lineFee) { $line['deliveryFee'] = $lineFee; }
+            $lines[] = $line;
         }
         if (!$lines) { wp_send_json_error(['message' => __('Warenkorb ist leer.', 'easycheckout')], 400); }
+        $deliveryFeeTotal = round($deliveryFeeTotal, 2);
+        $total = round($subtotal + $deliveryFeeTotal, 2);
 
         $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
         $name  = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
@@ -429,7 +574,6 @@ class Native_Dashboard {
             wp_send_json_error(['message' => __('Bitte vollständige Rechnungsadresse angeben.', 'easycheckout')], 400);
         }
 
-        $total = round($total, 2);
         $ref = 'EC-' . strtoupper(wp_generate_password(6, false, false));
         $order = [
             'id'            => 'ord_' . wp_generate_password(10, false, false),
@@ -444,6 +588,8 @@ class Native_Dashboard {
             'billing'       => $billing,
             'delivery'      => $delivery,
             'sameAddress'   => $sameAddr,
+            'fulfillmentMode' => $mode,
+            'deliveryFeeTotal' => $deliveryFeeTotal ?: null,
             'items'         => $lines,
             'total'         => $total,
             'currency'      => $checkout['currency'] ?? 'CHF',
@@ -472,13 +618,28 @@ class Native_Dashboard {
             $itemsTxt = '';
             foreach ($lines as $l) {
                 $itemsTxt .= sprintf("- %d× %s   %s %s\n", $l['qty'], $l['name'], $cur, number_format($l['lineTotal'], 2, '.', "'"));
+                if (!empty($l['options'])) {
+                    foreach ($l['options'] as $o) { $itemsTxt .= "    • " . $o['label'] . "\n"; }
+                }
+                if (!empty($l['customFields'])) {
+                    foreach ($l['customFields'] as $f) {
+                        $v = is_array($f['value']) ? implode(', ', $f['value']) : $f['value'];
+                        $itemsTxt .= "    • " . $f['label'] . ": " . $v . "\n";
+                    }
+                }
+                if (!empty($l['deliveryFee'])) {
+                    $itemsTxt .= sprintf("    • Liefergebühr   %s %s\n", $cur, number_format($l['deliveryFee'], 2, '.', "'"));
+                }
             }
-            $delivTxt = $sameAddr ? '' : ("Lieferadresse:\n" . $name . "\n" . $fmtAddr($delivery) . "\n\n");
+            $modeTxt = ($mode === 'delivery') ? "Lieferung" : "Abholung";
+            $delivTxt = ($mode === 'delivery' && !$sameAddr) ? ("Lieferadresse:\n" . $name . "\n" . $fmtAddr($delivery) . "\n\n") : '';
             $body = "Vielen Dank für deine Bestellung ({$ref}).\n\n"
                 . $issuer
                 . "Rechnungsadresse:\n" . $name . ($company ? "\n{$company}" : '') . "\n" . $fmtAddr($billing) . "\n\n"
                 . $delivTxt
+                . "Art: {$modeTxt}\n\n"
                 . "Positionen:\n" . $itemsTxt
+                . ($deliveryFeeTotal ? ("Liefergebühren: {$cur} " . number_format($deliveryFeeTotal, 2, '.', "'") . "\n") : '')
                 . "Total: {$cur} " . number_format($total, 2, '.', "'") . "\n\n"
                 . "Bitte überweise den Betrag an:\n"
                 . "IBAN: " . ($bank['iban'] ?: '—') . "\n"

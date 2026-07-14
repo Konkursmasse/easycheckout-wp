@@ -1065,6 +1065,147 @@
 		);
 	}
 
+	function ecUid( prefix ) { return ( prefix || 'x_' ) + Math.random().toString( 36 ).slice( 2, 8 ); }
+
+	// Voller Produkt-Editor (Modal) fuer den lokalen Checkout: Basis, Fulfillment-
+	// Preise, Optionsgruppen (S/M/L/Farben) mit Aufschlag und Infofelder (Text/
+	// Checkboxen). Gibt das bereinigte Produkt via onSave zurueck.
+	function LocalProductEditor( props ) {
+		var p0 = props.product || {};
+		var s = useState( {
+			id: p0.id || '',
+			name: p0.name || '', price: p0.price != null ? p0.price : '', description: p0.description || '',
+			imageUrl: p0.imageUrl || '', categoryId: p0.categoryId || '',
+			pickupPrice: p0.pickupPrice != null ? p0.pickupPrice : '',
+			deliveryPrice: p0.deliveryPrice != null ? p0.deliveryPrice : '',
+			deliveryFee: p0.deliveryFee != null ? p0.deliveryFee : '',
+			optionGroups: ( p0.optionGroups || [] ).map( function ( g ) { return { id: g.id, name: g.name, options: ( g.options || [] ).map( function ( o ) { return { id: o.id, label: o.label, priceModifier: o.priceModifier != null ? o.priceModifier : 0 }; } ) }; } ),
+			customFields: ( p0.customFields || [] ).map( function ( f ) { return { id: f.id, label: f.label, fieldType: f.fieldType || 'text', required: !! f.required, options: ( f.options || [] ).slice() }; } ),
+			imgBusy: false, error: ''
+		} );
+		var st = s[ 0 ], set = s[ 1 ];
+		function up( o ) { set( Object.assign( {}, st, o ) ); }
+
+		// Optionsgruppen
+		function addGroup() { up( { optionGroups: st.optionGroups.concat( [ { name: '', options: [ { label: '', priceModifier: 0 } ] } ] ) } ); }
+		function delGroup( gi ) { var g = st.optionGroups.slice(); g.splice( gi, 1 ); up( { optionGroups: g } ); }
+		function setGroup( gi, k, v ) { var g = st.optionGroups.slice(); g[ gi ] = Object.assign( {}, g[ gi ] ); g[ gi ][ k ] = v; up( { optionGroups: g } ); }
+		function addOpt( gi ) { var g = st.optionGroups.slice(); g[ gi ] = Object.assign( {}, g[ gi ], { options: g[ gi ].options.concat( [ { label: '', priceModifier: 0 } ] ) } ); up( { optionGroups: g } ); }
+		function delOpt( gi, oi ) { var g = st.optionGroups.slice(); var os = g[ gi ].options.slice(); os.splice( oi, 1 ); g[ gi ] = Object.assign( {}, g[ gi ], { options: os } ); up( { optionGroups: g } ); }
+		function setOpt( gi, oi, k, v ) { var g = st.optionGroups.slice(); var os = g[ gi ].options.slice(); os[ oi ] = Object.assign( {}, os[ oi ] ); os[ oi ][ k ] = v; g[ gi ] = Object.assign( {}, g[ gi ], { options: os } ); up( { optionGroups: g } ); }
+
+		// Infofelder
+		function addField() { up( { customFields: st.customFields.concat( [ { label: '', fieldType: 'text', required: false, options: [] } ] ) } ); }
+		function delField( fi ) { var f = st.customFields.slice(); f.splice( fi, 1 ); up( { customFields: f } ); }
+		function setField( fi, k, v ) { var f = st.customFields.slice(); f[ fi ] = Object.assign( {}, f[ fi ] ); f[ fi ][ k ] = v; if ( k === 'fieldType' && v === 'checkbox' && ( ! f[ fi ].options || ! f[ fi ].options.length ) ) { f[ fi ].options = [ '' ]; } up( { customFields: f } ); }
+		function addChoice( fi ) { var f = st.customFields.slice(); f[ fi ] = Object.assign( {}, f[ fi ], { options: ( f[ fi ].options || [] ).concat( [ '' ] ) } ); up( { customFields: f } ); }
+		function delChoice( fi, ci ) { var f = st.customFields.slice(); var os = ( f[ fi ].options || [] ).slice(); os.splice( ci, 1 ); f[ fi ] = Object.assign( {}, f[ fi ], { options: os } ); up( { customFields: f } ); }
+		function setChoice( fi, ci, v ) { var f = st.customFields.slice(); var os = ( f[ fi ].options || [] ).slice(); os[ ci ] = v; f[ fi ] = Object.assign( {}, f[ fi ], { options: os } ); up( { customFields: f } ); }
+
+		function doSave() {
+			if ( ! st.name.trim() ) { up( { error: 'Bitte einen Produktnamen angeben.' } ); return; }
+			var product = {
+				id: st.id || ecUid( 'p_' ),
+				name: st.name.trim(),
+				price: parseFloat( st.price ) || 0,
+				description: st.description,
+				imageUrl: st.imageUrl,
+				categoryId: st.categoryId || null,
+				pickupPrice: st.pickupPrice === '' ? null : ( parseFloat( st.pickupPrice ) || 0 ),
+				deliveryPrice: st.deliveryPrice === '' ? null : ( parseFloat( st.deliveryPrice ) || 0 ),
+				deliveryFee: st.deliveryFee === '' ? null : ( parseFloat( st.deliveryFee ) || 0 ),
+				optionGroups: st.optionGroups.map( function ( g ) {
+					return { id: g.id || ecUid( 'g_' ), name: g.name, options: ( g.options || [] ).filter( function ( o ) { return String( o.label ).trim() !== ''; } ).map( function ( o ) { return { id: o.id || ecUid( 'o_' ), label: o.label, priceModifier: parseFloat( o.priceModifier ) || 0 }; } ) };
+				} ).filter( function ( g ) { return String( g.name ).trim() !== '' && g.options.length; } ),
+				customFields: st.customFields.map( function ( f ) {
+					var opts = ( f.fieldType === 'checkbox' ) ? ( f.options || [] ).map( function ( x ) { return String( x ).trim(); } ).filter( Boolean ) : [];
+					return { id: f.id || ecUid( 'f_' ), label: f.label, fieldType: f.fieldType, required: !! f.required, options: opts };
+				} ).filter( function ( f ) { return String( f.label ).trim() !== '' && ( f.fieldType !== 'checkbox' || f.options.length ); } )
+			};
+			props.onSave( product );
+		}
+
+		var cur = props.currency || 'CHF';
+		return el( 'div', { className: 'ec-modal', onClick: props.onClose },
+			el( 'div', { className: 'ec-modal-card ec-modal-lg', onClick: function ( e ) { e.stopPropagation(); } },
+				el( 'button', { className: 'ec-modal-x', onClick: props.onClose, 'aria-label': 'Schliessen' }, '×' ),
+				el( 'h3', null, st.id ? 'Produkt bearbeiten' : 'Neues Produkt' ),
+				ErrorBox( st.error ),
+				// Basis
+				el( 'div', { className: 'ec-two' },
+					Field( 'Name', el( 'input', { type: 'text', value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
+					Field( 'Preis (' + cur + ')', el( 'input', { type: 'number', step: '0.05', value: st.price, onChange: function ( e ) { up( { price: e.target.value } ); } } ) )
+				),
+				Field( 'Beschreibung', el( 'input', { type: 'text', value: st.description, onChange: function ( e ) { up( { description: e.target.value } ); } } ) ),
+				( props.categories && props.categories.length ) ? Field( 'Kategorie', el( 'select', { value: st.categoryId || '', onChange: function ( e ) { up( { categoryId: e.target.value } ); } },
+					el( 'option', { value: '' }, '— keine —' ),
+					props.categories.map( function ( c ) { return el( 'option', { key: c.id, value: c.id }, c.name || '(ohne Name)' ); } )
+				) ) : null,
+				Field( 'Bild', el( 'div', null,
+					st.imageUrl ? el( 'img', { src: st.imageUrl, className: 'ec-thumb-lg' } ) : null,
+					el( 'div', { style: { display: 'flex', gap: '8px', marginTop: st.imageUrl ? '8px' : '0' } },
+						FilePick( st.imgBusy ? 'Lädt…' : ( st.imageUrl ? 'Bild ändern' : 'Bild hochladen' ), function ( f ) { up( { imgBusy: true } ); localUpload( f ).then( function ( d ) { up( { imageUrl: d.url, imgBusy: false } ); } ).catch( function ( e ) { up( { imgBusy: false, error: e.message } ); } ); } ),
+						st.imageUrl ? el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { up( { imageUrl: '' } ); } }, 'Entfernen' ) : null
+					)
+				) ),
+				// Fulfillment-Preise
+				el( 'h4', { className: 'ec-sub-h' }, 'Liefer-/Abholpreise (optional)' ),
+				el( 'p', { className: 'ec-hint' }, 'Leer lassen = Standardpreis gilt. Liefergebühr wird einmal pro Position berechnet (nur bei Lieferung).' ),
+				el( 'div', { className: 'ec-three' },
+					Field( 'Abholpreis', el( 'input', { type: 'number', step: '0.05', placeholder: 'Standard', value: st.pickupPrice, onChange: function ( e ) { up( { pickupPrice: e.target.value } ); } } ) ),
+					Field( 'Lieferpreis', el( 'input', { type: 'number', step: '0.05', placeholder: 'Standard', value: st.deliveryPrice, onChange: function ( e ) { up( { deliveryPrice: e.target.value } ); } } ) ),
+					Field( 'Liefergebühr', el( 'input', { type: 'number', step: '0.05', placeholder: '0.00', value: st.deliveryFee, onChange: function ( e ) { up( { deliveryFee: e.target.value } ); } } ) )
+				),
+				// Optionsgruppen
+				el( 'h4', { className: 'ec-sub-h' }, 'Optionen (z. B. Grösse, Farbe)' ),
+				st.optionGroups.map( function ( g, gi ) {
+					return el( 'div', { key: gi, className: 'ec-subcard' },
+						el( 'div', { className: 'ec-inline-form', style: { alignItems: 'center' } },
+							el( 'input', { type: 'text', placeholder: 'Gruppenname (z. B. Grösse)', value: g.name, onChange: function ( e ) { setGroup( gi, 'name', e.target.value ); } } ),
+							el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delGroup( gi ); } }, 'Gruppe entfernen' )
+						),
+						( g.options || [] ).map( function ( o, oi ) {
+							return el( 'div', { key: oi, className: 'ec-inline-form', style: { alignItems: 'center', marginTop: 6 } },
+								el( 'input', { type: 'text', placeholder: 'Option (z. B. L)', value: o.label, onChange: function ( e ) { setOpt( gi, oi, 'label', e.target.value ); } } ),
+								el( 'input', { type: 'number', step: '0.05', placeholder: 'Aufschlag', style: { maxWidth: '120px' }, value: o.priceModifier, onChange: function ( e ) { setOpt( gi, oi, 'priceModifier', e.target.value ); } } ),
+								el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delOpt( gi, oi ); } }, '×' )
+							);
+						} ),
+						el( 'button', { className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: function () { addOpt( gi ); } }, '+ Option' )
+					);
+				} ),
+				el( 'button', { className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: addGroup }, '+ Optionsgruppe' ),
+				// Infofelder
+				el( 'h4', { className: 'ec-sub-h' }, 'Infofelder (z. B. Allergien, Grösse)' ),
+				st.customFields.map( function ( f, fi ) {
+					return el( 'div', { key: fi, className: 'ec-subcard' },
+						el( 'div', { className: 'ec-inline-form', style: { alignItems: 'center' } },
+							el( 'input', { type: 'text', placeholder: 'Feldname (z. B. Allergien)', value: f.label, onChange: function ( e ) { setField( fi, 'label', e.target.value ); } } ),
+							el( 'select', { value: f.fieldType, onChange: function ( e ) { setField( fi, 'fieldType', e.target.value ); } }, el( 'option', { value: 'text' }, 'Textfeld' ), el( 'option', { value: 'checkbox' }, 'Checkboxen' ) ),
+							el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! f.required, onChange: function ( e ) { setField( fi, 'required', e.target.checked ); } } ), el( 'span', null, 'Pflicht' ) ),
+							el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delField( fi ); } }, '×' )
+						),
+						f.fieldType === 'checkbox' ? el( 'div', { style: { marginTop: 8 } },
+							( f.options || [] ).map( function ( opt, ci ) {
+								return el( 'div', { key: ci, className: 'ec-inline-form', style: { alignItems: 'center', marginTop: 6 } },
+									el( 'input', { type: 'text', placeholder: 'Auswahl (z. B. Vegetarisch)', value: opt, onChange: function ( e ) { setChoice( fi, ci, e.target.value ); } } ),
+									el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delChoice( fi, ci ); } }, '×' )
+								);
+							} ),
+							el( 'button', { className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: function () { addChoice( fi ); } }, '+ Auswahl' )
+						) : null
+					);
+				} ),
+				el( 'button', { className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: addField }, '+ Infofeld' ),
+				// Footer
+				el( 'div', { style: { display: 'flex', gap: '8px', marginTop: '18px' } },
+					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: doSave }, 'Übernehmen' ),
+					el( 'button', { className: 'ec-btn', onClick: props.onClose }, 'Abbrechen' )
+				)
+			)
+		);
+	}
+
 	function LocalCheckoutEditor( props ) {
 		var c0 = props.checkout;
 		var s = useState( {
@@ -1074,23 +1215,32 @@
 			bank: ( c0.paymentMethods || [] ).indexOf( 'bank' ) !== -1,
 			vatEnabled: !! c0.vatEnabled, vatRate: c0.vatRate != null ? c0.vatRate : 8.1,
 			currency: c0.currency || 'CHF',
+			productsTitle: c0.productsTitle || '',
+			pickupEnabled: c0.pickupEnabled !== false,
+			deliveryEnabled: !! c0.deliveryEnabled,
+			categorySelection: c0.categorySelection || 'multiple',
+			categories: ( c0.categories || [] ).slice(),
 			products: ( c0.products || [] ).slice(),
-			pName: '', pPrice: '', pDesc: '', pImage: '', pImgBusy: false, busy: false, saved: false, error: ''
+			editing: null,   // null | Index | 'new'
+			busy: false, saved: false, error: ''
 		} );
 		var st = s[ 0 ], set = s[ 1 ];
 		function up( o ) { set( Object.assign( {}, st, o, { saved: false } ) ); }
-		function addProduct() {
-			if ( ! st.pName.trim() ) { return; }
-			var np = st.products.concat( [ { name: st.pName, price: parseFloat( st.pPrice ) || 0, description: st.pDesc, imageUrl: st.pImage } ] );
-			set( Object.assign( {}, st, { products: np, pName: '', pPrice: '', pDesc: '', pImage: '', saved: false } ) );
-		}
 		function delProduct( i ) { var np = st.products.slice(); np.splice( i, 1 ); up( { products: np } ); }
-		function setProductImage( i, url ) { var np = st.products.slice(); np[ i ] = Object.assign( {}, np[ i ], { imageUrl: url } ); up( { products: np } ); }
-		function uploadNewImage( f ) {
-			set( Object.assign( {}, st, { pImgBusy: true, error: '' } ) );
-			localUpload( f ).then( function ( d ) { set( Object.assign( {}, st, { pImage: d.url, pImgBusy: false } ) ); } )
-				.catch( function ( e ) { set( Object.assign( {}, st, { pImgBusy: false, error: e.message } ) ); } );
+		function saveProduct( product ) {
+			var np = st.products.slice();
+			if ( st.editing === 'new' ) { np.push( product ); } else { np[ st.editing ] = product; }
+			set( Object.assign( {}, st, { products: np, editing: null, saved: false } ) );
 		}
+		// Kategorien
+		function addCategory() { up( { categories: st.categories.concat( [ { id: ecUid( 'c_' ), name: '', description: '', singleProduct: false, allowQuantity: true } ] ) } ); }
+		function delCategory( i ) {
+			var cats = st.categories.slice(); var removed = cats[ i ]; cats.splice( i, 1 );
+			var np = st.products.map( function ( p ) { return ( p.categoryId === removed.id ) ? Object.assign( {}, p, { categoryId: null } ) : p; } );
+			up( { categories: cats, products: np } );
+		}
+		function setCategory( i, k, v ) { var cats = st.categories.slice(); cats[ i ] = Object.assign( {}, cats[ i ] ); cats[ i ][ k ] = v; up( { categories: cats } ); }
+		function catName( id ) { var c = st.categories.filter( function ( x ) { return x.id === id; } )[ 0 ]; return c ? c.name : ''; }
 		function save() {
 			up( { busy: true, error: '' } );
 			var pm = st.bank ? [ 'bank' ] : [];
@@ -1099,11 +1249,21 @@
 				design: { primary: st.primary, logoUrl: st.logoUrl },
 				paymentMethods: pm.length ? pm : [ 'bank' ],
 				vatEnabled: st.vatEnabled, vatRate: st.vatRate, currency: st.currency,
+				productsTitle: st.productsTitle,
+				pickupEnabled: st.pickupEnabled, deliveryEnabled: st.deliveryEnabled,
+				categorySelection: st.categorySelection, categories: st.categories,
 				products: st.products
 			};
 			localApi( 'save', { data: JSON.stringify( payload ) } ).then( function () {
 				set( Object.assign( {}, st, { busy: false, saved: true } ) );
 			} ).catch( function ( e ) { set( Object.assign( {}, st, { busy: false, error: e.message } ) ); } );
+		}
+		function prodBadges( p ) {
+			var b = [];
+			if ( ( p.optionGroups || [] ).length ) { b.push( ( p.optionGroups || [] ).length + ' Option(en)' ); }
+			if ( ( p.customFields || [] ).length ) { b.push( ( p.customFields || [] ).length + ' Infofeld(er)' ); }
+			if ( p.deliveryPrice != null || p.pickupPrice != null || p.deliveryFee != null ) { b.push( 'Liefer/Abhol' ); }
+			return b.length ? el( 'span', { className: 'ec-tags' }, b.join( ' · ' ) ) : null;
 		}
 		return el( 'div', null,
 			el( 'div', { className: 'ec-page-head' },
@@ -1120,6 +1280,7 @@
 					el( 'h3', null, 'Allgemein' ),
 					Field( 'Name', el( 'input', { type: 'text', value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
 					Field( 'Slug (URL)', el( 'input', { type: 'text', value: st.slug, onChange: function ( e ) { up( { slug: e.target.value } ); } } ) ),
+					Field( 'Titel der Produktliste', el( 'input', { type: 'text', placeholder: 'Produkte', value: st.productsTitle, onChange: function ( e ) { up( { productsTitle: e.target.value } ); } } ) ),
 					Field( 'Primärfarbe', el( 'div', { className: 'ec-color-row' }, el( 'input', { type: 'color', value: st.primary, onChange: function ( e ) { up( { primary: e.target.value } ); } } ), el( 'input', { type: 'text', value: st.primary, onChange: function ( e ) { up( { primary: e.target.value } ); } } ) ) ),
 					Field( 'Währung', el( 'input', { type: 'text', value: st.currency, maxLength: 3, onChange: function ( e ) { up( { currency: e.target.value.toUpperCase() } ); } } ) ),
 					Field( 'Logo', el( 'div', null,
@@ -1135,36 +1296,62 @@
 					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.bank, onChange: function ( e ) { up( { bank: e.target.checked } ); } } ), el( 'span', null, 'Banküberweisung (ohne Konto)' ) ),
 					el( 'p', { className: 'ec-hint' }, 'Karte & TWINT benötigen ein verbundenes Konto.' ),
 					el( 'button', { className: 'ec-btn ec-btn-sm', onClick: props.onConnect, style: { marginTop: 8 } }, 'Konto verbinden für Online-Zahlung' ),
+					el( 'h3', { style: { marginTop: 18 } }, 'Abholung & Lieferung' ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.pickupEnabled, onChange: function ( e ) { up( { pickupEnabled: e.target.checked } ); } } ), el( 'span', null, 'Abholung anbieten' ) ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.deliveryEnabled, onChange: function ( e ) { up( { deliveryEnabled: e.target.checked } ); } } ), el( 'span', null, 'Lieferung anbieten (mit Liefergebühr je Produkt)' ) ),
 					el( 'h3', { style: { marginTop: 18 } }, 'MwSt.' ),
 					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.vatEnabled, onChange: function ( e ) { up( { vatEnabled: e.target.checked } ); } } ), el( 'span', null, 'MwSt. ausweisen' ) ),
 					st.vatEnabled && Field( 'MwSt-Satz (%)', el( 'input', { type: 'number', step: '0.1', value: st.vatRate, onChange: function ( e ) { up( { vatRate: e.target.value } ); } } ) )
 				)
 			),
 			el( 'div', { className: 'ec-card', style: { marginTop: 16 } },
-				el( 'h3', null, 'Produkte' ),
+				el( 'h3', null, 'Kategorien (optional)' ),
+				el( 'p', { className: 'ec-hint' }, 'Gruppiere Produkte. „Nur ein Produkt" = Auswahl per Radio; „Menge fix 1" = kein Mengenzähler.' ),
+				st.categories.length ? el( 'div', null, st.categories.map( function ( cat, i ) {
+					return el( 'div', { key: cat.id || i, className: 'ec-subcard' },
+						el( 'div', { className: 'ec-inline-form', style: { alignItems: 'center' } },
+							el( 'input', { type: 'text', placeholder: 'Kategoriename', value: cat.name, onChange: function ( e ) { setCategory( i, 'name', e.target.value ); } } ),
+							el( 'input', { type: 'text', placeholder: 'Beschreibung (optional)', value: cat.description || '', onChange: function ( e ) { setCategory( i, 'description', e.target.value ); } } ),
+							el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delCategory( i ); } }, 'Entfernen' )
+						),
+						el( 'div', { style: { display: 'flex', gap: '16px', marginTop: 6, flexWrap: 'wrap' } },
+							el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! cat.singleProduct, onChange: function ( e ) { setCategory( i, 'singleProduct', e.target.checked ); } } ), el( 'span', null, 'Nur ein Produkt wählbar' ) ),
+							el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: cat.allowQuantity !== false, onChange: function ( e ) { setCategory( i, 'allowQuantity', e.target.checked ); } } ), el( 'span', null, 'Menge wählbar' ) )
+						)
+					);
+				} ) ) : el( 'p', { className: 'ec-muted' }, 'Keine Kategorien.' ),
+				el( 'div', { style: { display: 'flex', gap: '8px', marginTop: 10, alignItems: 'center', flexWrap: 'wrap' } },
+					el( 'button', { className: 'ec-btn ec-btn-sm', onClick: addCategory }, '+ Kategorie' ),
+					st.categories.length ? el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.categorySelection === 'single', onChange: function ( e ) { up( { categorySelection: e.target.checked ? 'single' : 'multiple' } ); } } ), el( 'span', null, 'Kunde darf nur aus EINER Kategorie wählen' ) ) : null
+				)
+			),
+			el( 'div', { className: 'ec-card', style: { marginTop: 16 } },
+				el( 'div', { className: 'ec-page-head' },
+					el( 'h3', { style: { margin: 0 } }, 'Produkte' ),
+					el( 'button', { className: 'ec-btn ec-btn-primary ec-btn-sm', onClick: function () { up( { editing: 'new' } ); } }, '+ Produkt' ) ),
 				st.products.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Produkte.' ) :
 					el( 'table', { className: 'ec-table' },
-						el( 'thead', null, el( 'tr', null, el( 'th', null, 'Bild' ), el( 'th', null, 'Produkt' ), el( 'th', null, 'Preis' ), el( 'th', null, '' ) ) ),
+						el( 'thead', null, el( 'tr', null, el( 'th', null, 'Bild' ), el( 'th', null, 'Produkt' ), el( 'th', null, 'Kategorie' ), el( 'th', null, 'Preis' ), el( 'th', null, '' ) ) ),
 						el( 'tbody', null, st.products.map( function ( p, i ) {
 							return el( 'tr', { key: p.id || i },
 								el( 'td', null, p.imageUrl ? el( 'img', { src: p.imageUrl, className: 'ec-thumb' } ) : el( 'span', { className: 'ec-thumb ec-thumb-empty' } ) ),
-								el( 'td', null, p.name || '—' ),
+								el( 'td', null, el( 'div', null, p.name || '—' ), prodBadges( p ) ),
+								el( 'td', null, p.categoryId ? catName( p.categoryId ) : '—' ),
 								el( 'td', null, fmtMoney( p.price, st.currency ) ),
 								el( 'td', { style: { textAlign: 'right' } },
-									FilePick( p.imageUrl ? 'Bild ändern' : 'Bild', function ( f ) { localUpload( f ).then( function ( d ) { setProductImage( i, d.url ); } ).catch( function ( e ) { up( { error: e.message } ); } ); } ),
+									el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { up( { editing: i } ); } }, 'Bearbeiten' ),
 									el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger ec-ml', onClick: function () { delProduct( i ); } }, 'Entfernen' ) ) );
 						} ) )
 					),
-				el( 'div', { className: 'ec-inline-form', style: { marginTop: 12, alignItems: 'center' } },
-					st.pImage ? el( 'img', { src: st.pImage, className: 'ec-thumb' } ) : null,
-					el( 'input', { type: 'text', placeholder: 'Produktname', value: st.pName, onChange: function ( e ) { up( { pName: e.target.value } ); } } ),
-					el( 'input', { type: 'number', step: '0.05', placeholder: 'Preis', value: st.pPrice, onChange: function ( e ) { up( { pPrice: e.target.value } ); } } ),
-					el( 'input', { type: 'text', placeholder: 'Beschreibung (optional)', value: st.pDesc, onChange: function ( e ) { up( { pDesc: e.target.value } ); } } ),
-					FilePick( st.pImgBusy ? 'Lädt…' : ( st.pImage ? 'Bild ✓' : 'Bild' ), uploadNewImage ),
-					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: addProduct }, '+ Produkt' )
-				),
 				el( 'p', { className: 'ec-hint' }, 'Danach oben rechts „Speichern" nicht vergessen.' )
 			),
+			st.editing !== null ? el( LocalProductEditor, {
+				product: st.editing === 'new' ? {} : st.products[ st.editing ],
+				currency: st.currency,
+				categories: st.categories,
+				onSave: saveProduct,
+				onClose: function () { up( { editing: null } ); }
+			} ) : null,
 			el( 'div', { className: 'ec-card', style: { marginTop: 16 } },
 				el( 'h3', null, 'Einbindung' ),
 				el( 'p', { className: 'ec-hint', style: { marginBottom: 12 } }, 'So bindest du diesen Checkout auf deiner Website ein (bitte zuerst speichern):' ),
@@ -1305,16 +1492,27 @@
 					el( 'h3', null, 'Bestellung ' + o.ref ),
 					row( 'Status', ( STAT[ o.status ] || [ o.status ] )[ 0 ] ),
 					row( 'Datum', fmtDate( o.createdAt ) ),
+					o.fulfillmentMode ? row( 'Art', o.fulfillmentMode === 'delivery' ? 'Lieferung' : 'Abholung' ) : null,
 					row( 'Kunde', o.customerName ),
 					o.customerCompany ? row( 'Firma', o.customerCompany ) : null,
 					row( 'E-Mail', o.customerEmail ),
 					o.customerPhone ? row( 'Telefon', o.customerPhone ) : null,
 					row( 'Rechnungsadresse', addr( o.billing ) ),
-					( ! o.sameAddress ) ? row( 'Lieferadresse', addr( o.delivery ) ) : null,
+					( o.fulfillmentMode === 'delivery' && ! o.sameAddress ) ? row( 'Lieferadresse', addr( o.delivery ) ) : null,
 					el( 'table', { className: 'ec-table', style: { margin: '14px 0' } },
 						el( 'thead', null, el( 'tr', null, el( 'th', null, 'Produkt' ), el( 'th', null, 'Menge' ), el( 'th', null, 'Betrag' ) ) ),
-						el( 'tbody', null, ( o.items || [] ).map( function ( it, i ) { return el( 'tr', { key: i }, el( 'td', null, it.name ), el( 'td', null, it.qty ), el( 'td', null, fmtMoney( it.lineTotal, o.currency ) ) ); } ) )
+						el( 'tbody', null, ( o.items || [] ).map( function ( it, i ) {
+							var subs = [];
+							( it.options || [] ).forEach( function ( op ) { subs.push( op.label ); } );
+							( it.customFields || [] ).forEach( function ( f ) { subs.push( f.label + ': ' + ( Array.isArray( f.value ) ? f.value.join( ', ' ) : f.value ) ); } );
+							if ( it.deliveryFee ) { subs.push( 'Liefergebühr ' + fmtMoney( it.deliveryFee, o.currency ) ); }
+							return el( 'tr', { key: i },
+								el( 'td', null, el( 'div', null, it.name ), subs.length ? el( 'span', { className: 'ec-tags' }, subs.join( ' · ' ) ) : null ),
+								el( 'td', null, it.qty ),
+								el( 'td', null, fmtMoney( it.lineTotal, o.currency ) ) );
+						} ) )
 					),
+					( o.deliveryFeeTotal ) ? row( 'Liefergebühren', fmtMoney( o.deliveryFeeTotal, o.currency ) ) : null,
 					row( 'Total', fmtMoney( o.total, o.currency ) ),
 					el( 'div', { style: { display: 'flex', gap: '8px', marginTop: '16px', flexWrap: 'wrap' } },
 						o.status !== 'paid' ? el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { setStatus( o.id, 'paid' ); up( { detail: null } ); } }, 'Als bezahlt markieren' ) : null,

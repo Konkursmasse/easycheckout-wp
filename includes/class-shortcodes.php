@@ -321,6 +321,13 @@ class Shortcodes {
                 'price'       => (float) $p['price'],
                 'imageUrl'    => isset($p['imageUrl']) ? $p['imageUrl'] : '',
                 'categoryId'  => (isset($p['categoryId']) && $p['categoryId'] !== '') ? $p['categoryId'] : null,
+                // Fulfillment-Preise (null = Standardpreis) + Liefergebuehr.
+                'pickupPrice'   => (isset($p['pickupPrice']) && $p['pickupPrice'] !== null && $p['pickupPrice'] !== '') ? (float) $p['pickupPrice'] : null,
+                'deliveryPrice' => (isset($p['deliveryPrice']) && $p['deliveryPrice'] !== null && $p['deliveryPrice'] !== '') ? (float) $p['deliveryPrice'] : null,
+                'deliveryFee'   => (isset($p['deliveryFee']) && $p['deliveryFee'] !== null && $p['deliveryFee'] !== '') ? (float) $p['deliveryFee'] : null,
+                // Optionsgruppen + Infofelder.
+                'optionGroups'  => array_values((array) (isset($p['optionGroups']) ? $p['optionGroups'] : [])),
+                'customFields'  => array_values((array) (isset($p['customFields']) ? $p['customFields'] : [])),
             ];
         }
         $categories = [];
@@ -345,6 +352,8 @@ class Shortcodes {
                 'primary'    => $primary,
                 'vatEnabled' => !empty($c['vatEnabled']),
                 'vatRate'    => isset($c['vatRate']) ? (float) $c['vatRate'] : 0,
+                'pickupEnabled'   => !isset($c['pickupEnabled']) || !empty($c['pickupEnabled']),
+                'deliveryEnabled' => !empty($c['deliveryEnabled']),
                 'categorySelection' => isset($c['categorySelection']) ? $c['categorySelection'] : 'multiple',
                 'categories' => $categories,
                 'products'   => $products,

@@ -68,12 +68,21 @@
 .ec-color input[type=color] { width:38px; height:34px; padding:0; border:1px solid var(--ec-border); border-radius:6px; background:#fff; }
 .ec-color input[type=text] { flex:1; }
 .ec-two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.ec-three { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+@media (max-width:640px){ .ec-three { grid-template-columns:1fr; } }
 .ec-form-actions { grid-column:1 / -1; display:flex; gap:8px; margin-top:4px; }
+
+/* Produkt-Editor: Untertitel, Unterkarten, Badges */
+.ec-sub-h { margin:18px 0 6px; font-size:14px; font-weight:600; color:var(--ec-text); }
+.ec-subcard { border:1px solid var(--ec-border); border-radius:10px; padding:12px; margin-bottom:10px; background:#fafbfc; }
+.ec-tags { display:block; font-size:11px; color:var(--ec-muted); margin-top:3px; }
 
 /* Modal */
 .ec-modal { position:fixed; inset:0; background:rgba(17,24,39,.5); display:flex; align-items:flex-start; justify-content:center; padding:48px 16px; z-index:100000; overflow:auto; }
 .ec-modal-card { background:#fff; width:520px; max-width:96vw; border-radius:14px; padding:22px 24px; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+.ec-modal-card.ec-modal-lg { width:760px; }
 .ec-modal-card h3 { margin:0 0 14px; font-size:17px; }
+.ec-modal-card h4.ec-sub-h:first-of-type { margin-top:10px; }
 
 /* misc */
 .ec-thumb { width:34px; height:34px; object-fit:cover; border-radius:6px; border:1px solid var(--ec-border); display:inline-block; vertical-align:middle; }
