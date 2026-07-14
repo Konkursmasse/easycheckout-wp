@@ -487,8 +487,14 @@
 	// Die native Status-Karte (via server-seitigem JWT-Proxy) gibt den Schnellstatus,
 	// ohne dass man sich im Frame anmelden muss. „In neuem Tab" als Fallback, falls der
 	// Kamera-Schritt im iFrame vom Browser blockiert wird.
+	// Verifizierung: primaer als vollflaechige Weiterleitung auf die easyCheckout-
+	// Onboarding-Seite (Branchenstandard wie WooPayments/PayPal) – dort ist der Kunde
+	// top-level, Kamera/Selfie (Stripe Identity) und Login funktionieren sauber. Wir
+	// haengen ?return_url=<diese Seite> an → nach Abschluss leitet die Plattform
+	// automatisch WIEDER HIERHER zurueck. Alternativ laesst sich alles inline im
+	// Dashboard einbetten (iFrame, ohne return_url – sonst wuerde es sich selbst laden).
 	function OnboardingView() {
-		var s = useState( { status: null, acct: null, error: '' } );
+		var s = useState( { status: null, acct: null, error: '', embed: false } );
 		var st = s[ 0 ], set = s[ 1 ];
 		function load() {
 			api( 'GET', '/api/stripe/connect' ).then( function ( status ) {
@@ -499,23 +505,37 @@
 		useEffect( function () { load(); }, [] );
 
 		var appUrl = ( ecNative.appUrl || 'https://www.easycheckout.ch' ).replace( /\/$/, '' );
+		var backHere = window.location.href;
+		var startUrl = appUrl + '/onboarding?return_url=' + encodeURIComponent( backHere );
 		var frameUrl = appUrl + '/onboarding?embed=1';
 		var charges = st.status && ( st.status.chargesEnabled || ( st.acct && st.acct.chargesEnabled ) );
 		var statusLabel = ( st.acct && st.acct.status && ( st.acct.status.summary || st.acct.status.label ) ) || 'Verifizierung erforderlich';
+		function start() { window.location.href = startUrl; }
 
 		return el( 'div', null,
 			el( 'div', { className: 'ec-page-head' },
 				el( 'h2', null, 'Verifizierung' ),
-				el( 'a', { className: 'ec-btn ec-btn-sm', href: appUrl + '/onboarding', target: '_blank', rel: 'noopener' }, 'In neuem Tab öffnen ↗' ) ),
+				el( 'a', { className: 'ec-btn ec-btn-sm', href: startUrl, target: '_blank', rel: 'noopener' }, 'In neuem Tab öffnen ↗' ) ),
 			ErrorBox( st.error ),
 			el( 'div', { className: 'ec-card', style: { marginBottom: '16px' } },
 				el( 'h3', null, 'Status' ),
 				! st.status ? Spinner() : el( 'p', null, charges ? el( 'span', { className: 'ec-badge ec-badge-on' }, 'Zahlungen aktiv' ) : el( 'span', { className: 'ec-badge ec-badge-off' }, statusLabel ) ),
 				st.acct && st.acct.tasks && st.acct.tasks.length > 0 && el( 'ul', { className: 'ec-tasklist' }, st.acct.tasks.map( function ( t, i ) { return el( 'li', { key: i }, el( 'strong', null, t.title ), t.description && el( 'span', { className: 'ec-muted' }, ' — ' + t.description ) ); } ) )
 			),
-			el( 'div', { className: 'ec-card' },
-				el( 'p', { className: 'ec-hint', style: { marginBottom: 10 } }, 'Firma, Personen, wirtschaftlich Berechtigte (inkl. Ausweis-/Selfie-Prüfung und Unterschrift) sowie Bankverbindung – sicher über easyCheckout. Falls ein Login erscheint: einmalig mit deinen easyCheckout-Zugangsdaten anmelden.' ),
-				el( 'iframe', { src: frameUrl, className: 'ec-onboard-frame', allow: 'camera; microphone; clipboard-write; fullscreen', title: 'Verifizierung' } )
+			charges ? el( 'div', { className: 'ec-card' },
+				el( 'p', null, el( 'span', { className: 'ec-badge ec-badge-on' }, '✓ Verifizierung abgeschlossen' ) ),
+				el( 'p', { className: 'ec-hint', style: { marginTop: 8 } }, 'Dein Konto ist verifiziert – du kannst Zahlungen empfangen.' )
+			) : el( 'div', { className: 'ec-card' },
+				el( 'h3', null, 'Verifizierung abschliessen' ),
+				el( 'p', { className: 'ec-hint', style: { marginBottom: 12 } }, 'Firma, Personen, wirtschaftlich Berechtigte (inkl. Ausweis-/Selfie-Prüfung und Unterschrift) sowie Bankverbindung – sicher über easyCheckout. Nach Abschluss wirst du automatisch hierher zurückgeleitet.' ),
+				el( 'div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' } },
+					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: start }, 'Verifizierung auf easyCheckout starten →' ),
+					el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { embed: ! st.embed } ) ); } }, st.embed ? 'Einbettung ausblenden' : 'Stattdessen hier einbetten' )
+				),
+				st.embed ? el( 'div', { style: { marginTop: 14 } }, [
+					el( 'p', { key: 'h', className: 'ec-hint', style: { marginBottom: 8 } }, 'Falls ein Login erscheint: einmalig mit deinen easyCheckout-Zugangsdaten anmelden. Klappt die Kamera hier nicht, nutze „In neuem Tab öffnen".' ),
+					el( 'iframe', { key: 'f', src: frameUrl, className: 'ec-onboard-frame', allow: 'camera; microphone; clipboard-write; fullscreen', title: 'Verifizierung' } )
+				] ) : null
 			)
 		);
 	}
