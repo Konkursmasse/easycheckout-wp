@@ -480,8 +480,15 @@
 
 	var MCC = [ [ '5734', 'Software / IT' ], [ '7372', 'Programmierung' ], [ '5999', 'Einzelhandel (div.)' ], [ '5045', 'Computer/Zubehör' ], [ '7299', 'Dienstleistungen' ], [ '8999', 'Freiberuflich' ], [ '5812', 'Gastronomie' ], [ '5611', 'Bekleidung' ], [ '7991', 'Freizeit/Events' ] ];
 
+	// Verifizierung = eingebettete easyCheckout-Onboarding-Seite (single source of
+	// truth). So laufen ALLE Schritte automatisch mit – Firma, Personen, wirtschaftlich
+	// Berechtigte inkl. Ausweis-/Selfie-Pruefung (Stripe Identity) und elektronischer
+	// Unterschrift, Dokument-Nachforderungen, Bankverbindung – ohne Doppel-Nachbau/Drift.
+	// Die native Status-Karte (via server-seitigem JWT-Proxy) gibt den Schnellstatus,
+	// ohne dass man sich im Frame anmelden muss. „In neuem Tab" als Fallback, falls der
+	// Kamera-Schritt im iFrame vom Browser blockiert wird.
 	function OnboardingView() {
-		var s = useState( { status: null, acct: null, error: '', msg: '' } );
+		var s = useState( { status: null, acct: null, error: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
 		function load() {
 			api( 'GET', '/api/stripe/connect' ).then( function ( status ) {
@@ -490,31 +497,25 @@
 			} ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { error: err.message, status: {} } ); } ); } );
 		}
 		useEffect( function () { load(); }, [] );
-		function start() { api( 'POST', '/api/stripe/connect', { origin: window.location.origin } ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
-		function hosted() { api( 'POST', '/api/stripe/connect/onboarding-link', { origin: window.location.origin } ).then( function ( b ) { if ( b && b.url ) { window.open( b.url, '_blank', 'noopener' ); } else if ( b && b.redirectUrl ) { window.open( b.redirectUrl, '_blank', 'noopener' ); } else { window.alert( 'Onboarding bereits abgeschlossen.' ); } } ).catch( function ( err ) { window.alert( err.message ); } ); }
 
-		if ( ! st.status ) { return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Verifizierung' ) ), st.error ? ErrorBox( st.error ) : Spinner() ); }
-		var hasAccount = !! ( st.status.stripeAccountId || ( st.acct && st.acct.hasAccount ) );
-		var charges = st.status.chargesEnabled || ( st.acct && st.acct.chargesEnabled );
+		var appUrl = ( ecNative.appUrl || 'https://www.easycheckout.ch' ).replace( /\/$/, '' );
+		var frameUrl = appUrl + '/onboarding?embed=1';
+		var charges = st.status && ( st.status.chargesEnabled || ( st.acct && st.acct.chargesEnabled ) );
+		var statusLabel = ( st.acct && st.acct.status && ( st.acct.status.summary || st.acct.status.label ) ) || 'Verifizierung erforderlich';
 
 		return el( 'div', null,
 			el( 'div', { className: 'ec-page-head' },
 				el( 'h2', null, 'Verifizierung' ),
-				hasAccount && el( 'button', { className: 'ec-btn ec-btn-sm', onClick: hosted }, 'Bei Stripe abschließen ↗' ) ),
+				el( 'a', { className: 'ec-btn ec-btn-sm', href: appUrl + '/onboarding', target: '_blank', rel: 'noopener' }, 'In neuem Tab öffnen ↗' ) ),
 			ErrorBox( st.error ),
 			el( 'div', { className: 'ec-card', style: { marginBottom: '16px' } },
 				el( 'h3', null, 'Status' ),
-				el( 'p', null, charges ? el( 'span', { className: 'ec-badge ec-badge-on' }, 'Zahlungen aktiv' ) : el( 'span', { className: 'ec-badge ec-badge-off' }, ( st.acct && st.acct.status && ( st.acct.status.summary || st.acct.status.label ) ) || 'Verifizierung erforderlich' ) ),
-				st.acct && st.acct.tasks && st.acct.tasks.length > 0 && el( 'ul', { className: 'ec-tasklist' }, st.acct.tasks.map( function ( t, i ) { return el( 'li', { key: i }, el( 'strong', null, t.title ), t.description && el( 'span', { className: 'ec-muted' }, ' — ' + t.description ) ); } ) ),
-				! hasAccount && el( 'button', { className: 'ec-btn ec-btn-primary', onClick: start }, 'Verifizierung starten' )
+				! st.status ? Spinner() : el( 'p', null, charges ? el( 'span', { className: 'ec-badge ec-badge-on' }, 'Zahlungen aktiv' ) : el( 'span', { className: 'ec-badge ec-badge-off' }, statusLabel ) ),
+				st.acct && st.acct.tasks && st.acct.tasks.length > 0 && el( 'ul', { className: 'ec-tasklist' }, st.acct.tasks.map( function ( t, i ) { return el( 'li', { key: i }, el( 'strong', null, t.title ), t.description && el( 'span', { className: 'ec-muted' }, ' — ' + t.description ) ); } ) )
 			),
-			hasAccount && el( 'div', { className: 'ec-form-grid' },
-				el( BusinessForm, { onSaved: load } ),
-				el( PersonForm, { onSaved: load } ),
-				el( PersonsCard, null ),
-				el( BankForm, { onSaved: load } ),
-				el( DocsCard, null ),
-				el( TermsCard, { onSaved: load } )
+			el( 'div', { className: 'ec-card' },
+				el( 'p', { className: 'ec-hint', style: { marginBottom: 10 } }, 'Firma, Personen, wirtschaftlich Berechtigte (inkl. Ausweis-/Selfie-Prüfung und Unterschrift) sowie Bankverbindung – sicher über easyCheckout. Falls ein Login erscheint: einmalig mit deinen easyCheckout-Zugangsdaten anmelden.' ),
+				el( 'iframe', { src: frameUrl, className: 'ec-onboard-frame', allow: 'camera; microphone; clipboard-write; fullscreen', title: 'Verifizierung' } )
 			)
 		);
 	}

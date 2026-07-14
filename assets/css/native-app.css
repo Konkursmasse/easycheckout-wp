@@ -77,6 +77,9 @@
 .ec-subcard { border:1px solid var(--ec-border); border-radius:10px; padding:12px; margin-bottom:10px; background:#fafbfc; }
 .ec-tags { display:block; font-size:11px; color:var(--ec-muted); margin-top:3px; }
 
+/* Eingebettete Verifizierung (Onboarding-iFrame) */
+.ec-onboard-frame { width:100%; height:1600px; max-height:82vh; border:0; border-radius:12px; background:#fff; display:block; }
+
 /* Modal */
 .ec-modal { position:fixed; inset:0; background:rgba(17,24,39,.5); display:flex; align-items:flex-start; justify-content:center; padding:48px 16px; z-index:100000; overflow:auto; }
 .ec-modal-card { background:#fff; width:520px; max-width:96vw; border-radius:14px; padding:22px 24px; box-shadow:0 20px 60px rgba(0,0,0,.3); }
