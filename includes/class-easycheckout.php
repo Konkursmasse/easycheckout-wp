@@ -80,6 +80,10 @@ class EasyCheckout {
         $this->webhooks = new Webhook_Handler();
         $this->shortcodes = new Shortcodes();
 
+        // Auto-Updater (GitHub-Releases). Immer laden — auch fuer Hintergrund-
+        // Auto-Updates via WP-Cron, die nicht im Admin laufen.
+        new Updater();
+
         // Admin components
         if (is_admin()) {
             $this->admin = new Admin();

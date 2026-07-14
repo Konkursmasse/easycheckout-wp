@@ -207,8 +207,9 @@
 			}
 		}
 
-		// Left: products (gruppiert nach Kategorie)
-		var left = h( 'div', {}, [ h( 'h2', { class: 'eclc-col-h', text: 'Produkte' } ) ] );
+		// Left: products (gruppiert nach Kategorie). Obertitel dynamisch (z.B. „Tickets").
+		var prodTitle = ( C.productsTitle && String( C.productsTitle ).trim() ) ? C.productsTitle : 'Produkte';
+		var left = h( 'div', {}, [ h( 'h2', { class: 'eclc-col-h', text: prodTitle } ) ] );
 		if ( C.categorySelection === 'single' && ( C.categories || [] ).length ) {
 			left.appendChild( h( 'p', { class: 'eclc-cat-hint', text: 'Bitte nur Produkte aus einer Kategorie wählen.' } ) );
 		}

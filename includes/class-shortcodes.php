@@ -341,6 +341,7 @@ class Shortcodes {
                 'name'       => $c['name'],
                 'logo'       => (isset($c['design']['logoUrl']) && $c['design']['logoUrl']) ? $c['design']['logoUrl'] : '',
                 'currency'   => isset($c['currency']) ? $c['currency'] : 'CHF',
+                'productsTitle' => isset($c['productsTitle']) ? $c['productsTitle'] : '',
                 'primary'    => $primary,
                 'vatEnabled' => !empty($c['vatEnabled']),
                 'vatRate'    => isset($c['vatRate']) ? (float) $c['vatRate'] : 0,

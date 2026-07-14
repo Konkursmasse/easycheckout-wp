@@ -1,0 +1,47 @@
+name: Release
+
+# Baut bei jedem Version-Tag (v1.2.3) automatisch ein sauberes Plugin-ZIP mit dem
+# Ordner „easycheckout-wp/" und haengt es als Release-Asset an. Der Auto-Updater im
+# Plugin (includes/class-updater.php) laedt genau dieses Asset -> alle Kundenseiten
+# aktualisieren sich anschliessend selbststaendig.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build plugin ZIP
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Building easycheckout-wp $VERSION"
+          # Ordnername = Plugin-Slug, damit WordPress am selben Ort aktualisiert.
+          mkdir -p build/easycheckout-wp
+          rsync -a --exclude='.git' --exclude='.github' --exclude='build' \
+                --exclude='node_modules' --exclude='*.zip' ./ build/easycheckout-wp/
+          cd build
+          zip -r "../easycheckout-wp.zip" easycheckout-wp >/dev/null
+          cd ..
+          ls -la easycheckout-wp.zip
+
+      - name: Create / update GitHub Release with asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" easycheckout-wp.zip --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" easycheckout-wp.zip \
+              --title "EasyCheckout $VERSION" \
+              --notes "Automatisches Release von easycheckout-wp $VERSION. Wird vom Plugin-Auto-Updater eingespielt."
+          fi
