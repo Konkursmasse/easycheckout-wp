@@ -130,6 +130,7 @@ class EasyCheckout {
     public function init_woocommerce() {
         require_once EASYCHECKOUT_PLUGIN_DIR . 'woocommerce/class-wc-gateway.php';
         require_once EASYCHECKOUT_PLUGIN_DIR . 'woocommerce/class-wc-blocks.php';
+        require_once EASYCHECKOUT_PLUGIN_DIR . 'woocommerce/class-wc-express.php';
 
         // Register payment gateway
         add_filter('woocommerce_payment_gateways', function($gateways) {
@@ -139,6 +140,9 @@ class EasyCheckout {
 
         // Initialize blocks support
         new WooCommerce\WC_Blocks_Support();
+
+        // Express-Checkout (zusaetzlicher Direkt-Button im Warenkorb -> Fast-Checkout).
+        new WooCommerce\WC_Express();
     }
 
     /**

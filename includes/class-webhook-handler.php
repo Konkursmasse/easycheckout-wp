@@ -2,6 +2,17 @@
 /**
  * EasyCheckout Webhook Handler
  *
+ * Empfängt und verarbeitet Webhooks der EasyCheckout-Plattform. Das Format ist
+ * exakt an lib/webhooks.js der Plattform ausgerichtet:
+ *
+ *   Header  X-EasyCheckout-Signature: t=<unixts>,v1=<hmac_sha256_hex>
+ *           (HMAC über "<t>.<rawbody>" mit dem Endpoint-Secret)
+ *   Header  X-EasyCheckout-Event:       <event-typ>   (z.B. order.paid)
+ *   Body    { id: "evt_...", type: "order.paid", created, data: {...}, api_version }
+ *
+ *   data (order.*): { order: { id, orderNumber, amount, currency, paymentMethod,
+ *                              paidAt, metadata }, customer, items, checkout? }
+ *
  * @package EasyCheckout
  */
 
@@ -42,23 +53,17 @@ class Webhook_Handler {
      * @return \WP_REST_Response
      */
     public function handle_webhook($request) {
+        // WICHTIG: Rohkörper verwenden (nicht das dekodierte Array). Die Signatur
+        // wird über exakt diese Bytes gebildet; ein Re-Encode würde sie brechen.
         $payload = $request->get_body();
         $signature = $request->get_header('X-EasyCheckout-Signature');
-        $timestamp = $request->get_header('X-EasyCheckout-Timestamp');
 
-        // Log incoming webhook
         $this->log('Webhook received: ' . substr($payload, 0, 500));
 
-        // Verify signature
-        if (!$this->verify_signature($payload, $signature, $timestamp)) {
+        // Signatur prüfen (Format t=<ts>,v1=<hmac>). Enthält zugleich den Zeitstempel.
+        if (!$this->verify_signature($payload, $signature)) {
             $this->log('Webhook signature verification failed', 'error');
             return new \WP_REST_Response(['error' => 'Invalid signature'], 401);
-        }
-
-        // Verify timestamp
-        if (!$this->verify_timestamp($timestamp)) {
-            $this->log('Webhook timestamp expired', 'error');
-            return new \WP_REST_Response(['error' => 'Request expired'], 401);
         }
 
         // Parse payload
@@ -68,8 +73,9 @@ class Webhook_Handler {
             return new \WP_REST_Response(['error' => 'Invalid JSON'], 400);
         }
 
-        $event_type = $data['event'] ?? '';
-        $event_id = $data['eventId'] ?? '';
+        // Envelope der Plattform: { id, type, created, data, api_version }
+        $event_type = $data['type'] ?? $request->get_header('X-EasyCheckout-Event') ?? '';
+        $event_id = $data['id'] ?? '';
 
         // Check for duplicate event
         if ($this->is_duplicate_event($event_id)) {
@@ -78,7 +84,7 @@ class Webhook_Handler {
         }
 
         // Process event
-        $result = $this->process_event($event_type, $data);
+        $result = $this->process_event($event_type, $data['data'] ?? []);
 
         if (is_wp_error($result)) {
             $this->log('Webhook processing error: ' . $result->get_error_message(), 'error');
@@ -94,50 +100,62 @@ class Webhook_Handler {
     }
 
     /**
-     * Verify webhook signature
+     * Verify webhook signature.
      *
-     * @param string $payload
-     * @param string $signature
-     * @param string $timestamp
+     * Erwartetes Header-Format (Stripe-Stil, wie lib/webhooks.js sendet):
+     *   t=<unix-timestamp>,v1=<hmac-sha256-hex>
+     * Der HMAC wird über "<t>.<rawbody>" mit dem Endpoint-Secret gebildet.
+     * Der Zeitstempel steckt im selben Header (kein separater Timestamp-Header).
+     *
+     * @param string $payload   Roher Request-Body
+     * @param string $signature Wert des X-EasyCheckout-Signature Headers
      * @return bool
      */
-    private function verify_signature($payload, $signature, $timestamp) {
+    private function verify_signature($payload, $signature) {
         if (empty($this->webhook_secret)) {
-            // No secret configured, skip verification in dev mode
-            if (get_option('easycheckout_test_mode', 'yes') === 'yes') {
-                return true;
-            }
-            return false;
+            // Kein Secret hinterlegt: nur im Testmodus durchlassen (Dev), sonst ablehnen.
+            return get_option('easycheckout_test_mode', 'yes') === 'yes';
         }
 
         if (empty($signature)) {
             return false;
         }
 
-        // Create signed payload
-        $signed_payload = $timestamp . '.' . $payload;
-
-        // Calculate expected signature
-        $expected = hash_hmac('sha256', $signed_payload, $this->webhook_secret);
-
-        return hash_equals($expected, $signature);
-    }
-
-    /**
-     * Verify timestamp is within tolerance
-     *
-     * @param string $timestamp
-     * @return bool
-     */
-    private function verify_timestamp($timestamp) {
-        if (empty($timestamp)) {
-            return get_option('easycheckout_test_mode', 'yes') === 'yes';
+        // t=... und v1=... aus dem Header lösen.
+        $timestamp = null;
+        $provided = null;
+        foreach (explode(',', $signature) as $part) {
+            $kv = explode('=', trim($part), 2);
+            if (count($kv) !== 2) {
+                continue;
+            }
+            if ($kv[0] === 't') {
+                $timestamp = $kv[1];
+            } elseif ($kv[0] === 'v1') {
+                $provided = $kv[1];
+            }
         }
 
-        $webhook_time = intval($timestamp);
-        $current_time = time();
+        // Rückwärtskompatibilität: falls doch eine nackte Signatur ohne t=/v1= kommt.
+        if ($provided === null && strpos($signature, '=') === false) {
+            $provided = $signature;
+            $timestamp = $timestamp ?? (string) time();
+        }
 
-        return abs($current_time - $webhook_time) <= self::TIMESTAMP_TOLERANCE;
+        if (empty($timestamp) || empty($provided)) {
+            return false;
+        }
+
+        // Replay-Schutz: Zeitstempel innerhalb der Toleranz.
+        if (abs(time() - intval($timestamp)) > self::TIMESTAMP_TOLERANCE) {
+            $this->log('Webhook timestamp outside tolerance', 'error');
+            return false;
+        }
+
+        $signed_payload = $timestamp . '.' . $payload;
+        $expected = hash_hmac('sha256', $signed_payload, $this->webhook_secret);
+
+        return hash_equals($expected, $provided);
     }
 
     /**
@@ -153,7 +171,7 @@ class Webhook_Handler {
 
         $processed = get_option('easycheckout_processed_events', []);
 
-        return in_array($event_id, $processed);
+        return in_array($event_id, $processed, true);
     }
 
     /**
@@ -183,33 +201,56 @@ class Webhook_Handler {
      * Process webhook event
      *
      * @param string $event_type
-     * @param array $data
+     * @param array $data Inhalt des "data"-Feldes des Envelopes
      * @return bool|\WP_Error
      */
     private function process_event($event_type, $data) {
-        $order_data = $data['data'] ?? [];
-
         switch ($event_type) {
             case 'order.paid':
-                return $this->handle_order_paid($order_data);
+                return $this->handle_order_paid($data);
 
             case 'order.failed':
-                return $this->handle_order_failed($order_data);
+                return $this->handle_order_failed($data);
 
             case 'order.refunded':
-                return $this->handle_order_refunded($order_data);
+            case 'order.partially_refunded':
+                return $this->handle_order_refunded($data, $event_type === 'order.partially_refunded');
 
             case 'order.created':
-                return $this->handle_order_created($order_data);
+                return $this->handle_order_created($data);
 
             case 'checkout.completed':
-                return $this->handle_checkout_completed($order_data);
+                return $this->handle_checkout_completed($data);
 
             default:
-                $this->log('Unknown webhook event type: ' . $event_type);
-                // Return true for unknown events to acknowledge receipt
+                $this->log('Unhandled webhook event type: ' . $event_type);
+                // Unbekannte Events bestätigen (200), damit die Plattform nicht endlos retryt.
                 return true;
         }
+    }
+
+    /**
+     * Order-Objekt aus dem data-Feld holen. Plattform verschachtelt unter data.order,
+     * ältere/andere Quellen evtl. flach – beides tolerieren.
+     *
+     * @param array $data
+     * @return array
+     */
+    private function extract_order($data) {
+        if (isset($data['order']) && is_array($data['order'])) {
+            return $data['order'];
+        }
+        return is_array($data) ? $data : [];
+    }
+
+    /**
+     * EasyCheckout-Order-ID aus dem Order-Objekt lesen.
+     *
+     * @param array $order
+     * @return string
+     */
+    private function extract_ec_order_id($order) {
+        return (string) ($order['id'] ?? $order['orderId'] ?? '');
     }
 
     /**
@@ -219,7 +260,8 @@ class Webhook_Handler {
      * @return bool|\WP_Error
      */
     private function handle_order_paid($data) {
-        $ec_order_id = $data['orderId'] ?? $data['id'] ?? '';
+        $order = $this->extract_order($data);
+        $ec_order_id = $this->extract_ec_order_id($order);
 
         if (empty($ec_order_id)) {
             return new \WP_Error('invalid_data', 'Missing order ID');
@@ -230,13 +272,13 @@ class Webhook_Handler {
         $plugin->update_transaction($ec_order_id, [
             'status' => 'paid',
             'webhook_received' => 1,
-            'payment_method' => $data['paymentMethod'] ?? '',
+            'payment_method' => $order['paymentMethod'] ?? '',
         ]);
 
         // Handle WooCommerce order if linked
-        $wc_order_id = $this->get_wc_order_id($ec_order_id);
+        $wc_order_id = $this->get_wc_order_id($ec_order_id, $order);
         if ($wc_order_id) {
-            $this->complete_wc_order($wc_order_id, $data);
+            $this->complete_wc_order($wc_order_id, $order, $ec_order_id, $data['customer'] ?? []);
         }
 
         // Fire action for other integrations
@@ -252,59 +294,56 @@ class Webhook_Handler {
      * @return bool|\WP_Error
      */
     private function handle_order_failed($data) {
-        $ec_order_id = $data['orderId'] ?? $data['id'] ?? '';
+        $order = $this->extract_order($data);
+        $ec_order_id = $this->extract_ec_order_id($order);
 
         if (empty($ec_order_id)) {
             return new \WP_Error('invalid_data', 'Missing order ID');
         }
 
-        // Update transaction record
         $plugin = EasyCheckout::instance();
         $plugin->update_transaction($ec_order_id, [
             'status' => 'failed',
             'webhook_received' => 1,
         ]);
 
-        // Handle WooCommerce order if linked
-        $wc_order_id = $this->get_wc_order_id($ec_order_id);
+        $wc_order_id = $this->get_wc_order_id($ec_order_id, $order);
         if ($wc_order_id) {
             $this->fail_wc_order($wc_order_id, $data);
         }
 
-        // Fire action
         do_action('easycheckout_order_failed', $ec_order_id, $data);
 
         return true;
     }
 
     /**
-     * Handle order.refunded event
+     * Handle order.refunded / order.partially_refunded event
      *
      * @param array $data
+     * @param bool  $partial
      * @return bool|\WP_Error
      */
-    private function handle_order_refunded($data) {
-        $ec_order_id = $data['orderId'] ?? $data['id'] ?? '';
-        $refund_amount = $data['refundAmount'] ?? $data['amount'] ?? 0;
+    private function handle_order_refunded($data, $partial = false) {
+        $order = $this->extract_order($data);
+        $ec_order_id = $this->extract_ec_order_id($order);
+        $refund_amount = $order['refundedAmount'] ?? $order['refundAmount'] ?? $order['amount'] ?? 0;
 
         if (empty($ec_order_id)) {
             return new \WP_Error('invalid_data', 'Missing order ID');
         }
 
-        // Update transaction record
         $plugin = EasyCheckout::instance();
         $plugin->update_transaction($ec_order_id, [
-            'status' => 'refunded',
+            'status' => $partial ? 'partially_refunded' : 'refunded',
             'webhook_received' => 1,
         ]);
 
-        // Handle WooCommerce refund if linked
-        $wc_order_id = $this->get_wc_order_id($ec_order_id);
+        $wc_order_id = $this->get_wc_order_id($ec_order_id, $order);
         if ($wc_order_id) {
-            $this->refund_wc_order($wc_order_id, $refund_amount, $data);
+            $this->refund_wc_order($wc_order_id, (float) $refund_amount, $data);
         }
 
-        // Fire action
         do_action('easycheckout_order_refunded', $ec_order_id, $refund_amount, $data);
 
         return true;
@@ -317,9 +356,9 @@ class Webhook_Handler {
      * @return bool
      */
     private function handle_order_created($data) {
-        $ec_order_id = $data['orderId'] ?? $data['id'] ?? '';
+        $order = $this->extract_order($data);
+        $ec_order_id = $this->extract_ec_order_id($order);
 
-        // Fire action
         do_action('easycheckout_order_created', $ec_order_id, $data);
 
         return true;
@@ -332,42 +371,65 @@ class Webhook_Handler {
      * @return bool
      */
     private function handle_checkout_completed($data) {
-        $checkout_slug = $data['checkoutSlug'] ?? '';
-        $ec_order_id = $data['orderId'] ?? $data['id'] ?? '';
+        $order = $this->extract_order($data);
+        $checkout_slug = $data['checkout']['slug'] ?? $data['checkoutSlug'] ?? '';
+        $ec_order_id = $this->extract_ec_order_id($order);
 
-        // Fire action
         do_action('easycheckout_checkout_completed', $checkout_slug, $ec_order_id, $data);
 
         return true;
     }
 
     /**
-     * Get WooCommerce order ID from EasyCheckout order ID
+     * Get WooCommerce order ID for an EasyCheckout order.
+     *
+     * Bevorzugt die in den Zahlungs-Metadaten mitgeführte wc_order_id (der Gateway
+     * setzt sie beim Anlegen der payment-session). Fallback: Transaktionstabelle und
+     * das _easycheckout_order_id Order-Meta.
      *
      * @param string $ec_order_id
+     * @param array  $order Order-Objekt aus dem Webhook (enthält evtl. metadata)
      * @return int|null
      */
-    private function get_wc_order_id($ec_order_id) {
+    private function get_wc_order_id($ec_order_id, $order = []) {
+        if (!function_exists('wc_get_order')) {
+            return null;
+        }
+
+        // 1) Direkter Weg: wc_order_id aus den Zahlungs-Metadaten.
+        $meta = isset($order['metadata']) && is_array($order['metadata']) ? $order['metadata'] : [];
+        if (!empty($meta['wc_order_id'])) {
+            $candidate = intval($meta['wc_order_id']);
+            if ($candidate > 0) {
+                $wc_order = wc_get_order($candidate);
+                // Optional gegen den Bestellschlüssel absichern, falls mitgeliefert.
+                if ($wc_order) {
+                    if (!empty($meta['wc_order_key']) && $wc_order->get_order_key() !== $meta['wc_order_key']) {
+                        $this->log('wc_order_key mismatch for order ' . $candidate, 'error');
+                    } else {
+                        return $candidate;
+                    }
+                }
+            }
+        }
+
+        // 2) Transaktionstabelle (ec_order_id -> wc_order_id).
         global $wpdb;
-
         $table = $wpdb->prefix . 'easycheckout_transactions';
-
         $wc_order_id = $wpdb->get_var($wpdb->prepare(
-            "SELECT wc_order_id FROM $table WHERE ec_order_id = %s AND wc_order_id > 0",
+            "SELECT wc_order_id FROM {$table} WHERE ec_order_id = %s AND wc_order_id > 0",
             $ec_order_id
         ));
-
         if ($wc_order_id) {
             return intval($wc_order_id);
         }
 
-        // Also check order meta
+        // 3) Order-Meta _easycheckout_order_id.
         $orders = wc_get_orders([
             'meta_key' => '_easycheckout_order_id',
             'meta_value' => $ec_order_id,
             'limit' => 1,
         ]);
-
         if (!empty($orders)) {
             return $orders[0]->get_id();
         }
@@ -378,46 +440,128 @@ class Webhook_Handler {
     /**
      * Complete WooCommerce order
      *
-     * @param int $order_id
-     * @param array $data
+     * @param int    $order_id
+     * @param array  $order       Order-Objekt aus dem Webhook
+     * @param string $ec_order_id
+     * @param array  $customer    Kundendaten aus dem Webhook (Fast-Checkout-Adresse)
      */
-    private function complete_wc_order($order_id, $data) {
+    private function complete_wc_order($order_id, $order, $ec_order_id = '', $customer = []) {
         if (!function_exists('wc_get_order')) {
             return;
         }
 
-        $order = wc_get_order($order_id);
-        if (!$order) {
+        $wc_order = wc_get_order($order_id);
+        if (!$wc_order) {
             return;
         }
 
-        // Only process if not already completed
-        if (!in_array($order->get_status(), ['pending', 'on-hold', 'processing'])) {
+        // Fehlt die Rechnungsadresse (typisch fuer Express-Bestellungen), aus den
+        // im Fast-Checkout erfassten Kundendaten nachtragen -> Fulfillment + Mails.
+        // Bewusst VOR dem is_paid-Guard: falls die Rueckkehr-Seite die Bestellung
+        // bereits auf processing gesetzt hat, geht die Adresse sonst verloren.
+        if (!$wc_order->get_billing_email() && !empty($customer)) {
+            $this->apply_customer_address($wc_order, $customer);
+            $wc_order->save();
+        }
+
+        // Idempotenz: bereits bezahlt -> nichts weiter tun.
+        if ($wc_order->is_paid()) {
             return;
         }
 
-        // Add order note
-        $order->add_order_note(sprintf(
-            __('Payment completed via EasyCheckout. Transaction ID: %s', 'easycheckout'),
-            $data['transactionId'] ?? $data['orderId'] ?? ''
+        // Nur aus offenen Zuständen heraus abschließen.
+        if (!in_array($wc_order->get_status(), ['pending', 'on-hold', 'failed'], true)) {
+            return;
+        }
+
+        $transaction_id = $order['paymentIntentId'] ?? $order['transactionId'] ?? $ec_order_id;
+
+        $wc_order->add_order_note(sprintf(
+            /* translators: %s: transaction/order id */
+            __('Zahlung via EasyCheckout bestätigt (Referenz: %s).', 'easycheckout'),
+            $transaction_id
         ));
 
-        // Update order meta
-        if (!empty($data['transactionId'])) {
-            $order->set_transaction_id($data['transactionId']);
+        if (!empty($transaction_id)) {
+            $wc_order->set_transaction_id($transaction_id);
         }
 
-        // Complete the order
-        $order->payment_complete();
+        // Bezahlt markieren: bucht Bestand (falls noch nicht), leert Cart, setzt
+        // processing/completed nach WooCommerce-Logik.
+        $wc_order->payment_complete($transaction_id);
 
-        // Fire action
-        do_action('easycheckout_wc_order_completed', $order_id, $data);
+        do_action('easycheckout_wc_order_completed', $order_id, $order);
+    }
+
+    /**
+     * Kundendaten aus dem Webhook (Fast-Checkout) auf Billing/Shipping der
+     * Bestellung schreiben. Der Name wird nach bestem Wissen in Vor-/Nachname
+     * geteilt.
+     *
+     * @param \WC_Order $wc_order
+     * @param array     $customer { email, name, phone, company, address:{street,postalCode,city,country} }
+     */
+    private function apply_customer_address($wc_order, $customer) {
+        $email = isset($customer['email']) ? sanitize_email($customer['email']) : '';
+        $name = isset($customer['name']) ? trim((string) $customer['name']) : '';
+        $phone = isset($customer['phone']) ? (string) $customer['phone'] : '';
+        $company = isset($customer['company']) ? (string) $customer['company'] : '';
+
+        $addr = isset($customer['address']) && is_array($customer['address']) ? $customer['address'] : [];
+        $street = (string) ($addr['street'] ?? '');
+        $postal = (string) ($addr['postalCode'] ?? '');
+        $city = (string) ($addr['city'] ?? '');
+        $country = strtoupper((string) ($addr['country'] ?? 'CH'));
+
+        // Name aufteilen (letztes Wort = Nachname).
+        $first = $name;
+        $last = '';
+        if ($name !== '' && strpos($name, ' ') !== false) {
+            $parts = preg_split('/\s+/', $name);
+            $last = array_pop($parts);
+            $first = implode(' ', $parts);
+        }
+
+        if ($email) {
+            $wc_order->set_billing_email($email);
+        }
+        if ($first !== '') {
+            $wc_order->set_billing_first_name($first);
+            $wc_order->set_shipping_first_name($first);
+        }
+        if ($last !== '') {
+            $wc_order->set_billing_last_name($last);
+            $wc_order->set_shipping_last_name($last);
+        }
+        if ($company !== '') {
+            $wc_order->set_billing_company($company);
+            $wc_order->set_shipping_company($company);
+        }
+        if ($phone !== '') {
+            $wc_order->set_billing_phone($phone);
+        }
+        if ($street !== '') {
+            $wc_order->set_billing_address_1($street);
+            $wc_order->set_shipping_address_1($street);
+        }
+        if ($postal !== '') {
+            $wc_order->set_billing_postcode($postal);
+            $wc_order->set_shipping_postcode($postal);
+        }
+        if ($city !== '') {
+            $wc_order->set_billing_city($city);
+            $wc_order->set_shipping_city($city);
+        }
+        if ($country !== '') {
+            $wc_order->set_billing_country($country);
+            $wc_order->set_shipping_country($country);
+        }
     }
 
     /**
      * Mark WooCommerce order as failed
      *
-     * @param int $order_id
+     * @param int   $order_id
      * @param array $data
      */
     private function fail_wc_order($order_id, $data) {
@@ -430,23 +574,28 @@ class Webhook_Handler {
             return;
         }
 
-        $error_message = $data['errorMessage'] ?? $data['error'] ?? __('Payment failed', 'easycheckout');
+        if ($order->is_paid()) {
+            // Bereits bezahlt -> ein verspätetes failed ignorieren.
+            return;
+        }
+
+        $error_message = $data['error'] ?? $data['errorMessage'] ?? __('Zahlung fehlgeschlagen', 'easycheckout');
 
         $order->add_order_note(sprintf(
-            __('Payment failed via EasyCheckout: %s', 'easycheckout'),
+            /* translators: %s: error message */
+            __('Zahlung via EasyCheckout fehlgeschlagen: %s', 'easycheckout'),
             $error_message
         ));
 
-        $order->update_status('failed', __('Payment failed.', 'easycheckout'));
+        $order->update_status('failed', __('Zahlung fehlgeschlagen.', 'easycheckout'));
 
-        // Fire action
         do_action('easycheckout_wc_order_failed', $order_id, $data);
     }
 
     /**
      * Process WooCommerce refund
      *
-     * @param int $order_id
+     * @param int   $order_id
      * @param float $amount
      * @param array $data
      */
@@ -460,12 +609,27 @@ class Webhook_Handler {
             return;
         }
 
-        // Create refund
+        // Bereits (voll) erstattet? Nicht doppelt erstatten.
+        $already_refunded = (float) $order->get_total_refunded();
+        $order_total = (float) $order->get_total();
+        if ($already_refunded >= $order_total && $order_total > 0) {
+            return;
+        }
+
+        // Betrag begrenzen auf den noch nicht erstatteten Rest.
+        $remaining = max(0, $order_total - $already_refunded);
+        if ($amount <= 0 || $amount > $remaining) {
+            $amount = $remaining;
+        }
+        if ($amount <= 0) {
+            return;
+        }
+
         $refund = wc_create_refund([
             'amount' => $amount,
-            'reason' => $data['refundReason'] ?? __('Refund via EasyCheckout', 'easycheckout'),
+            'reason' => $data['refundReason'] ?? __('Rückerstattung via EasyCheckout', 'easycheckout'),
             'order_id' => $order_id,
-            'refund_payment' => false, // Already refunded via EasyCheckout
+            'refund_payment' => false, // Erstattung erfolgte bereits über EasyCheckout/Stripe.
         ]);
 
         if (is_wp_error($refund)) {
@@ -474,11 +638,11 @@ class Webhook_Handler {
         }
 
         $order->add_order_note(sprintf(
-            __('Refund of %s processed via EasyCheckout.', 'easycheckout'),
+            /* translators: %s: refunded amount */
+            __('Rückerstattung von %s via EasyCheckout verbucht.', 'easycheckout'),
             wc_price($amount, ['currency' => $order->get_currency()])
         ));
 
-        // Fire action
         do_action('easycheckout_wc_order_refunded', $order_id, $amount, $data);
     }
 

@@ -90,6 +90,14 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
                 'default' => '',
                 'desc_tip' => true,
             ],
+            'express_checkout' => [
+                'title' => __('Express-Checkout', 'easycheckout'),
+                'type' => 'checkbox',
+                'label' => __('Express-Checkout-Button im Warenkorb anzeigen', 'easycheckout'),
+                'description' => __('Zeigt zusätzlich zum normalen Checkout einen Direkt-Button im Warenkorb, der Adresse und Zahlung in einem schnellen Schritt erfasst.', 'easycheckout'),
+                'default' => 'yes',
+                'desc_tip' => true,
+            ],
             'payment_methods' => [
                 'title' => __('Payment Methods', 'easycheckout'),
                 'type' => 'multiselect',
@@ -306,8 +314,16 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
             $order->save();
         }
 
-        // If status indicates success, mark as processing (webhook will confirm)
-        if ($status === 'success' || $status === 'paid') {
+        // Express-Bestellungen NICHT vorzeitig als bezahlt markieren: Bestand und
+        // Abschluss laufen ueber payment_complete() im order.paid-Webhook (der
+        // zugleich die im Fast-Checkout erfasste Adresse nachtraegt). Wuerde hier
+        // vorab auf processing gesetzt, uebersaehe der Webhook payment_complete
+        // (is_paid) und der Bestand bliebe unreduziert.
+        $is_express = $order->get_created_via() === 'easycheckout_express';
+
+        // Beim regulaeren Gateway-Flow ist die Adresse bereits erfasst -> als
+        // Zwischenstatus processing setzen, der Webhook bestaetigt endgueltig.
+        if (!$is_express && ($status === 'success' || $status === 'paid')) {
             if (!$order->is_paid()) {
                 $order->update_status('processing', __('Payment received via EasyCheckout, awaiting webhook confirmation.', 'easycheckout'));
             }
