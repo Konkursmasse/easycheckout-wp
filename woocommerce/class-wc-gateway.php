@@ -329,6 +329,14 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
             }
         }
 
+        // Warenkorb leeren: Beim Express umgeht der Flow den WC-Checkout, der den
+        // Cart sonst selbst leert -> hier nachholen, damit die bereits als Bestellung
+        // erfassten Positionen nicht doppelt bestellt werden. (Beim regulaeren
+        // Gateway hat WC-Core den Cart schon geleert; erneutes Leeren ist harmlos.)
+        if ($is_express && ($status === 'success' || $status === 'paid') && function_exists('WC') && WC()->cart) {
+            WC()->cart->empty_cart();
+        }
+
         // Redirect to thank you page
         wp_redirect($this->get_return_url($order));
         exit;
