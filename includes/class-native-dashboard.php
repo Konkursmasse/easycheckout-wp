@@ -58,6 +58,8 @@ class Native_Dashboard {
         add_action('wp_ajax_easycheckout_native_register', [$this, 'ajax_register']);
         add_action('wp_ajax_easycheckout_native_logout', [$this, 'ajax_logout']);
         add_action('wp_ajax_easycheckout_native_proxy', [$this, 'ajax_proxy']);
+        add_action('wp_ajax_easycheckout_activate_gateway', [$this, 'ajax_activate_gateway']);
+        add_action('wp_ajax_easycheckout_gateway_status', [$this, 'ajax_gateway_status']);
         add_action('wp_ajax_easycheckout_native_upload', [$this, 'ajax_upload']);
         // Lokale Checkout-Entwuerfe (nutzbar OHNE Konto; werden bei Verbindung veroeffentlicht)
         add_action('wp_ajax_easycheckout_local_get', [$this, 'ajax_local_get']);
@@ -720,6 +722,73 @@ class Native_Dashboard {
         $this->guard();
         $this->api->logout();
         wp_send_json_success();
+    }
+
+    /**
+     * WooCommerce-Gateway self-service aktivieren: erzeugt via JWT einen payments_only
+     * eck_-Key (POST /api/auth/gateway-key), speichert ihn verschluesselt fuer den
+     * Gateway und registriert direkt den Webhook. Kein Admin/kein Kopieren noetig.
+     */
+    public function ajax_activate_gateway() {
+        $this->guard();
+        if (!$this->api->is_authenticated()) {
+            wp_send_json_error(['message' => __('Bitte zuerst mit deinem EasyCheckout-Konto anmelden.', 'easycheckout')]);
+        }
+
+        // 1) Gateway-Key erzeugen (JWT-authentifiziert).
+        $r = $this->api->request('POST', '/api/auth/gateway-key', []);
+        if (is_wp_error($r)) { wp_send_json_error(['message' => $r->get_error_message()]); }
+        if (($r['status'] ?? 0) >= 400) {
+            wp_send_json_error(['message' => $r['body']['error'] ?? __('Gateway-Key konnte nicht erstellt werden.', 'easycheckout')]);
+        }
+        $key = $r['body']['apiKey'] ?? '';
+        if (!$key) { wp_send_json_error(['message' => __('Kein Key erhalten.', 'easycheckout')]); }
+        $keyType = $r['body']['keyType'] ?? 'live';
+
+        // 2) Verschluesselt speichern (Gateway/API_Client nutzen genau diesen Key).
+        update_option('easycheckout_api_key', API_Client::encrypt_api_key($key));
+        update_option('easycheckout_test_mode', $keyType === 'test' ? 'yes' : 'no');
+
+        // 3) Webhook registrieren (frischer API_Client liest den neuen Key).
+        $webhook = 'skipped';
+        $secret_set = false;
+        $api = new API_Client();
+        $url = Webhook_Handler::get_webhook_url();
+        $resp = $api->create_webhook_endpoint($url, ['order.paid', 'order.failed', 'order.refunded', 'order.created']);
+        if (is_wp_error($resp)) {
+            $webhook = 'error: ' . $resp->get_error_message();
+        } else {
+            $data = (isset($resp['data']) && is_array($resp['data'])) ? $resp['data'] : $resp;
+            $secret = $data['secret'] ?? '';
+            if ($secret) {
+                update_option('easycheckout_webhook_secret', $secret);
+                $secret_set = true;
+                $webhook = 'registered';
+            } else {
+                $webhook = 'no_secret';
+            }
+        }
+
+        wp_send_json_success([
+            'message'    => __('WooCommerce-Gateway aktiviert.', 'easycheckout'),
+            'keyType'    => $keyType,
+            'webhook'    => $webhook,
+            'webhookUrl' => $url,
+            'secretSet'  => $secret_set,
+        ]);
+    }
+
+    /**
+     * Status fuer die Gateway-Karte im Dashboard.
+     */
+    public function ajax_gateway_status() {
+        $this->guard();
+        wp_send_json_success([
+            'apiKeySet'    => (bool) get_option('easycheckout_api_key', ''),
+            'webhookSet'   => (bool) get_option('easycheckout_webhook_secret', ''),
+            'wooActive'    => class_exists('WooCommerce'),
+            'authed'       => $this->api->is_authenticated(),
+        ]);
     }
 
     /**

@@ -845,6 +845,54 @@
 
 	// --- Overview -----------------------------------------------------------
 
+	// WooCommerce-Gateway: self-service aktivieren (Key erzeugen + Webhook registrieren).
+	function WooGatewayCard() {
+		var s = useState( { st: null, busy: false, msg: '', error: '' } );
+		var v = s[ 0 ], set = s[ 1 ];
+		function load() {
+			post( 'easycheckout_gateway_status', {} ).then( function ( j ) {
+				if ( j && j.success ) { set( function ( p ) { return Object.assign( {}, p, { st: j.data } ); } ); }
+			} );
+		}
+		useEffect( function () { load(); }, [] );
+
+		function activate() {
+			set( function ( p ) { return Object.assign( {}, p, { busy: true, msg: '', error: '' } ); } );
+			post( 'easycheckout_activate_gateway', {} ).then( function ( j ) {
+				if ( ! j || ! j.success ) { throw new Error( ( j && j.data && j.data.message ) || 'Fehler' ); }
+				var wh = j.data.webhook;
+				var note = wh === 'registered'
+					? 'Gateway aktiviert und Webhook registriert.'
+					: ( 'Gateway aktiviert. Webhook: ' + wh );
+				set( function ( p ) { return Object.assign( {}, p, { busy: false, msg: note } ); } );
+				load();
+			} ).catch( function ( err ) {
+				set( function ( p ) { return Object.assign( {}, p, { busy: false, error: err.message } ); } );
+			} );
+		}
+
+		var st = v.st || {};
+		var ready = st.apiKeySet && st.webhookSet;
+		function row( ok, label ) {
+			return el( 'div', { className: 'ec-kv-row' },
+				el( 'span', null, ( ok ? '✓ ' : '• ' ) + label ),
+				el( 'strong', { style: { color: ok ? '#059669' : '#94a3b8' } }, ok ? 'ok' : 'offen' ) );
+		}
+		return el( 'div', { className: 'ec-card' },
+			el( 'h3', null, 'WooCommerce-Gateway' ),
+			v.msg && el( 'div', { className: 'ec-alert' }, v.msg ),
+			ErrorBox( v.error ),
+			el( 'p', { style: { color: '#64748b', margin: '0 0 12px' } },
+				'Aktiviert den EasyCheckout-Bezahlweg (Karte/TWINT) und Express-Checkout in WooCommerce – erzeugt automatisch den Zahlungs-Key und registriert den Webhook.' ),
+			! st.wooActive && el( 'div', { className: 'ec-alert' }, 'WooCommerce ist nicht aktiv – bitte zuerst WooCommerce aktivieren.' ),
+			row( !! st.apiKeySet, 'Zahlungs-Key hinterlegt' ),
+			row( !! st.webhookSet, 'Webhook registriert (Order-Sync)' ),
+			el( 'div', { className: 'ec-form-actions', style: { marginTop: '12px' } },
+				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: v.busy || ! st.authed, onClick: activate },
+					v.busy ? '…' : ( ready ? 'Neu verbinden' : 'WooCommerce-Gateway aktivieren' ) ) )
+		);
+	}
+
 	function OverviewView() {
 		var s = useState( null );
 		var stats = s[ 0 ], set = s[ 1 ];
@@ -859,7 +907,8 @@
 			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Übersicht' ) ),
 			el( 'div', { className: 'ec-stat-grid' }, cards.map( function ( c, i ) {
 				return el( 'div', { key: i, className: 'ec-stat' }, el( 'div', { className: 'ec-stat-val' }, c[ 1 ] ), el( 'div', { className: 'ec-stat-lbl' }, c[ 0 ] ) );
-			} ) )
+			} ) ),
+			el( 'div', { style: { marginTop: '20px', maxWidth: '520px' } }, el( WooGatewayCard, null ) )
 		);
 	}
 
