@@ -192,11 +192,11 @@
 	function ptLabel( type ) { var f = PRODUCT_TYPES.filter( function ( p ) { return p[ 0 ] === type; } )[ 0 ]; return f ? f[ 1 ] : 'Physische Produkte (Versand)'; }
 
 	function CheckoutsList( props ) {
-		var s = useState( { items: null, error: '', creating: false, name: '', slug: '', productType: 'physical', busy: false } );
+		var s = useState( { items: null, error: '', creating: false, name: '', slug: '', productType: 'physical', busy: false, limit: null, atLimit: false, plan: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
 		function load() {
 			api( 'GET', '/api/checkouts' ).then( function ( b ) {
-				set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.checkouts ) || [], error: '' } ); } );
+				set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.checkouts ) || [], error: '', limit: ( b && b.checkoutLimit != null ) ? b.checkoutLimit : null, atLimit: !! ( b && b.atCheckoutLimit ), plan: ( b && b.plan ) || '' } ); } );
 			} ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } );
 		}
 		useEffect( function () { load(); }, [] );
@@ -213,7 +213,10 @@
 		}
 		return el( 'div', null,
 			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Checkouts' ),
-				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { creating: true } ) ); } }, '+ Neuer Checkout' ) ),
+				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.atLimit, title: st.atLimit ? 'Checkout-Limit deines Plans erreicht' : '', onClick: function () { if ( ! st.atLimit ) { set( Object.assign( {}, st, { creating: true } ) ); } } }, '+ Neuer Checkout' ) ),
+			st.limit != null && el( 'p', { className: 'ec-muted ec-sm', style: { marginTop: '-6px', marginBottom: '10px' } },
+				( st.items ? st.items.length : 0 ) + ' / ' + st.limit + ' Checkouts' + ( st.plan ? ' · Plan: ' + st.plan : '' ),
+				st.atLimit ? el( 'span', null, ' — Limit erreicht. Für weitere Checkouts bitte ', el( 'a', { href: '#', onClick: function ( e ) { e.preventDefault(); props.navigate( 'billing' ); } }, 'Tarif upgraden' ), '.' ) : null ),
 			ErrorBox( st.error ),
 			st.creating && el( 'div', { className: 'ec-card', style: { marginBottom: '14px' } },
 				el( 'form', { onSubmit: create },
