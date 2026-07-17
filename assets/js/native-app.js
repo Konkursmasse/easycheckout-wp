@@ -877,12 +877,10 @@
 	}
 
 	// [ key, Label, Kommission ] – Sätze gespiegelt aus der Plattform (lib/plans.js).
+	// Zum Start bietet das Plugin bewusst nur Basic an (weitere Tarife bleiben auf der
+	// Plattform bestehen).
 	var PLANS = [
-		[ 'free', 'Free', '3,5 % + 0,35 CHF' ],
-		[ 'free_plus', 'Free+', '3,5 % + 0,35 CHF' ],
 		[ 'basic', 'Basic', '2,9 % + 0,35 CHF' ],
-		[ 'pro', 'Pro', '2,9 % + 0,30 CHF' ],
-		[ 'rechnungen_only', 'Rechnungen', 'keine Transaktionsgebühr' ],
 	];
 	function BillingView() {
 		var s = useState( { me: null, error: '', busy: '' } );
