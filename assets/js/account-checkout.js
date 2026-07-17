@@ -415,7 +415,10 @@
 			stripe = Stripe( body.publishableKey, body.stripeAccountId ? { stripeAccount: body.stripeAccountId } : undefined );
 		} catch ( e ) { errEl.textContent = 'Zahlungssystem nicht verfügbar.'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = 'Weiter zur Zahlung'; return; }
 		elements = stripe.elements( { clientSecret: body.clientSecret } );
-		var pe = elements.create( 'payment' );
+		// Accordion-Layout: methoden als klare vertikale Liste (kein Tabs-Karussell mit
+		// Pfeil zum Umschalten). Reihenfolge folgt der Checkout-Konfiguration.
+		var pmOrder = ( C && C.paymentMethods && C.paymentMethods.length ) ? C.paymentMethods.slice() : [ 'card', 'twint' ];
+		var pe = elements.create( 'payment', { layout: { type: 'accordion', defaultCollapsed: false, radios: true, spacedAccordionItems: true }, paymentMethodOrder: pmOrder } );
 		payWrap.innerHTML = '';
 		payWrap.appendChild( h( 'div', { class: 'eclc-sec' }, [ h( 'h3', { class: 'eclc-sec-h', text: 'Zahlung' } ), h( 'div', { id: 'eca-pe' } ) ] ) );
 		pe.mount( '#eca-pe' );
