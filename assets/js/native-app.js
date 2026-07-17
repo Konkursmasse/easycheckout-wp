@@ -282,6 +282,7 @@
 				name: c.name, description: c.description, slug: c.slug, isActive: c.isActive !== false,
 				design: c.design, vatEnabled: !! c.vatEnabled, vatRate: parseFloat( c.vatRate ) || 0, vatInclusive: c.vatInclusive !== false,
 				paymentMethods: c.paymentMethods, currency: c.currency || 'CHF', successUrl: c.successUrl || '', cancelUrl: c.cancelUrl || '', qrPaymentEnabled: !! c.qrPaymentEnabled,
+					pickupEnabled: c.pickupEnabled !== false, deliveryEnabled: !! c.deliveryEnabled,
 			};
 			api( 'PUT', '/api/checkouts/' + props.id, payload ).then( function () { set( Object.assign( {}, st, { saving: false, saved: true } ) ); } )
 				.catch( function ( err ) { set( Object.assign( {}, st, { saving: false, error: err.message } ) ); } );
@@ -307,6 +308,12 @@
 					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! c.vatEnabled, onChange: function ( e ) { upd( { vatEnabled: e.target.checked } ); } } ), ' MwSt-pflichtig' ),
 					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: c.vatInclusive !== false, onChange: function ( e ) { upd( { vatInclusive: e.target.checked } ); } } ), ' Preise inkl. MwSt' ),
 					Field( 'Standard-MwSt-Satz (%)', el( 'input', { type: 'number', step: '0.1', value: c.vatRate != null ? c.vatRate : '', onChange: function ( e ) { upd( { vatRate: e.target.value } ); } } ), 'Gilt für Produkte ohne eigenen Satz. Abweichende Sätze setzt du direkt beim Produkt (z. B. 8.1 Standard, 2.6 Lebensmittel).' )
+				),
+				el( 'div', { className: 'ec-card' },
+					el( 'h3', null, 'Lieferung / Abholung' ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: c.pickupEnabled !== false, onChange: function ( e ) { upd( { pickupEnabled: e.target.checked } ); } } ), ' Abholung anbieten' ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! c.deliveryEnabled, onChange: function ( e ) { upd( { deliveryEnabled: e.target.checked } ); } } ), ' Lieferung anbieten' ),
+					el( 'p', { className: 'ec-hint' }, 'Bei aktiver Lieferung fragt der Checkout eine Lieferadresse ab (mit Option „gleich wie Rechnungsadresse"). Liefer-/Abholpreise setzt du je Produkt.' )
 				),
 				el( 'div', { className: 'ec-card' },
 					el( 'h3', null, 'Zahlungsarten' ),
