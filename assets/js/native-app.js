@@ -301,9 +301,9 @@
 				),
 				el( 'div', { className: 'ec-card' },
 					el( 'h3', null, 'MwSt' ),
-					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! c.vatEnabled, onChange: function ( e ) { upd( { vatEnabled: e.target.checked } ); } } ), ' MwSt aktiv' ),
-					Field( 'MwSt-Satz (%)', el( 'input', { type: 'number', step: '0.1', value: c.vatRate != null ? c.vatRate : '', onChange: function ( e ) { upd( { vatRate: e.target.value } ); } } ) ),
-					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: c.vatInclusive !== false, onChange: function ( e ) { upd( { vatInclusive: e.target.checked } ); } } ), ' Preise inkl. MwSt' )
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! c.vatEnabled, onChange: function ( e ) { upd( { vatEnabled: e.target.checked } ); } } ), ' MwSt-pflichtig' ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: c.vatInclusive !== false, onChange: function ( e ) { upd( { vatInclusive: e.target.checked } ); } } ), ' Preise inkl. MwSt' ),
+					Field( 'Standard-MwSt-Satz (%)', el( 'input', { type: 'number', step: '0.1', value: c.vatRate != null ? c.vatRate : '', onChange: function ( e ) { upd( { vatRate: e.target.value } ); } } ), 'Gilt für Produkte ohne eigenen Satz. Abweichende Sätze setzt du direkt beim Produkt (z. B. 8.1 Standard, 2.6 Lebensmittel).' )
 				),
 				el( 'div', { className: 'ec-card' },
 					el( 'h3', null, 'Zahlungsarten' ),
@@ -350,17 +350,17 @@
 	// --- Products manager ---------------------------------------------------
 
 	function ProductsManager( props ) {
-		var s = useState( { items: null, error: '', editing: null, productType: 'physical' } );
+		var s = useState( { items: null, error: '', editing: null, productType: 'physical', vatEnabled: false, vatRate: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
 		function load() {
 			api( 'GET', '/api/checkouts/' + props.id + '/products' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.products ) || [], error: '' } ); } ); } )
 				.catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } );
 		}
-		// Produktart des Checkouts laden -> steuert die Felder im Produkt-Editor.
+		// Checkout laden -> Produktart (Felder) + MwSt-Einstellungen (Standard-Satz).
 		useEffect( function () {
 			api( 'GET', '/api/checkouts/' + props.id ).then( function ( b ) {
-				var pt = ( b && b.checkout && b.checkout.productType ) || 'physical';
-				set( function ( p ) { return Object.assign( {}, p, { productType: pt } ); } );
+				var c = ( b && b.checkout ) || {};
+				set( function ( p ) { return Object.assign( {}, p, { productType: c.productType || 'physical', vatEnabled: !! c.vatEnabled, vatRate: c.vatRate != null ? c.vatRate : '' } ); } );
 			} ).catch( function () {} );
 		}, [ props.id ] );
 		useEffect( function () { load(); }, [ props.id ] );
@@ -371,7 +371,7 @@
 			backHead( props, 'Produkte' + ( props.name ? ' · ' + props.name : '' ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { editing: emptyProduct() } ) ); } }, '+ Neues Produkt' ) ),
 			el( 'p', { className: 'ec-muted ec-sm', style: { marginTop: '-6px', marginBottom: '10px' } }, 'Produktart: ', el( 'strong', null, ptLabel( st.productType ) ) ),
 			ErrorBox( st.error ),
-			st.editing && el( ProductForm, { checkoutId: props.id, productType: st.productType, product: st.editing, onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
+			st.editing && el( ProductForm, { checkoutId: props.id, productType: st.productType, vatEnabled: st.vatEnabled, defaultVatRate: st.vatRate, product: st.editing, onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
 			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Produkte.' ) :
 				el( 'table', { className: 'ec-table' },
 					el( 'thead', null, el( 'tr', null, el( 'th', null, '' ), el( 'th', null, 'Name' ), el( 'th', null, 'Preis' ), el( 'th', null, 'Status' ), el( 'th', null, '' ) ) ),
@@ -400,6 +400,7 @@
 			imageUrl: p0.imageUrl || '', isActive: p0.isActive !== false,
 			maxPerCustomer: p0.maxPerCustomer != null ? p0.maxPerCustomer : '', maxTotal: p0.maxTotal != null ? p0.maxTotal : '',
 			pickupPrice: p0.pickupPrice != null ? p0.pickupPrice : '', deliveryPrice: p0.deliveryPrice != null ? p0.deliveryPrice : '', deliveryFee: p0.deliveryFee != null ? p0.deliveryFee : '',
+			vatRate: p0.vatRate != null ? p0.vatRate : '',
 			optionGroups: ( p0.optionGroups || [] ).map( function ( g ) { return { name: g.name || '', options: ( g.options || [] ).map( function ( o ) { return { label: o.label || '', priceModifier: o.priceModifier != null ? o.priceModifier : 0 }; } ) }; } ),
 			customFields: ( p0.customFields || [] ).map( function ( f ) { return { label: f.label || '', fieldType: f.fieldType || 'text', required: !! f.required, options: parseOpts( f.options ) }; } ),
 		} );
@@ -426,6 +427,7 @@
 			if ( ! String( st.name ).trim() ) { up( { error: 'Bitte einen Namen angeben.' } ); return; }
 			set( Object.assign( {}, st, { busy: true, error: '' } ) );
 			var payload = { name: st.name, description: st.description, price: parseFloat( st.price ) || 0, imageUrl: st.imageUrl || '', isActive: st.isActive !== false };
+			if ( props.vatEnabled ) { payload.vatRate = st.vatRate === '' ? null : ( parseFloat( st.vatRate ) || 0 ); }
 			if ( f0.limits ) {
 				payload.maxPerCustomer = st.maxPerCustomer === '' ? null : parseInt( st.maxPerCustomer, 10 );
 				payload.maxTotal = st.maxTotal === '' ? null : parseInt( st.maxTotal, 10 );
@@ -460,6 +462,8 @@
 				Field( 'Preis', el( 'input', { type: 'number', step: '0.01', required: true, value: st.price, onChange: function ( e ) { up( { price: e.target.value } ); } } ) ) ),
 			Field( 'Beschreibung', el( 'textarea', { rows: 2, value: st.description || '', onChange: function ( e ) { up( { description: e.target.value } ); } } ) ),
 			Field( 'Bild', el( 'div', null, st.imageUrl && el( 'img', { src: st.imageUrl, className: 'ec-thumb-lg' } ), el( 'input', { type: 'file', accept: 'image/*', onChange: pickImage } ) ) ),
+			// MwSt-Satz je Produkt (nur wenn der Checkout MwSt-pflichtig ist)
+			props.vatEnabled ? Field( 'MwSt-Satz (%)', el( 'input', { type: 'number', step: '0.1', min: 0, placeholder: ( props.defaultVatRate != null && props.defaultVatRate !== '' ? String( props.defaultVatRate ) + ' (Standard)' : 'Standard' ), value: st.vatRate, onChange: function ( e ) { up( { vatRate: e.target.value } ); } } ), 'Leer = Standard-Satz des Checkouts. Für Produkte mit abweichendem Satz hier setzen (z. B. 2.6).' ) : null,
 			// Liefer-/Abholpreise (physisch/gastro)
 			f0.delivery ? el( 'div', null,
 				el( 'h4', { className: 'ec-sub-h' }, 'Liefer-/Abholpreise (optional)' ),
