@@ -255,6 +255,22 @@ class Native_API {
     }
 
     /**
+     * Onboarding-URL auf easyCheckout mit SSO-Token (falls angemeldet) + Rueckkehr-Ziel.
+     * Die Plattform liest ?token=, speichert ihn und entfernt ihn sofort aus der URL.
+     *
+     * @param string $return_url
+     * @return string
+     */
+    public function onboarding_url($return_url = '') {
+        $url = $this->base_url() . '/onboarding';
+        $params = [];
+        $token = $this->get_token();
+        if ($token) { $params['token'] = $token; }
+        if ($return_url) { $params['return_url'] = $return_url; }
+        return $params ? add_query_arg($params, $url) : $url;
+    }
+
+    /**
      * @param string $value
      * @return string
      */

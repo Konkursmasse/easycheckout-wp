@@ -144,7 +144,14 @@
 				} );
 			} else {
 				post( 'easycheckout_native_register', { data: JSON.stringify( { email: st.email, password: st.password, companyName: st.companyName, plan: 'free' } ) } ).then( function ( j ) {
-					if ( j.success ) { props.onAuthed( j.data.merchant || {} ); }
+					if ( j.success ) {
+						// Frisch registriert -> direkt ins Onboarding (SSO-Token in der URL),
+						// damit die Verifizierung unmittelbar nach der Registrierung startet.
+						post( 'easycheckout_onboarding_url', { 'return': window.location.href } ).then( function ( r ) {
+							if ( r && r.success && r.data && r.data.url ) { window.location.href = r.data.url; }
+							else { props.onAuthed( j.data.merchant || {} ); }
+						} ).catch( function () { props.onAuthed( j.data.merchant || {} ); } );
+					}
 					else { set( Object.assign( {}, st, { busy: false, error: ( j.data && j.data.message ) || 'Registrierung fehlgeschlagen' } ) ); }
 				} );
 			}
@@ -510,7 +517,13 @@
 		var frameUrl = appUrl + '/onboarding?embed=1';
 		var charges = st.status && ( st.status.chargesEnabled || ( st.acct && st.acct.chargesEnabled ) );
 		var statusLabel = ( st.acct && st.acct.status && ( st.acct.status.summary || st.acct.status.label ) ) || 'Verifizierung erforderlich';
-		function start() { window.location.href = startUrl; }
+		function start() {
+			// SSO-Token serverseitig anhaengen, damit man auf easyCheckout nicht erneut
+			// einloggen muss; Fallback = tokenlose URL (dann ggf. Login noetig).
+			post( 'easycheckout_onboarding_url', { 'return': backHere } ).then( function ( r ) {
+				window.location.href = ( r && r.success && r.data && r.data.url ) ? r.data.url : startUrl;
+			} ).catch( function () { window.location.href = startUrl; } );
+		}
 
 		return el( 'div', null,
 			el( 'div', { className: 'ec-page-head' },

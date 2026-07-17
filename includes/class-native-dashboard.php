@@ -60,6 +60,7 @@ class Native_Dashboard {
         add_action('wp_ajax_easycheckout_native_proxy', [$this, 'ajax_proxy']);
         add_action('wp_ajax_easycheckout_activate_gateway', [$this, 'ajax_activate_gateway']);
         add_action('wp_ajax_easycheckout_gateway_status', [$this, 'ajax_gateway_status']);
+        add_action('wp_ajax_easycheckout_onboarding_url', [$this, 'ajax_onboarding_url']);
         add_action('wp_ajax_easycheckout_native_upload', [$this, 'ajax_upload']);
         // Lokale Checkout-Entwuerfe (nutzbar OHNE Konto; werden bei Verbindung veroeffentlicht)
         add_action('wp_ajax_easycheckout_local_get', [$this, 'ajax_local_get']);
@@ -776,6 +777,16 @@ class Native_Dashboard {
             'webhookUrl' => $url,
             'secretSet'  => $secret_set,
         ]);
+    }
+
+    /**
+     * Liefert die Onboarding-URL mit SSO-Token, damit die Verifizierung ohne
+     * erneuten Login auf easyCheckout startet (Aufruf direkt nach Registrierung).
+     */
+    public function ajax_onboarding_url() {
+        $this->guard();
+        $return = isset($_POST['return']) ? esc_url_raw(wp_unslash($_POST['return'])) : '';
+        wp_send_json_success(['url' => $this->api->onboarding_url($return)]);
     }
 
     /**
