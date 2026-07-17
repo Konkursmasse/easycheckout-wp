@@ -173,8 +173,26 @@
 
 	// --- Checkouts list -----------------------------------------------------
 
+	// Produktarten (bei der Checkout-Erstellung gewaehlt) -> steuern, welche Felder
+	// der Produkt-Editor zeigt.
+	var PRODUCT_TYPES = [
+		[ 'physical', 'Physische Produkte (Versand)' ],
+		[ 'food', 'Gastro / Speisen' ],
+		[ 'tickets', 'Tickets / Events' ],
+		[ 'digital', 'Digital / Dienstleistung' ],
+	];
+	function ptFields( type ) {
+		switch ( type ) {
+			case 'food':    return { options: true,  optionsLabel: 'Optionen (z. B. Extras, Beilagen)', delivery: true,  fields: true, limits: false };
+			case 'tickets': return { options: false, optionsLabel: '', delivery: false, fields: true, limits: true };
+			case 'digital': return { options: false, optionsLabel: '', delivery: false, fields: false, limits: false };
+			default:        return { options: true,  optionsLabel: 'Varianten (z. B. Grösse, Farbe)', delivery: true,  fields: true, limits: true }; // physical
+		}
+	}
+	function ptLabel( type ) { var f = PRODUCT_TYPES.filter( function ( p ) { return p[ 0 ] === type; } )[ 0 ]; return f ? f[ 1 ] : 'Physische Produkte (Versand)'; }
+
 	function CheckoutsList( props ) {
-		var s = useState( { items: null, error: '', creating: false, name: '', slug: '', busy: false } );
+		var s = useState( { items: null, error: '', creating: false, name: '', slug: '', productType: 'physical', busy: false } );
 		var st = s[ 0 ], set = s[ 1 ];
 		function load() {
 			api( 'GET', '/api/checkouts' ).then( function ( b ) {
@@ -184,8 +202,8 @@
 		useEffect( function () { load(); }, [] );
 		function create( e ) {
 			e.preventDefault(); set( Object.assign( {}, st, { busy: true, error: '' } ) );
-			api( 'POST', '/api/checkouts', { name: st.name, slug: st.slug } ).then( function ( b ) {
-				set( Object.assign( {}, st, { busy: false, creating: false, name: '', slug: '' } ) );
+			api( 'POST', '/api/checkouts', { name: st.name, slug: st.slug, productType: st.productType } ).then( function ( b ) {
+				set( Object.assign( {}, st, { busy: false, creating: false, name: '', slug: '', productType: 'physical' } ) );
 				if ( b && b.checkout ) { props.navigate( 'checkout', { id: b.checkout.id } ); } else { load(); }
 			} ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
 		}
@@ -197,11 +215,19 @@
 			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Checkouts' ),
 				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { creating: true } ) ); } }, '+ Neuer Checkout' ) ),
 			ErrorBox( st.error ),
-			st.creating && el( 'form', { className: 'ec-inline-form', onSubmit: create },
-				el( 'input', { placeholder: 'Name', required: true, value: st.name, onChange: function ( e ) { set( Object.assign( {}, st, { name: e.target.value } ) ); } } ),
-				el( 'input', { placeholder: 'Slug (z. B. mein-shop)', required: true, value: st.slug, onChange: function ( e ) { set( Object.assign( {}, st, { slug: e.target.value } ) ); } } ),
-				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : 'Erstellen' ),
-				el( 'button', { type: 'button', className: 'ec-btn', onClick: function () { set( Object.assign( {}, st, { creating: false } ) ); } }, 'Abbrechen' ) ),
+			st.creating && el( 'div', { className: 'ec-card', style: { marginBottom: '14px' } },
+				el( 'form', { onSubmit: create },
+					el( 'div', { className: 'ec-two' },
+						Field( 'Name', el( 'input', { placeholder: 'z. B. Mein Shop', required: true, value: st.name, onChange: function ( e ) { set( Object.assign( {}, st, { name: e.target.value } ) ); } } ) ),
+						Field( 'Slug', el( 'input', { placeholder: 'z. B. mein-shop', required: true, value: st.slug, onChange: function ( e ) { set( Object.assign( {}, st, { slug: e.target.value } ) ); } } ) )
+					),
+					Field( 'Was verkaufst du?', el( 'select', { value: st.productType, onChange: function ( e ) { set( Object.assign( {}, st, { productType: e.target.value } ) ); } },
+						PRODUCT_TYPES.map( function ( p ) { return el( 'option', { key: p[ 0 ], value: p[ 0 ] }, p[ 1 ] ); } )
+					), 'Bestimmt, welche Felder der Produkt-Editor zeigt (z. B. Grössen nur bei physischen Produkten).' ),
+					el( 'div', { className: 'ec-form-actions' },
+						el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : 'Erstellen' ),
+						el( 'button', { type: 'button', className: 'ec-btn', onClick: function () { set( Object.assign( {}, st, { creating: false } ) ); } }, 'Abbrechen' ) )
+				) ),
 			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Checkouts.' ) :
 				el( 'table', { className: 'ec-table' },
 					el( 'thead', null, el( 'tr', null, el( 'th', null, 'Name' ), el( 'th', null, 'Slug' ), el( 'th', null, 'Produkte' ), el( 'th', null, 'Bestellungen' ), el( 'th', null, 'Status' ), el( 'th', null, '' ) ) ),
@@ -324,20 +350,28 @@
 	// --- Products manager ---------------------------------------------------
 
 	function ProductsManager( props ) {
-		var s = useState( { items: null, error: '', editing: null } );
+		var s = useState( { items: null, error: '', editing: null, productType: 'physical' } );
 		var st = s[ 0 ], set = s[ 1 ];
 		function load() {
 			api( 'GET', '/api/checkouts/' + props.id + '/products' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.products ) || [], error: '' } ); } ); } )
 				.catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } );
 		}
+		// Produktart des Checkouts laden -> steuert die Felder im Produkt-Editor.
+		useEffect( function () {
+			api( 'GET', '/api/checkouts/' + props.id ).then( function ( b ) {
+				var pt = ( b && b.checkout && b.checkout.productType ) || 'physical';
+				set( function ( p ) { return Object.assign( {}, p, { productType: pt } ); } );
+			} ).catch( function () {} );
+		}, [ props.id ] );
 		useEffect( function () { load(); }, [ props.id ] );
 		function del( p ) { if ( ! window.confirm( 'Produkt löschen?' ) ) { return; } api( 'DELETE', '/api/products/' + p.id ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
 		function emptyProduct() { return { name: '', description: '', price: '', imageUrl: '', isActive: true, maxPerCustomer: '', maxTotal: '' }; }
 
 		return el( 'div', null,
 			backHead( props, 'Produkte' + ( props.name ? ' · ' + props.name : '' ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { editing: emptyProduct() } ) ); } }, '+ Neues Produkt' ) ),
+			el( 'p', { className: 'ec-muted ec-sm', style: { marginTop: '-6px', marginBottom: '10px' } }, 'Produktart: ', el( 'strong', null, ptLabel( st.productType ) ) ),
 			ErrorBox( st.error ),
-			st.editing && el( ProductForm, { checkoutId: props.id, product: st.editing, onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
+			st.editing && el( ProductForm, { checkoutId: props.id, productType: st.productType, product: st.editing, onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
 			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Produkte.' ) :
 				el( 'table', { className: 'ec-table' },
 					el( 'thead', null, el( 'tr', null, el( 'th', null, '' ), el( 'th', null, 'Name' ), el( 'th', null, 'Preis' ), el( 'th', null, 'Status' ), el( 'th', null, '' ) ) ),
@@ -357,30 +391,128 @@
 	}
 
 	function ProductForm( props ) {
-		var s = useState( Object.assign( { busy: false, error: '' }, props.product ) );
+		var p0 = props.product || {};
+		var f0 = ptFields( props.productType );
+		function parseOpts( o ) { if ( Array.isArray( o ) ) { return o.slice(); } if ( typeof o === 'string' && o ) { try { var a = JSON.parse( o ); return Array.isArray( a ) ? a : []; } catch ( e ) { return []; } } return []; }
+		var s = useState( {
+			busy: false, error: '',
+			id: p0.id, name: p0.name || '', description: p0.description || '', price: p0.price != null ? p0.price : '',
+			imageUrl: p0.imageUrl || '', isActive: p0.isActive !== false,
+			maxPerCustomer: p0.maxPerCustomer != null ? p0.maxPerCustomer : '', maxTotal: p0.maxTotal != null ? p0.maxTotal : '',
+			pickupPrice: p0.pickupPrice != null ? p0.pickupPrice : '', deliveryPrice: p0.deliveryPrice != null ? p0.deliveryPrice : '', deliveryFee: p0.deliveryFee != null ? p0.deliveryFee : '',
+			optionGroups: ( p0.optionGroups || [] ).map( function ( g ) { return { name: g.name || '', options: ( g.options || [] ).map( function ( o ) { return { label: o.label || '', priceModifier: o.priceModifier != null ? o.priceModifier : 0 }; } ) }; } ),
+			customFields: ( p0.customFields || [] ).map( function ( f ) { return { label: f.label || '', fieldType: f.fieldType || 'text', required: !! f.required, options: parseOpts( f.options ) }; } ),
+		} );
 		var st = s[ 0 ], set = s[ 1 ];
 		function up( o ) { set( Object.assign( {}, st, { error: '' }, o ) ); }
 		function pickImage( e ) { var f = e.target.files[ 0 ]; if ( ! f ) { return; } if ( f.size > 2 * 1024 * 1024 ) { up( { error: 'Bild max. 2 MB' } ); return; } fileToDataUrl( f ).then( function ( d ) { up( { imageUrl: d } ); } ); }
+		// Optionsgruppen
+		function addGroup() { up( { optionGroups: st.optionGroups.concat( [ { name: '', options: [ { label: '', priceModifier: 0 } ] } ] ) } ); }
+		function delGroup( gi ) { var g = st.optionGroups.slice(); g.splice( gi, 1 ); up( { optionGroups: g } ); }
+		function setGroup( gi, k, v ) { var g = st.optionGroups.slice(); g[ gi ] = Object.assign( {}, g[ gi ] ); g[ gi ][ k ] = v; up( { optionGroups: g } ); }
+		function addOpt( gi ) { var g = st.optionGroups.slice(); g[ gi ] = Object.assign( {}, g[ gi ], { options: g[ gi ].options.concat( [ { label: '', priceModifier: 0 } ] ) } ); up( { optionGroups: g } ); }
+		function delOpt( gi, oi ) { var g = st.optionGroups.slice(); var os = g[ gi ].options.slice(); os.splice( oi, 1 ); g[ gi ] = Object.assign( {}, g[ gi ], { options: os } ); up( { optionGroups: g } ); }
+		function setOpt( gi, oi, k, v ) { var g = st.optionGroups.slice(); var os = g[ gi ].options.slice(); os[ oi ] = Object.assign( {}, os[ oi ] ); os[ oi ][ k ] = v; g[ gi ] = Object.assign( {}, g[ gi ], { options: os } ); up( { optionGroups: g } ); }
+		// Infofelder
+		function addField() { up( { customFields: st.customFields.concat( [ { label: '', fieldType: 'text', required: false, options: [] } ] ) } ); }
+		function delField( fi ) { var f = st.customFields.slice(); f.splice( fi, 1 ); up( { customFields: f } ); }
+		function setField( fi, k, v ) { var f = st.customFields.slice(); f[ fi ] = Object.assign( {}, f[ fi ] ); f[ fi ][ k ] = v; if ( k === 'fieldType' && v === 'checkbox' && ( ! f[ fi ].options || ! f[ fi ].options.length ) ) { f[ fi ].options = [ '' ]; } up( { customFields: f } ); }
+		function addChoice( fi ) { var f = st.customFields.slice(); f[ fi ] = Object.assign( {}, f[ fi ], { options: ( f[ fi ].options || [] ).concat( [ '' ] ) } ); up( { customFields: f } ); }
+		function delChoice( fi, ci ) { var f = st.customFields.slice(); var os = ( f[ fi ].options || [] ).slice(); os.splice( ci, 1 ); f[ fi ] = Object.assign( {}, f[ fi ], { options: os } ); up( { customFields: f } ); }
+		function setChoice( fi, ci, v ) { var f = st.customFields.slice(); var os = ( f[ fi ].options || [] ).slice(); os[ ci ] = v; f[ fi ] = Object.assign( {}, f[ fi ], { options: os } ); up( { customFields: f } ); }
+
 		function save( e ) {
-			e.preventDefault(); set( Object.assign( {}, st, { busy: true, error: '' } ) );
-			var payload = {
-				name: st.name, description: st.description, price: parseFloat( st.price ) || 0, imageUrl: st.imageUrl || '', isActive: st.isActive !== false,
-				maxPerCustomer: st.maxPerCustomer === '' ? null : parseInt( st.maxPerCustomer, 10 ), maxTotal: st.maxTotal === '' ? null : parseInt( st.maxTotal, 10 ),
-			};
+			e.preventDefault();
+			if ( ! String( st.name ).trim() ) { up( { error: 'Bitte einen Namen angeben.' } ); return; }
+			set( Object.assign( {}, st, { busy: true, error: '' } ) );
+			var payload = { name: st.name, description: st.description, price: parseFloat( st.price ) || 0, imageUrl: st.imageUrl || '', isActive: st.isActive !== false };
+			if ( f0.limits ) {
+				payload.maxPerCustomer = st.maxPerCustomer === '' ? null : parseInt( st.maxPerCustomer, 10 );
+				payload.maxTotal = st.maxTotal === '' ? null : parseInt( st.maxTotal, 10 );
+			}
+			if ( f0.delivery ) {
+				payload.pickupPrice = st.pickupPrice === '' ? null : ( parseFloat( st.pickupPrice ) || 0 );
+				payload.deliveryPrice = st.deliveryPrice === '' ? null : ( parseFloat( st.deliveryPrice ) || 0 );
+				payload.deliveryFee = st.deliveryFee === '' ? null : ( parseFloat( st.deliveryFee ) || 0 );
+			}
 			var pr = st.id ? api( 'PUT', '/api/products/' + st.id, payload ) : api( 'POST', '/api/checkouts/' + props.checkoutId + '/products', payload );
-			pr.then( function () { props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
+			pr.then( function ( b ) {
+				var pid = st.id || ( b && b.product && b.product.id );
+				if ( ! pid || ( ! f0.options && ! f0.fields ) ) { props.onSaved(); return; }
+				var groups = f0.options ? st.optionGroups.map( function ( g ) {
+					return { name: String( g.name ).trim(), options: ( g.options || [] ).filter( function ( o ) { return String( o.label ).trim() !== ''; } ).map( function ( o ) { return { label: o.label, priceModifier: parseFloat( o.priceModifier ) || 0 }; } ) };
+				} ).filter( function ( g ) { return g.name !== '' && g.options.length; } ) : [];
+				var cfs = f0.fields ? st.customFields.map( function ( f ) {
+					var opts = ( f.fieldType === 'checkbox' ) ? ( f.options || [] ).map( function ( x ) { return String( x ).trim(); } ).filter( Boolean ) : [];
+					return { label: String( f.label ).trim(), fieldType: f.fieldType, required: !! f.required, options: opts };
+				} ).filter( function ( f ) { return f.label !== '' && ( f.fieldType !== 'checkbox' || f.options.length ); } ) : [];
+				api( 'PUT', '/api/products/' + pid + '/options', { groups: groups, customFields: cfs } )
+					.then( function () { props.onSaved(); } )
+					.catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: 'Produkt gespeichert, aber Optionen/Felder: ' + err.message } ) ); } );
+			} ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
 		}
-		return el( 'div', { className: 'ec-modal' }, el( 'form', { className: 'ec-modal-card', onSubmit: save },
-			el( 'h3', null, st.id ? 'Produkt bearbeiten' : 'Neues Produkt' ),
+
+		return el( 'div', { className: 'ec-modal' }, el( 'form', { className: 'ec-modal-card ec-modal-lg', onSubmit: save },
+			el( 'h3', null, ( st.id ? 'Produkt bearbeiten' : 'Neues Produkt' ) + ' · ' + ptLabel( props.productType ) ),
 			ErrorBox( st.error ),
-			Field( 'Name', el( 'input', { required: true, value: st.name || '', onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
-			Field( 'Beschreibung', el( 'textarea', { rows: 2, value: st.description || '', onChange: function ( e ) { up( { description: e.target.value } ); } } ) ),
-			Field( 'Preis', el( 'input', { type: 'number', step: '0.01', required: true, value: st.price, onChange: function ( e ) { up( { price: e.target.value } ); } } ) ),
-			Field( 'Bild', el( 'div', null, st.imageUrl && el( 'img', { src: st.imageUrl, className: 'ec-thumb-lg' } ), el( 'input', { type: 'file', accept: 'image/*', onChange: pickImage } ) ) ),
 			el( 'div', { className: 'ec-two' },
+				Field( 'Name', el( 'input', { required: true, value: st.name || '', onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
+				Field( 'Preis', el( 'input', { type: 'number', step: '0.01', required: true, value: st.price, onChange: function ( e ) { up( { price: e.target.value } ); } } ) ) ),
+			Field( 'Beschreibung', el( 'textarea', { rows: 2, value: st.description || '', onChange: function ( e ) { up( { description: e.target.value } ); } } ) ),
+			Field( 'Bild', el( 'div', null, st.imageUrl && el( 'img', { src: st.imageUrl, className: 'ec-thumb-lg' } ), el( 'input', { type: 'file', accept: 'image/*', onChange: pickImage } ) ) ),
+			// Liefer-/Abholpreise (physisch/gastro)
+			f0.delivery ? el( 'div', null,
+				el( 'h4', { className: 'ec-sub-h' }, 'Liefer-/Abholpreise (optional)' ),
+				el( 'p', { className: 'ec-hint' }, 'Leer = Standardpreis. Liefergebühr wird einmal pro Position berechnet.' ),
+				el( 'div', { className: 'ec-three' },
+					Field( 'Abholpreis', el( 'input', { type: 'number', step: '0.05', placeholder: 'Standard', value: st.pickupPrice, onChange: function ( e ) { up( { pickupPrice: e.target.value } ); } } ) ),
+					Field( 'Lieferpreis', el( 'input', { type: 'number', step: '0.05', placeholder: 'Standard', value: st.deliveryPrice, onChange: function ( e ) { up( { deliveryPrice: e.target.value } ); } } ) ),
+					Field( 'Liefergebühr', el( 'input', { type: 'number', step: '0.05', placeholder: '0.00', value: st.deliveryFee, onChange: function ( e ) { up( { deliveryFee: e.target.value } ); } } ) ) )
+			) : null,
+			// Optionen / Varianten (physisch/gastro)
+			f0.options ? el( 'div', null,
+				el( 'h4', { className: 'ec-sub-h' }, f0.optionsLabel ),
+				st.optionGroups.map( function ( g, gi ) {
+					return el( 'div', { key: gi, className: 'ec-subcard' },
+						el( 'div', { className: 'ec-inline-form', style: { alignItems: 'center' } },
+							el( 'input', { type: 'text', placeholder: 'Gruppenname (z. B. Grösse)', value: g.name, onChange: function ( e ) { setGroup( gi, 'name', e.target.value ); } } ),
+							el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delGroup( gi ); } }, 'Gruppe entfernen' ) ),
+						( g.options || [] ).map( function ( o, oi ) {
+							return el( 'div', { key: oi, className: 'ec-inline-form', style: { alignItems: 'center', marginTop: 6 } },
+								el( 'input', { type: 'text', placeholder: 'Option (z. B. L)', value: o.label, onChange: function ( e ) { setOpt( gi, oi, 'label', e.target.value ); } } ),
+								el( 'input', { type: 'number', step: '0.05', placeholder: 'Aufschlag', style: { maxWidth: '120px' }, value: o.priceModifier, onChange: function ( e ) { setOpt( gi, oi, 'priceModifier', e.target.value ); } } ),
+								el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delOpt( gi, oi ); } }, '×' ) );
+						} ),
+						el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: function () { addOpt( gi ); } }, '+ Option' ) );
+				} ),
+				el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: addGroup }, '+ Optionsgruppe' )
+			) : null,
+			// Infofelder (gastro/tickets/physisch)
+			f0.fields ? el( 'div', null,
+				el( 'h4', { className: 'ec-sub-h' }, 'Infofelder (z. B. Allergien, Teilnehmername)' ),
+				st.customFields.map( function ( f, fi ) {
+					return el( 'div', { key: fi, className: 'ec-subcard' },
+						el( 'div', { className: 'ec-inline-form', style: { alignItems: 'center' } },
+							el( 'input', { type: 'text', placeholder: 'Feldname', value: f.label, onChange: function ( e ) { setField( fi, 'label', e.target.value ); } } ),
+							el( 'select', { value: f.fieldType, onChange: function ( e ) { setField( fi, 'fieldType', e.target.value ); } }, el( 'option', { value: 'text' }, 'Textfeld' ), el( 'option', { value: 'checkbox' }, 'Checkboxen' ) ),
+							el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! f.required, onChange: function ( e ) { setField( fi, 'required', e.target.checked ); } } ), el( 'span', null, 'Pflicht' ) ),
+							el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delField( fi ); } }, '×' ) ),
+						f.fieldType === 'checkbox' ? el( 'div', { style: { marginTop: 8 } },
+							( f.options || [] ).map( function ( opt, ci ) {
+								return el( 'div', { key: ci, className: 'ec-inline-form', style: { alignItems: 'center', marginTop: 6 } },
+									el( 'input', { type: 'text', placeholder: 'Auswahl', value: opt, onChange: function ( e ) { setChoice( fi, ci, e.target.value ); } } ),
+									el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delChoice( fi, ci ); } }, '×' ) );
+							} ),
+							el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: function () { addChoice( fi ); } }, '+ Auswahl' )
+						) : null );
+				} ),
+				el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: addField }, '+ Infofeld' )
+			) : null,
+			// Mengenlimits (physisch/tickets)
+			f0.limits ? el( 'div', { className: 'ec-two', style: { marginTop: '14px' } },
 				Field( 'Max. pro Kunde', el( 'input', { type: 'number', min: 0, value: st.maxPerCustomer != null ? st.maxPerCustomer : '', onChange: function ( e ) { up( { maxPerCustomer: e.target.value } ); } } ), 'leer = unbegrenzt' ),
-				Field( 'Gesamtkontingent', el( 'input', { type: 'number', min: 0, value: st.maxTotal != null ? st.maxTotal : '', onChange: function ( e ) { up( { maxTotal: e.target.value } ); } } ), 'leer = unbegrenzt' ) ),
-			el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.isActive !== false, onChange: function ( e ) { up( { isActive: e.target.checked } ); } } ), ' Aktiv' ),
+				Field( 'Gesamtkontingent', el( 'input', { type: 'number', min: 0, value: st.maxTotal != null ? st.maxTotal : '', onChange: function ( e ) { up( { maxTotal: e.target.value } ); } } ), 'leer = unbegrenzt' ) ) : null,
+			el( 'label', { className: 'ec-check', style: { marginTop: '12px' } }, el( 'input', { type: 'checkbox', checked: st.isActive !== false, onChange: function ( e ) { up( { isActive: e.target.checked } ); } } ), ' Aktiv' ),
 			el( 'div', { className: 'ec-form-actions' },
 				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : 'Speichern' ),
 				el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, 'Abbrechen' ) )
@@ -744,7 +876,14 @@
 					el( 'tbody', null, st.items.map( function ( t ) { return el( 'tr', { key: t.id }, el( 'td', null, el( 'code', null, t.ticketNumber ) ), el( 'td', null, t.subject ), el( 'td', null, t.status ), el( 'td', null, fmtDate( t.createdAt ) ) ); } ) ) ) );
 	}
 
-	var PLANS = [ [ 'free', 'Free' ], [ 'free_plus', 'Free+' ], [ 'basic', 'Basic' ], [ 'pro', 'Pro' ], [ 'rechnungen_only', 'Rechnungen' ] ];
+	// [ key, Label, Kommission ] – Sätze gespiegelt aus der Plattform (lib/plans.js).
+	var PLANS = [
+		[ 'free', 'Free', '3,5 % + 0,35 CHF' ],
+		[ 'free_plus', 'Free+', '3,5 % + 0,35 CHF' ],
+		[ 'basic', 'Basic', '2,9 % + 0,35 CHF' ],
+		[ 'pro', 'Pro', '2,9 % + 0,30 CHF' ],
+		[ 'rechnungen_only', 'Rechnungen', 'keine Transaktionsgebühr' ],
+	];
 	function BillingView() {
 		var s = useState( { me: null, error: '', busy: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
@@ -761,9 +900,10 @@
 			el( 'div', { className: 'ec-stat-grid' }, PLANS.map( function ( pl ) {
 				var current = st.me.plan === pl[ 0 ];
 				return el( 'div', { key: pl[ 0 ], className: 'ec-stat' }, el( 'div', { className: 'ec-stat-val', style: { fontSize: '18px' } }, pl[ 1 ] ),
+					el( 'div', { className: 'ec-stat-lbl', style: { marginTop: '4px' } }, 'Kommission: ', el( 'strong', null, pl[ 2 ] ) ),
 					el( 'button', { className: 'ec-btn ec-btn-sm' + ( current ? '' : ' ec-btn-primary' ), disabled: current || st.busy === pl[ 0 ], onClick: function () { choose( pl[ 0 ] ); }, style: { marginTop: '8px' } }, current ? 'Aktiv' : ( pl[ 0 ] === 'free' ? 'Wechseln' : 'Upgrade ↗' ) ) );
 			} ) ),
-			el( 'p', { className: 'ec-muted ec-sm', style: { marginTop: '12px' } }, 'Kostenpflichtige Tarife: Kartenzahlung über die sichere EasyCheckout-Seite (neuer Tab).' )
+			el( 'p', { className: 'ec-muted ec-sm', style: { marginTop: '12px' } }, 'Kommission pro erfolgreicher Zahlung (inkl. Stripe-Gebühren). Kostenpflichtige Tarife: Kartenzahlung über die sichere EasyCheckout-Seite (neuer Tab).' )
 		);
 	}
 
