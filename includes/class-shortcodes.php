@@ -154,10 +154,14 @@ class Shortcodes {
             'font' => '',         // '' | 'default' | 'site' (match this site) | a font name e.g. "Poppins"
         ], $atts, 'easycheckout');
 
-        // Lokaler Checkout (Bankueberweisung, ohne Konto) hat Vorrang, wenn der
-        // Slug zu einem lokal gebauten Checkout passt.
+        // Lokaler Checkout (Bankueberweisung, ohne Konto) nur verwenden, wenn KEIN
+        // Konto verbunden ist. Sobald ein Konto verbunden ist, ist die Plattform die
+        // Quelle der Wahrheit -> Konto-Checkout (Karte/TWINT via Stripe) hat Vorrang,
+        // sonst wuerde ein alter lokaler Checkout mit gleichem Slug den echten
+        // Stripe-Checkout ueberlagern (nur Bankueberweisung sichtbar).
+        $connected = class_exists('EasyCheckout\\Native_API') && (new \EasyCheckout\Native_API())->is_authenticated();
         $want = $atts['slug'] !== '' ? $atts['slug'] : $atts['id'];
-        if ($want !== '' && class_exists('EasyCheckout\\Native_Dashboard')) {
+        if (!$connected && $want !== '' && class_exists('EasyCheckout\\Native_Dashboard')) {
             $local = \EasyCheckout\Native_Dashboard::get_local_checkout_by_slug($want);
             if ($local) {
                 return $this->render_local_checkout($local);
