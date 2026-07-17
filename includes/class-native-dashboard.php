@@ -747,6 +747,11 @@ class Native_Dashboard {
         $keyType = $r['body']['keyType'] ?? 'live';
 
         // 2) Verschluesselt speichern (Gateway/API_Client nutzen genau diesen Key).
+        // WICHTIG: register_setting('easycheckout_api_key') haengt einen sanitize-Callback
+        // an, der encrypt_api_key() aufruft. update_option triggert diesen -> wuerde den
+        // bereits verschluesselten Wert DOPPELT verschluesseln (Key danach ungueltig ->
+        // "Invalid OAuth token"). Daher den Sanitize-Filter vor dem Speichern entfernen.
+        remove_all_filters('sanitize_option_easycheckout_api_key');
         update_option('easycheckout_api_key', API_Client::encrypt_api_key($key));
         update_option('easycheckout_test_mode', $keyType === 'test' ? 'yes' : 'no');
 
