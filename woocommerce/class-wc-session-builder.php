@@ -164,13 +164,18 @@ class WC_Session_Builder {
             'vat_inclusive' => true,
             'line_items'    => $line_items,
             'customer'      => $customer,
-            'metadata'      => [
+            'metadata'      => array_merge([
                 'wc_order_id'    => (string) $order->get_id(),
                 'wc_order_key'   => $order->get_order_key(),
                 'source'         => $source,
                 'customer_email' => $order->get_billing_email(),
                 'customer_name'  => $order->get_formatted_billing_full_name(),
             ],
+                // Kassen-Ersatz: immer mind. Name + E-Mail auf der EC-Kasse abfragen
+                // (auch wenn WC-Billing uebernommen wurde -> dann vorbefuellt). „Sofort
+                // kaufen" (woocommerce_buynow) bleibt unveraendert.
+                $source === 'woocommerce' ? ['collect_customer' => '1'] : []
+            ),
         ];
 
         if ($fulfillment !== null) {
