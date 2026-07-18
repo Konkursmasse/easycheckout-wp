@@ -83,10 +83,33 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
                 'default' => __('Pay securely with your preferred payment method.', 'easycheckout'),
                 'desc_tip' => true,
             ],
+            'product_source' => [
+                'title' => __('Produktquelle', 'easycheckout'),
+                'type' => 'select',
+                'description' => __('„WooCommerce-Warenkorb": die im Shop gewählten Artikel werden verarbeitet. „EasyCheckout-Checkout": es wird dein im EasyCheckout hinterlegter Checkout (mit dessen Produkten) geöffnet – dazu unten den Slug angeben.', 'easycheckout'),
+                'default' => 'woo_cart',
+                'options' => [
+                    'woo_cart'    => __('WooCommerce-Warenkorb', 'easycheckout'),
+                    'ec_checkout' => __('EasyCheckout-Checkout (Slug)', 'easycheckout'),
+                ],
+                'desc_tip' => true,
+            ],
+            'checkout_mode' => [
+                'title' => __('Checkout-Modus', 'easycheckout'),
+                'type' => 'select',
+                'description' => __('Wie die Bezahlseite dem Kunden gezeigt wird. „Eingebettet" und „Auf der Seite" bleiben auf deiner Domain; „Extern" leitet zur gehosteten easyCheckout-Seite weiter.', 'easycheckout'),
+                'default' => 'embedded',
+                'options' => [
+                    'embedded' => __('Eingebettet (auf deiner Domain)', 'easycheckout'),
+                    'inline'   => __('Auf der Seite gerendert (auf deiner Domain)', 'easycheckout'),
+                    'extern'   => __('Extern (Weiterleitung zu easyCheckout)', 'easycheckout'),
+                ],
+                'desc_tip' => true,
+            ],
             'checkout_slug' => [
-                'title' => __('Checkout Slug', 'easycheckout'),
+                'title' => __('Checkout Slug (optional)', 'easycheckout'),
                 'type' => 'text',
-                'description' => __('The EasyCheckout checkout slug to use for WooCommerce orders.', 'easycheckout'),
+                'description' => __('Nur für Standalone-Nutzung ohne WooCommerce. Im WooCommerce-Betrieb wird immer der WooCommerce-Warenkorb verarbeitet.', 'easycheckout'),
                 'default' => '',
                 'desc_tip' => true,
             ],
@@ -96,6 +119,34 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
                 'label' => __('Express-Checkout-Button im Warenkorb anzeigen', 'easycheckout'),
                 'description' => __('Zeigt zusätzlich zum normalen Checkout einen Direkt-Button im Warenkorb, der Adresse und Zahlung in einem schnellen Schritt erfasst.', 'easycheckout'),
                 'default' => 'yes',
+                'desc_tip' => true,
+            ],
+            'buy_now' => [
+                'title' => __('Sofort kaufen', 'easycheckout'),
+                'type' => 'checkbox',
+                'label' => __('„Sofort kaufen"-Button auf Produktseiten anzeigen', 'easycheckout'),
+                'description' => __('Zeigt auf jeder Produktseite unter „In den Warenkorb" einen Direkt-Kauf-Button, der sofort zur EasyCheckout-Kasse führt.', 'easycheckout'),
+                'default' => 'yes',
+                'desc_tip' => true,
+            ],
+            'replace_checkout' => [
+                'title' => __('WooCommerce-Kasse ersetzen', 'easycheckout'),
+                'type' => 'checkbox',
+                'label' => __('Die WooCommerce-Kasse vollständig durch die EasyCheckout-Kasse ersetzen', 'easycheckout'),
+                'description' => __('Beim Aufruf der Kasse wird der Warenkorb direkt an die EasyCheckout-Kasse übergeben (Adresse + Zahlung dort). Die Standard-WooCommerce-Kasse wird übersprungen.', 'easycheckout'),
+                'default' => 'no',
+                'desc_tip' => true,
+            ],
+            'checkout_mode' => [
+                'title' => __('Darstellung der Kasse', 'easycheckout'),
+                'type' => 'select',
+                'description' => __('Wie die EasyCheckout-Kasse angezeigt wird, wenn sie die WooCommerce-Kasse ersetzt (oder bei „Sofort kaufen“).', 'easycheckout'),
+                'default' => 'inline',
+                'options' => [
+                    'inline'   => __('Nativ auf Ihrer Website (empfohlen) – kein iFrame, gleiche Domain', 'easycheckout'),
+                    'embedded' => __('Eingebettet (iFrame)', 'easycheckout'),
+                    'extern'   => __('Weiterleitung zu easycheckout.ch', 'easycheckout'),
+                ],
                 'desc_tip' => true,
             ],
             'payment_methods' => [
@@ -142,47 +193,56 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
         }
 
         $payment_methods = $this->get_option('payment_methods', ['card', 'twint']);
+        $labels = [];
+        foreach ($payment_methods as $method) {
+            $labels[] = $this->get_method_label($method);
+        }
         ?>
         <div id="easycheckout-payment-info">
             <p class="easycheckout-redirect-notice">
-                <?php _e('You will be redirected to complete your payment securely.', 'easycheckout'); ?>
+                <?php _e('Nach dem Absenden der Bestellung wirst du sicher zu EasyCheckout weitergeleitet – dort wählst du deine Zahlungsart und bezahlst.', 'easycheckout'); ?>
             </p>
 
-            <?php if (count($payment_methods) > 1) : ?>
-            <div class="easycheckout-payment-methods-display">
-                <p class="easycheckout-methods-label"><?php _e('Available payment methods:', 'easycheckout'); ?></p>
-                <ul class="easycheckout-methods-list">
-                    <?php foreach ($payment_methods as $method) : ?>
-                    <li class="easycheckout-method-item">
-                        <?php echo esc_html($this->get_method_label($method)); ?>
-                    </li>
-                    <?php endforeach; ?>
-                </ul>
+            <?php if (!empty($labels)) : ?>
+            <div class="easycheckout-methods-badges" aria-hidden="true">
+                <?php foreach ($labels as $lbl) : ?>
+                    <span class="easycheckout-method-badge"><?php echo esc_html($lbl); ?></span>
+                <?php endforeach; ?>
             </div>
             <?php endif; ?>
         </div>
 
         <style>
             #easycheckout-payment-info {
-                padding: 15px;
-                background: #f8f9fa;
-                border-radius: 4px;
+                padding: 14px 16px;
+                background: #f6f9fc;
+                border: 1px solid #e3e8ee;
+                border-radius: 8px;
                 margin-top: 10px;
             }
-            .easycheckout-redirect-notice {
+            #easycheckout-payment-info .easycheckout-redirect-notice {
                 margin: 0 0 10px;
-                color: #666;
+                color: #425466;
+                font-size: 14px;
             }
-            .easycheckout-methods-label {
-                margin: 0 0 8px;
-                font-weight: 500;
-            }
-            .easycheckout-methods-list {
+            #easycheckout-payment-info .easycheckout-methods-badges {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
                 margin: 0;
-                padding-left: 20px;
+                padding: 0;
+                list-style: none;
             }
-            .easycheckout-method-item {
-                margin-bottom: 4px;
+            #easycheckout-payment-info .easycheckout-method-badge {
+                display: inline-flex;
+                align-items: center;
+                padding: 5px 12px;
+                background: #fff;
+                border: 1px solid #d7dee7;
+                border-radius: 999px;
+                font-size: 13px;
+                color: #334155;
+                line-height: 1.3;
             }
         </style>
         <?php
@@ -212,6 +272,13 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
     public function process_payment($order_id) {
         $order = wc_get_order($order_id);
 
+        // Produktquelle „EasyCheckout-Checkout": zum konfigurierten Checkout leiten
+        // (dessen Produkte), statt den WooCommerce-Warenkorb zu verarbeiten.
+        $ec = WC_Session_Builder::ec_checkout_url();
+        if ($ec !== '') {
+            return ['result' => 'success', 'redirect' => $ec];
+        }
+
         $success_url = add_query_arg([
             'wc-api' => 'easycheckout',
             'order_id' => $order_id,
@@ -224,22 +291,11 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
             'key' => $order->get_order_key(),
         ], home_url('/'));
 
-        // Create an ad-hoc payment session for the cart total and get the hosted
-        // payment page URL. Amount must be an integer in the smallest currency unit.
-        $session_data = [
-            'amount' => (int) round((float) $order->get_total() * 100),
-            'currency' => $order->get_currency(),
-            'success_url' => $success_url,
-            'cancel_url' => $cancel_url,
-            'description' => sprintf(__('Bestellung %s', 'easycheckout'), $order->get_order_number()),
-            'metadata' => [
-                'wc_order_id' => (string) $order_id,
-                'wc_order_key' => $order->get_order_key(),
-                'source' => 'woocommerce',
-                'customer_email' => $order->get_billing_email(),
-                'customer_name' => $order->get_formatted_billing_full_name(),
-            ],
-        ];
+        // Volle EasyCheckout-Kasse: Session mit strukturierten Positionen +
+        // Kundendaten + Fulfillment aus der WC-Bestellung. So zeigt /pay die
+        // komplette Bestellübersicht (Artikel, MwSt, Versand) statt nur eines
+        // Betrags. Der belastete Betrag bleibt das WC-Total.
+        $session_data = WC_Session_Builder::build($order, $success_url, $cancel_url, 'woocommerce');
 
         $response = $this->api->create_payment_session($session_data);
 
@@ -251,7 +307,7 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
 
         $data = isset($response['data']) && is_array($response['data']) ? $response['data'] : $response;
 
-        $redirect_url = $data['payment_url'] ?? '';
+        $redirect_url = WC_Session_Builder::dispatch_redirect($data['payment_url'] ?? '');
         $ec_order_id = $data['order_id'] ?? '';
 
         if (empty($redirect_url)) {
