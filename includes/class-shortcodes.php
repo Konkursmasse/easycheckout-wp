@@ -39,6 +39,53 @@ class Shortcodes {
         add_action('wp_ajax_nopriv_easycheckout_pub_checkout', [$this, 'ajax_pub_checkout']);
         add_action('wp_ajax_easycheckout_pub_pay', [$this, 'ajax_pub_pay']);
         add_action('wp_ajax_nopriv_easycheckout_pub_pay', [$this, 'ajax_pub_pay']);
+        // Proxies fuer den nativen WooCommerce-Warenkorb-Checkout (/api/pay/{token}).
+        foreach (['pay_get', 'pay_patch', 'pay_intent'] as $a) {
+            add_action('wp_ajax_easycheckout_' . $a, [$this, 'ajax_' . $a]);
+            add_action('wp_ajax_nopriv_easycheckout_' . $a, [$this, 'ajax_' . $a]);
+        }
+    }
+
+    /** Token aus der Anfrage (unguessbar, kein sanitize_title -> Bindestriche/Unterstriche behalten). */
+    private function pay_token() {
+        $t = isset($_REQUEST['token']) ? wp_unslash($_REQUEST['token']) : '';
+        return preg_replace('/[^A-Za-z0-9_\-]/', '', (string) $t);
+    }
+
+    /** Proxy: GET /api/pay/{token} — Bestelldaten (Positionen/MwSt/Adresse/Loyalty). */
+    public function ajax_pay_get() {
+        if (!check_ajax_referer('easycheckout_front', 'nonce', false)) { wp_send_json_error(['message' => 'Ungültige Anfrage.'], 400); }
+        $token = $this->pay_token();
+        if ($token === '') { wp_send_json_error(['message' => 'Kein Token.'], 400); }
+        $resp = wp_remote_get($this->api_base() . '/api/pay/' . rawurlencode($token), ['timeout' => 20]);
+        if (is_wp_error($resp)) { wp_send_json_error(['message' => $resp->get_error_message()], 502); }
+        wp_send_json_success(['status' => wp_remote_retrieve_response_code($resp), 'body' => json_decode(wp_remote_retrieve_body($resp), true)]);
+    }
+
+    /** Proxy: PATCH /api/pay/{token} — Kundendaten/Adresse (Fast-Checkout). */
+    public function ajax_pay_patch() {
+        if (!check_ajax_referer('easycheckout_front', 'nonce', false)) { wp_send_json_error(['message' => 'Ungültige Anfrage.'], 400); }
+        $token = $this->pay_token();
+        $payload = isset($_POST['payload']) ? json_decode(wp_unslash($_POST['payload']), true) : null;
+        if ($token === '' || !is_array($payload)) { wp_send_json_error(['message' => 'Ungültige Daten.'], 400); }
+        $resp = wp_remote_request($this->api_base() . '/api/pay/' . rawurlencode($token), [
+            'method' => 'PATCH', 'timeout' => 20, 'headers' => ['Content-Type' => 'application/json'], 'body' => wp_json_encode($payload),
+        ]);
+        if (is_wp_error($resp)) { wp_send_json_error(['message' => $resp->get_error_message()], 502); }
+        wp_send_json_success(['status' => wp_remote_retrieve_response_code($resp), 'body' => json_decode(wp_remote_retrieve_body($resp), true)]);
+    }
+
+    /** Proxy: POST /api/pay/{token} — PaymentIntent anlegen (clientSecret/publishableKey). */
+    public function ajax_pay_intent() {
+        if (!check_ajax_referer('easycheckout_front', 'nonce', false)) { wp_send_json_error(['message' => 'Ungültige Anfrage.'], 400); }
+        $token = $this->pay_token();
+        if ($token === '') { wp_send_json_error(['message' => 'Kein Token.'], 400); }
+        $payload = isset($_POST['payload']) ? json_decode(wp_unslash($_POST['payload']), true) : [];
+        $resp = wp_remote_post($this->api_base() . '/api/pay/' . rawurlencode($token), [
+            'timeout' => 25, 'headers' => ['Content-Type' => 'application/json'], 'body' => wp_json_encode(is_array($payload) ? $payload : []),
+        ]);
+        if (is_wp_error($resp)) { wp_send_json_error(['message' => $resp->get_error_message()], 502); }
+        wp_send_json_success(['status' => wp_remote_retrieve_response_code($resp), 'body' => json_decode(wp_remote_retrieve_body($resp), true)]);
     }
 
     /** Basis-URL der easyCheckout-API. */
@@ -83,8 +130,67 @@ class Shortcodes {
      * teilbarer Link, ohne erst eine WP-Seite anzulegen.
      */
     public function maybe_render_standalone() {
+        // Eingebettete WooCommerce-Zahlseite auf der eigenen Domain: Vollbild-iFrame
+        // der gehosteten Zahlseite. Der Kunde bleibt auf der Händler-Domain; die
+        // Zahlseite bricht bei Erfolg selbst in den Top-Frame aus (zur WC-Danke-Seite).
+        $embedId = !empty($_GET['ec_embed']) ? preg_replace('/[^A-Za-z0-9]/', '', wp_unslash($_GET['ec_embed'])) : '';
+        if ($embedId !== '') {
+            $payUrl = get_transient('ec_embed_' . $embedId);
+            if (!$payUrl) { return; }
+            nocache_headers();
+            echo '<!DOCTYPE html><html ' . get_language_attributes() . '><head><meta charset="' . esc_attr(get_bloginfo('charset')) . '">';
+            echo '<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">';
+            echo '<title>' . esc_html__('Checkout', 'easycheckout') . '</title>';
+            echo '<style>html,body{margin:0;padding:0;height:100%;background:#f8fafc}iframe{border:0;width:100%;height:100vh;display:block}</style>';
+            echo '</head><body>';
+            echo '<iframe src="' . esc_url($payUrl) . '" allow="payment *"></iframe>';
+            echo '</body></html>';
+            exit;
+        }
+
+        // Nativer WooCommerce-Warenkorb-Checkout (KEIN iFrame): DOM-Rendering auf der
+        // eigenen Domain, Stripe white-label via Server-Proxies (/api/pay/{token}).
+        $payId = !empty($_GET['ec_pay']) ? preg_replace('/[^A-Za-z0-9]/', '', wp_unslash($_GET['ec_pay'])) : '';
+        if ($payId !== '') {
+            $payUrl = get_transient('ec_embed_' . $payId);
+            if (!$payUrl) { return; }
+            $parts = wp_parse_url($payUrl);
+            $token = '';
+            if (!empty($parts['path']) && preg_match('#/pay/([^/?]+)#', $parts['path'], $mm)) { $token = $mm[1]; }
+            $q = [];
+            if (!empty($parts['query'])) { parse_str($parts['query'], $q); }
+            if ($token === '') { return; }
+
+            wp_register_script('stripe-js', 'https://js.stripe.com/v3/', [], null, true);
+            wp_register_script('easycheckout-pay-checkout', EASYCHECKOUT_PLUGIN_URL . 'assets/js/pay-checkout.js', ['stripe-js'], EASYCHECKOUT_VERSION, true);
+            wp_localize_script('easycheckout-pay-checkout', 'ecPay', [
+                'ajaxUrl'    => admin_url('admin-ajax.php'),
+                'nonce'      => wp_create_nonce('easycheckout_front'),
+                'token'      => $token,
+                'successUrl' => $q['success_url'] ?? '',
+                'cancelUrl'  => $q['cancel_url'] ?? '',
+            ]);
+            wp_enqueue_script('easycheckout-pay-checkout');
+
+            nocache_headers();
+            echo '<!DOCTYPE html><html ' . get_language_attributes() . '><head><meta charset="' . esc_attr(get_bloginfo('charset')) . '">';
+            echo '<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">';
+            echo '<title>' . esc_html__('Checkout', 'easycheckout') . '</title>';
+            wp_print_styles();
+            wp_print_head_scripts();
+            echo '</head><body style="margin:0;background:#f8fafc;"><div id="ec-pay-checkout"></div>';
+            wp_print_footer_scripts();
+            echo '</body></html>';
+            exit;
+        }
+
         $localSlug   = !empty($_GET['ec_local']) ? sanitize_title(wp_unslash($_GET['ec_local'])) : '';
+        // ec_checkout = kundenfreundlicher Alias von ec_preview (echter Checkout,
+        // nativ auf der Händler-Domain gerendert). Wird von den WooCommerce-Buttons genutzt.
         $previewSlug = !empty($_GET['ec_preview']) ? sanitize_title(wp_unslash($_GET['ec_preview'])) : '';
+        if ($previewSlug === '' && !empty($_GET['ec_checkout'])) {
+            $previewSlug = sanitize_title(wp_unslash($_GET['ec_checkout']));
+        }
         if ($localSlug === '' && $previewSlug === '') { return; }
 
         if ($previewSlug !== '') {

@@ -474,6 +474,23 @@ class Webhook_Handler {
             return;
         }
 
+        // Loyalty-Rabatt (Treuepunkte-Gutschein aus dem EasyCheckout-Checkout) als
+        // negative Position nachtragen, damit das WooCommerce-Total dem tatsächlich
+        // gezahlten Betrag entspricht. Einmalig (Meta-Guard gegen doppelte Webhooks).
+        $discount = isset($order['discount']) ? (float) $order['discount'] : 0;
+        if ($discount > 0 && !$wc_order->get_meta('_easycheckout_loyalty_discount')) {
+            $code = isset($order['voucherCode']) ? sanitize_text_field($order['voucherCode']) : '';
+            $fee = new \WC_Order_Item_Fee();
+            $fee->set_name(trim(__('Treuepunkte-Gutschein', 'easycheckout') . ($code ? " ($code)" : '')));
+            $fee->set_amount(-$discount);
+            $fee->set_total(-$discount);
+            $fee->set_tax_status('none');
+            $wc_order->add_item($fee);
+            $wc_order->update_meta_data('_easycheckout_loyalty_discount', $discount);
+            $wc_order->calculate_totals(false);
+            $wc_order->save();
+        }
+
         $transaction_id = $order['paymentIntentId'] ?? $order['transactionId'] ?? $ec_order_id;
 
         $wc_order->add_order_note(sprintf(

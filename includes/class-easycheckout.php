@@ -128,9 +128,13 @@ class EasyCheckout {
      * Initialize WooCommerce integration
      */
     public function init_woocommerce() {
+        require_once EASYCHECKOUT_PLUGIN_DIR . 'woocommerce/class-wc-session-builder.php';
+        require_once EASYCHECKOUT_PLUGIN_DIR . 'woocommerce/class-wc-cart-order.php';
         require_once EASYCHECKOUT_PLUGIN_DIR . 'woocommerce/class-wc-gateway.php';
         require_once EASYCHECKOUT_PLUGIN_DIR . 'woocommerce/class-wc-blocks.php';
         require_once EASYCHECKOUT_PLUGIN_DIR . 'woocommerce/class-wc-express.php';
+        require_once EASYCHECKOUT_PLUGIN_DIR . 'woocommerce/class-wc-buynow.php';
+        require_once EASYCHECKOUT_PLUGIN_DIR . 'woocommerce/class-wc-checkout-replace.php';
 
         // Register payment gateway
         add_filter('woocommerce_payment_gateways', function($gateways) {
@@ -143,6 +147,12 @@ class EasyCheckout {
 
         // Express-Checkout (zusaetzlicher Direkt-Button im Warenkorb -> Fast-Checkout).
         new WooCommerce\WC_Express();
+
+        // Sofort-Kauf-Button auf Produktseiten -> volle EasyCheckout-Kasse.
+        new WooCommerce\WC_BuyNow();
+
+        // Optional (Opt-in): WooCommerce-Kasse komplett durch EasyCheckout ersetzen.
+        new WooCommerce\WC_Checkout_Replace();
     }
 
     /**

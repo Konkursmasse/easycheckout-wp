@@ -94,18 +94,6 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
                 ],
                 'desc_tip' => true,
             ],
-            'checkout_mode' => [
-                'title' => __('Checkout-Modus', 'easycheckout'),
-                'type' => 'select',
-                'description' => __('Wie die Bezahlseite dem Kunden gezeigt wird. „Eingebettet" und „Auf der Seite" bleiben auf deiner Domain; „Extern" leitet zur gehosteten easyCheckout-Seite weiter.', 'easycheckout'),
-                'default' => 'embedded',
-                'options' => [
-                    'embedded' => __('Eingebettet (auf deiner Domain)', 'easycheckout'),
-                    'inline'   => __('Auf der Seite gerendert (auf deiner Domain)', 'easycheckout'),
-                    'extern'   => __('Extern (Weiterleitung zu easyCheckout)', 'easycheckout'),
-                ],
-                'desc_tip' => true,
-            ],
             'checkout_slug' => [
                 'title' => __('Checkout Slug (optional)', 'easycheckout'),
                 'type' => 'text',

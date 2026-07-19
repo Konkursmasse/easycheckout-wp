@@ -91,14 +91,22 @@ class WC_Express {
      * Express-Button im Warenkorb rendern.
      */
     public function render_cart_button() {
+        $ec = WC_Session_Builder::ec_checkout_url();
         ?>
         <div class="easycheckout-express-wrap" style="margin-bottom:12px;">
+            <?php if ($ec !== '') : ?>
+            <a href="<?php echo esc_url($ec); ?>" class="button alt easycheckout-express-btn"
+               style="width:100%;text-align:center;display:block;box-sizing:border-box;">
+                <?php esc_html_e('Zum Checkout', 'easycheckout'); ?>
+            </a>
+            <?php else : ?>
             <button type="button"
                     id="easycheckout-express-btn"
                     class="button alt easycheckout-express-btn"
                     style="width:100%;text-align:center;">
                 <?php esc_html_e('Express-Checkout', 'easycheckout'); ?>
             </button>
+            <?php endif; ?>
             <p class="easycheckout-express-hint" style="margin:6px 0 0;font-size:12px;color:#666;text-align:center;">
                 <?php esc_html_e('Schnell bezahlen – Adresse und Zahlung in einem Schritt.', 'easycheckout'); ?>
             </p>
@@ -121,7 +129,7 @@ class WC_Express {
         WC()->cart->calculate_totals();
 
         try {
-            $order = $this->create_order_from_cart();
+            $order = WC_Cart_Order::from_cart('easycheckout_express');
         } catch (\Exception $e) {
             $this->log('Express order creation failed: ' . $e->getMessage(), 'error');
             wp_send_json_error(['message' => __('Bestellung konnte nicht erstellt werden.', 'easycheckout')]);
@@ -146,18 +154,8 @@ class WC_Express {
             'key'      => $order->get_order_key(),
         ], home_url('/'));
 
-        $session_data = [
-            'amount'      => (int) round((float) $order->get_total() * 100),
-            'currency'    => $order->get_currency(),
-            'success_url' => $success_url,
-            'cancel_url'  => $cancel_url,
-            'description' => sprintf(__('Bestellung %s', 'easycheckout'), $order->get_order_number()),
-            'metadata'    => [
-                'wc_order_id'  => (string) $order_id,
-                'wc_order_key' => $order->get_order_key(),
-                'source'       => 'woocommerce_express',
-            ],
-        ];
+        // Volle EasyCheckout-Kasse mit Positionen + Fulfillment aus dem Warenkorb.
+        $session_data = WC_Session_Builder::build($order, $success_url, $cancel_url, 'woocommerce_express');
 
         $response = $this->api->create_payment_session($session_data);
 
@@ -169,7 +167,7 @@ class WC_Express {
         }
 
         $data = isset($response['data']) && is_array($response['data']) ? $response['data'] : $response;
-        $redirect_url = $data['payment_url'] ?? '';
+        $redirect_url = WC_Session_Builder::dispatch_redirect($data['payment_url'] ?? '');
         $ec_order_id  = $data['order_id'] ?? '';
 
         if (empty($redirect_url)) {
@@ -193,119 +191,6 @@ class WC_Express {
         ]);
 
         wp_send_json_success(['redirect' => $redirect_url]);
-    }
-
-    /**
-     * WooCommerce-Bestellung aus dem aktuellen Warenkorb aufbauen.
-     *
-     * Uebernimmt Positionen inkl. Steuern, Versand, Gebuehren und Gutscheine aus
-     * dem Cart und berechnet die Summen. Adresse bleibt zunaechst leer und wird
-     * nach der Zahlung aus dem Fast-Checkout per Webhook nachgetragen.
-     *
-     * @return \WC_Order|null
-     * @throws \Exception
-     */
-    private function create_order_from_cart() {
-        $cart = WC()->cart;
-
-        $order = wc_create_order([
-            'status'      => 'pending',
-            'created_via' => 'easycheckout_express',
-            'customer_id' => get_current_user_id(),
-        ]);
-
-        if (is_wp_error($order)) {
-            throw new \Exception($order->get_error_message());
-        }
-
-        // Positionen.
-        foreach ($cart->get_cart() as $cart_item_key => $values) {
-            $product = $values['data'];
-            if (!$product) {
-                continue;
-            }
-            $item_id = $order->add_product($product, $values['quantity'], [
-                'subtotal' => $values['line_subtotal'],
-                'total'    => $values['line_total'],
-                'taxes'    => [
-                    'subtotal' => $values['line_tax_data']['subtotal'] ?? [],
-                    'total'    => $values['line_tax_data']['total'] ?? [],
-                ],
-            ]);
-            if (!$item_id) {
-                throw new \Exception('add_product failed');
-            }
-        }
-
-        // Versand aus den gewaehlten Methoden.
-        $this->add_shipping_lines($order, $cart);
-
-        // Gebuehren.
-        foreach ($cart->get_fees() as $fee) {
-            $item = new \WC_Order_Item_Fee();
-            $item->set_name($fee->name);
-            $item->set_amount($fee->amount);
-            $item->set_total($fee->total);
-            $item->set_tax_class($fee->tax_class ?? '');
-            if (isset($fee->tax_data)) {
-                $item->set_taxes(['total' => $fee->tax_data]);
-            }
-            $order->add_item($item);
-        }
-
-        // Gutscheine.
-        if (method_exists($cart, 'get_applied_coupons')) {
-            foreach ($cart->get_applied_coupons() as $code) {
-                $order->apply_coupon($code);
-            }
-        }
-
-        $order->set_payment_method('easycheckout');
-        $order->set_payment_method_title(__('EasyCheckout (Express)', 'easycheckout'));
-        $order->set_currency(get_woocommerce_currency());
-
-        // Bei eingeloggtem Kunden Adresse vorbefuellen (spart Tippen im Fast-Checkout).
-        if (is_user_logged_in()) {
-            $customer = new \WC_Customer(get_current_user_id());
-            $order->set_address($customer->get_billing(), 'billing');
-            $order->set_address($customer->get_shipping(), 'shipping');
-        }
-
-        $order->calculate_totals(false); // Steuern aus den Positionen behalten.
-        $order->save();
-
-        return $order;
-    }
-
-    /**
-     * Versandzeilen aus den gewaehlten Versandmethoden des Warenkorbs uebernehmen.
-     *
-     * @param \WC_Order $order
-     * @param \WC_Cart  $cart
-     */
-    private function add_shipping_lines($order, $cart) {
-        if (!$cart->needs_shipping() || !function_exists('WC')) {
-            return;
-        }
-
-        $packages = WC()->shipping() ? WC()->shipping()->get_packages() : [];
-        $chosen_methods = WC()->session ? WC()->session->get('chosen_shipping_methods', []) : [];
-
-        foreach ($packages as $package_key => $package) {
-            $chosen_id = $chosen_methods[$package_key] ?? '';
-            if (!$chosen_id || empty($package['rates'][$chosen_id])) {
-                continue;
-            }
-            $rate = $package['rates'][$chosen_id];
-
-            $item = new \WC_Order_Item_Shipping();
-            $item->set_method_title($rate->get_label());
-            $item->set_method_id($rate->get_method_id());
-            $item->set_instance_id($rate->get_instance_id());
-            $item->set_total($rate->get_cost());
-            $item->set_taxes(['total' => $rate->get_taxes()]);
-            $order->add_item($item);
-        }
     }
 
     /**

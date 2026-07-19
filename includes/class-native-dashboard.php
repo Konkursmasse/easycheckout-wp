@@ -51,6 +51,10 @@ class Native_Dashboard {
         $this->api = new Native_API();
         add_action('admin_menu', [$this, 'add_menu'], 5);
         add_action('admin_enqueue_scripts', [$this, 'enqueue']);
+        // Selbstheilung + klarer Hinweis, falls der Gateway-Key fehlt (sonst
+        // deaktivieren sich Buy-Now/Kassen-Ersatz/Zahlung lautlos).
+        add_action('admin_init', [$this, 'maybe_self_heal_gateway']);
+        add_action('admin_notices', [$this, 'maybe_connection_notice']);
         // Fremde Plugin-Hinweise (WooCommerce/Pinterest/…) auf der nativen
         // EasyCheckout-Seite ausblenden -> sauberer nativer Screen.
         add_action('in_admin_header', [$this, 'suppress_foreign_notices'], 1);
@@ -736,14 +740,36 @@ class Native_Dashboard {
             wp_send_json_error(['message' => __('Bitte zuerst mit deinem EasyCheckout-Konto anmelden.', 'easycheckout')]);
         }
 
+        $result = $this->provision_gateway_key();
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()]);
+        }
+        wp_send_json_success($result);
+    }
+
+    /**
+     * Mintet den payments_only-Gateway-Key (JWT-authentifiziert), speichert ihn
+     * verschluesselt und registriert den Webhook. Wiederverwendbar von der
+     * AJAX-Aktivierung UND der automatischen Selbstheilung (maybe_self_heal_gateway).
+     *
+     * Der Gateway/API_Client (is_configured) haengt an genau diesem Key; ohne ihn
+     * sind „Sofort kaufen", Kassen-Ersatz und die Zahlung lautlos deaktiviert.
+     *
+     * @return array|\WP_Error Erfolgs-Payload oder Fehler.
+     */
+    public function provision_gateway_key() {
+        if (!$this->api->is_authenticated()) {
+            return new \WP_Error('ec_not_authenticated', __('Nicht mit EasyCheckout verbunden.', 'easycheckout'));
+        }
+
         // 1) Gateway-Key erzeugen (JWT-authentifiziert).
         $r = $this->api->request('POST', '/api/auth/gateway-key', []);
-        if (is_wp_error($r)) { wp_send_json_error(['message' => $r->get_error_message()]); }
+        if (is_wp_error($r)) { return $r; }
         if (($r['status'] ?? 0) >= 400) {
-            wp_send_json_error(['message' => $r['body']['error'] ?? __('Gateway-Key konnte nicht erstellt werden.', 'easycheckout')]);
+            return new \WP_Error('ec_gateway_key', $r['body']['error'] ?? __('Gateway-Key konnte nicht erstellt werden.', 'easycheckout'));
         }
         $key = $r['body']['apiKey'] ?? '';
-        if (!$key) { wp_send_json_error(['message' => __('Kein Key erhalten.', 'easycheckout')]); }
+        if (!$key) { return new \WP_Error('ec_gateway_key', __('Kein Key erhalten.', 'easycheckout')); }
         $keyType = $r['body']['keyType'] ?? 'live';
 
         // 2) Verschluesselt speichern (Gateway/API_Client nutzen genau diesen Key).
@@ -775,13 +801,65 @@ class Native_Dashboard {
             }
         }
 
-        wp_send_json_success([
+        return [
             'message'    => __('WooCommerce-Gateway aktiviert.', 'easycheckout'),
             'keyType'    => $keyType,
             'webhook'    => $webhook,
             'webhookUrl' => $url,
             'secretSet'  => $secret_set,
-        ]);
+        ];
+    }
+
+    /**
+     * SELBSTHEILUNG: Ist der Merchant verbunden (JWT), aber der Gateway-Key fehlt
+     * (Salt-Rotation, Plugin-Update, oder der Aktivierungs-Schritt lief nie),
+     * dann waeren Buy-Now/Kassen-Ersatz/Gateway lautlos deaktiviert. Wir minten
+     * den Key automatisch nach — hoechstens 1x/Stunde (Transient-Lock), damit die
+     * API nicht bei jedem Admin-Aufruf angefragt wird.
+     */
+    public function maybe_self_heal_gateway() {
+        if (!current_user_can('manage_woocommerce') && !current_user_can('manage_options')) {
+            return;
+        }
+        if (get_option('easycheckout_api_key', '')) {
+            return; // Key vorhanden -> nichts zu tun.
+        }
+        if (!$this->api->is_authenticated()) {
+            return; // Nicht verbunden -> der Admin-Hinweis uebernimmt.
+        }
+        if (get_transient('easycheckout_gateway_heal_lock')) {
+            return; // Throttle: erst nach Ablauf erneut versuchen.
+        }
+        set_transient('easycheckout_gateway_heal_lock', 1, HOUR_IN_SECONDS);
+        $this->provision_gateway_key(); // Fehler still -> der Hinweis zeigt den Zustand.
+    }
+
+    /**
+     * Klarer Admin-Hinweis statt lautloser Deaktivierung: Gateway ist aktiviert,
+     * aber die EasyCheckout-Verbindung/der Gateway-Key fehlt -> Buttons + Kassen-
+     * Ersatz + Zahlung sind inaktiv. Mit direktem Handlungs-Button.
+     */
+    public function maybe_connection_notice() {
+        if (!current_user_can('manage_woocommerce') && !current_user_can('manage_options')) {
+            return;
+        }
+        $s = get_option('woocommerce_easycheckout_settings', []);
+        $enabled = is_array($s) && ($s['enabled'] ?? 'no') === 'yes';
+        if (!$enabled || get_option('easycheckout_api_key', '')) {
+            return; // Gateway aus, oder Key vorhanden -> alles gut.
+        }
+        $url = admin_url('admin.php?page=' . $this->page_slug);
+        if ($this->api->is_authenticated()) {
+            $msg = __('EasyCheckout ist verbunden, aber das WooCommerce-Gateway ist noch nicht aktiviert. „Sofort kaufen", der Kassen-Ersatz und die Bezahlung sind deshalb inaktiv.', 'easycheckout');
+            $btn = __('Gateway jetzt aktivieren', 'easycheckout');
+        } else {
+            $msg = __('EasyCheckout ist als Zahlart aktiviert, aber nicht mit deinem Konto verbunden. „Sofort kaufen", der Kassen-Ersatz und die Bezahlung sind deshalb inaktiv.', 'easycheckout');
+            $btn = __('Mit EasyCheckout verbinden', 'easycheckout');
+        }
+        printf(
+            '<div class="notice notice-error"><p><strong>EasyCheckout:</strong> %s</p><p><a class="button button-primary" href="%s">%s</a></p></div>',
+            esc_html($msg), esc_url($url), esc_html($btn)
+        );
     }
 
     /**
