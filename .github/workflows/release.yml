@@ -24,12 +24,15 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           echo "Building easycheckout-wp $VERSION"
-          # Ordnername = Plugin-Slug, damit WordPress am selben Ort aktualisiert.
-          mkdir -p build/easycheckout-wp
+          # Ordnername = Plugin-Slug "easycheckout" (= Ordner der real installierten
+          # Plugins), damit ein manueller ZIP-Upload das vorhandene Plugin sauber
+          # ERSETZT statt eine Dublette anzulegen. Der Auto-Updater benennt den Ordner
+          # ohnehin auf den installierten Slug um (fix_source_dir) -> fuer beide Faelle ok.
+          mkdir -p build/easycheckout
           rsync -a --exclude='.git' --exclude='.github' --exclude='build' \
-                --exclude='node_modules' --exclude='*.zip' ./ build/easycheckout-wp/
+                --exclude='node_modules' --exclude='*.zip' ./ build/easycheckout/
           cd build
-          zip -r "../easycheckout-wp.zip" easycheckout-wp >/dev/null
+          zip -r "../easycheckout-wp.zip" easycheckout >/dev/null
           cd ..
           ls -la easycheckout-wp.zip
 
