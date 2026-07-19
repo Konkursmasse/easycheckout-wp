@@ -47,7 +47,11 @@ class Updater {
         add_action('upgrader_process_complete', [$this, 'flush_cache'], 10, 2);
         // Hintergrund-Auto-Updates fuer DIESES Plugin standardmaessig aktivieren.
         add_filter('auto_update_plugin', [$this, 'enable_auto_update'], 10, 2);
-        // Manuelles „Nach Updates suchen": Cache leeren, wenn WP die Liste neu zieht.
+        // „Nach Updates suchen" (force-check) MUSS auch unseren 6h-GitHub-Cache
+        // leeren – sonst vergleicht WP weiter gegen das alte, gecachte Release und
+        // zeigt eine frisch veroeffentlichte Version bis zu 6h nicht an. Der
+        // force-check-Parameter wird auf der Update-Seite gesetzt.
+        add_action('load-update-core.php', [$this, 'maybe_flush_on_force_check']);
         add_action('load-plugins.php', [$this, 'maybe_flush_on_force_check']);
     }
 
