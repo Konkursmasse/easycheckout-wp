@@ -1,9 +1,12 @@
 name: Release
 
-# Baut bei jedem Version-Tag (v1.2.3) automatisch ein sauberes Plugin-ZIP mit dem
-# Ordner „easycheckout-wp/" und haengt es als Release-Asset an. Der Auto-Updater im
-# Plugin (includes/class-updater.php) laedt genau dieses Asset -> alle Kundenseiten
-# aktualisieren sich anschliessend selbststaendig.
+# Baut bei jedem Version-Tag (v1.2.3) zwei saubere Plugin-ZIPs (Ordner
+# „easycheckout/") und haengt sie als Release-Assets an:
+#   * easycheckout-wp.zip        – Self-Hosting/Direkt-Download, MIT Auto-Updater.
+#     Genau dieses Asset laedt der Auto-Updater (includes/class-updater.php) ->
+#     alle Kundenseiten aktualisieren sich selbststaendig.
+#   * easycheckout-wp-wporg.zip  – WordPress.org-Fassung, OHNE Auto-Updater und
+#     ohne Entwickler-Dokus. .org verwaltet Updates selbst.
 
 on:
   push:
@@ -20,31 +23,48 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build plugin ZIP
+      - name: Build plugin ZIPs
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           echo "Building easycheckout-wp $VERSION"
+
           # Ordnername = Plugin-Slug "easycheckout" (= Ordner der real installierten
           # Plugins), damit ein manueller ZIP-Upload das vorhandene Plugin sauber
           # ERSETZT statt eine Dublette anzulegen. Der Auto-Updater benennt den Ordner
           # ohnehin auf den installierten Slug um (fix_source_dir) -> fuer beide Faelle ok.
-          mkdir -p build/easycheckout
-          rsync -a --exclude='.git' --exclude='.github' --exclude='build' \
-                --exclude='node_modules' --exclude='*.zip' ./ build/easycheckout/
-          cd build
-          zip -r "../easycheckout-wp.zip" easycheckout >/dev/null
-          cd ..
-          ls -la easycheckout-wp.zip
 
-      - name: Create / update GitHub Release with asset
+          # --- Self-Hosting-Fassung (voll, mit Updater) ---
+          mkdir -p build/full/easycheckout
+          rsync -a --exclude='.git' --exclude='.github' --exclude='build' \
+                --exclude='node_modules' --exclude='*.zip' \
+                --exclude='.wordpress-org' \
+                ./ build/full/easycheckout/
+          (cd build/full && zip -r "$GITHUB_WORKSPACE/easycheckout-wp.zip" easycheckout >/dev/null)
+
+          # --- WordPress.org-Fassung (ohne Updater + ohne Dev-Dokus) ---
+          mkdir -p build/wporg/easycheckout
+          rsync -a --exclude='.git' --exclude='.github' --exclude='build' \
+                --exclude='node_modules' --exclude='*.zip' \
+                --exclude='.wordpress-org' \
+                --exclude='.gitignore' \
+                --exclude='includes/class-updater.php' \
+                --exclude='API-REFERENCE.md' \
+                --exclude='INSTALL-UND-NUTZUNG.md' \
+                --exclude='PUBLISHING.md' \
+                ./ build/wporg/easycheckout/
+          (cd build/wporg && zip -r "$GITHUB_WORKSPACE/easycheckout-wp-wporg.zip" easycheckout >/dev/null)
+
+          ls -la easycheckout-wp.zip easycheckout-wp-wporg.zip
+
+      - name: Create / update GitHub Release with assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" easycheckout-wp.zip --clobber
+            gh release upload "$GITHUB_REF_NAME" easycheckout-wp.zip easycheckout-wp-wporg.zip --clobber
           else
-            gh release create "$GITHUB_REF_NAME" easycheckout-wp.zip \
+            gh release create "$GITHUB_REF_NAME" easycheckout-wp.zip easycheckout-wp-wporg.zip \
               --title "EasyCheckout $VERSION" \
-              --notes "Automatisches Release von easycheckout-wp $VERSION. Wird vom Plugin-Auto-Updater eingespielt."
+              --notes "Automatisches Release von easycheckout-wp $VERSION. easycheckout-wp.zip = Self-Hosting (mit Auto-Updater), easycheckout-wp-wporg.zip = WordPress.org-Fassung (ohne Auto-Updater)."
           fi

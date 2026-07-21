@@ -80,9 +80,13 @@ class EasyCheckout {
         $this->webhooks = new Webhook_Handler();
         $this->shortcodes = new Shortcodes();
 
-        // Auto-Updater (GitHub-Releases). Immer laden — auch fuer Hintergrund-
-        // Auto-Updates via WP-Cron, die nicht im Admin laufen.
-        new Updater();
+        // Auto-Updater (GitHub-Releases). Nur laden, wenn die Updater-Klasse
+        // vorhanden ist: die WordPress.org-Fassung wird OHNE sie ausgeliefert, da
+        // .org Updates selbst verwaltet. Zusaetzlich per Filter abschaltbar.
+        if (file_exists(EASYCHECKOUT_PLUGIN_DIR . 'includes/class-updater.php')
+            && apply_filters('easycheckout_enable_updater', true)) {
+            new Updater();
+        }
 
         // Admin components
         if (is_admin()) {
