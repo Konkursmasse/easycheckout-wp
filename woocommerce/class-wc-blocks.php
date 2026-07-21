@@ -135,6 +135,7 @@ class WC_Blocks_Payment_Method extends AbstractPaymentMethodType {
             'paymentMethods' => $this->get_setting('payment_methods', ['card', 'twint']),
             'isTestMode' => $api->is_test_mode(),
             'icons' => $this->get_icons(),
+            'logo' => apply_filters('easycheckout_gateway_icon', EASYCHECKOUT_PLUGIN_URL . 'assets/images/easycheckout-logo.png'),
         ];
     }
 
