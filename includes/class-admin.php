@@ -414,7 +414,7 @@ class Admin {
                                        name="easycheckout_payment_methods[]"
                                        value="card"
                                        <?php checked(in_array('card', $payment_methods)); ?>>
-                                <?php _e('Credit/Debit Cards (Stripe)', 'easycheckout'); ?>
+                                <?php _e('Kredit-/Debitkarten', 'easycheckout'); ?>
                             </label>
                             <br>
                             <label>

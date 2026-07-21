@@ -778,7 +778,7 @@
 		var st = s[ 0 ], set = s[ 1 ];
 		function accept() { set( { busy: true, msg: '', error: '' } ); api( 'POST', '/api/stripe/connect/terms', {} ).then( function ( b ) { if ( b && b.redirectUrl ) { window.open( b.redirectUrl, '_blank', 'noopener' ); } set( { busy: false, msg: 'AGB akzeptiert.' } ); props.onSaved(); } ).catch( function ( err ) { set( { busy: false, error: err.message } ); } ); }
 		return el( 'div', { className: 'ec-card' }, el( 'h3', null, '6. AGB akzeptieren' ), st.msg && el( 'div', { className: 'ec-alert' }, st.msg ), ErrorBox( st.error ),
-			el( 'p', { className: 'ec-muted ec-sm' }, 'Mit dem Akzeptieren bestätigst du die Stripe-Nutzungsbedingungen.' ),
+			el( 'p', { className: 'ec-muted ec-sm' }, 'Mit dem Akzeptieren bestätigst du die Nutzungsbedingungen für die Zahlungsabwicklung.' ),
 			el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy, onClick: accept }, st.busy ? '…' : 'AGB akzeptieren' ) );
 	}
 
@@ -894,7 +894,7 @@
 	// Zum Start bietet das Plugin bewusst nur Basic an (weitere Tarife bleiben auf der
 	// Plattform bestehen).
 	var PLANS = [
-		[ 'basic', 'Basic', '2,9 % + 0,35 CHF' ],
+		[ 'basic', 'Basic', '3,5 % + CHF 0,35' ],
 	];
 	function BillingView() {
 		var s = useState( { me: null, error: '', busy: '' } );
@@ -915,7 +915,7 @@
 					el( 'div', { className: 'ec-stat-lbl', style: { marginTop: '4px' } }, 'Kommission: ', el( 'strong', null, pl[ 2 ] ) ),
 					el( 'button', { className: 'ec-btn ec-btn-sm' + ( current ? '' : ' ec-btn-primary' ), disabled: current || st.busy === pl[ 0 ], onClick: function () { choose( pl[ 0 ] ); }, style: { marginTop: '8px' } }, current ? 'Aktiv' : ( pl[ 0 ] === 'free' ? 'Wechseln' : 'Upgrade ↗' ) ) );
 			} ) ),
-			el( 'p', { className: 'ec-muted ec-sm', style: { marginTop: '12px' } }, 'Kommission pro erfolgreicher Zahlung (inkl. Stripe-Gebühren). Kostenpflichtige Tarife: Kartenzahlung über die sichere EasyCheckout-Seite (neuer Tab).' )
+			el( 'p', { className: 'ec-muted ec-sm', style: { marginTop: '12px' } }, 'Kommission pro erfolgreicher Zahlung – alle Zahlungsgebühren inklusive, keine versteckten Kosten. Kostenpflichtige Tarife: Kartenzahlung über die sichere EasyCheckout-Seite (neuer Tab).' )
 		);
 	}
 
