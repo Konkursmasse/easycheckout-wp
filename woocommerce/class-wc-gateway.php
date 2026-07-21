@@ -31,7 +31,8 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
      */
     public function __construct() {
         $this->id = 'easycheckout';
-        $this->icon = '';
+        // EasyCheckout-Emblem neben dem Zahlungsart-Namen (Checkout + Admin-Liste).
+        $this->icon = apply_filters('easycheckout_gateway_icon', EASYCHECKOUT_PLUGIN_URL . 'assets/images/easycheckout-logo.png');
         $this->has_fields = true;
         $this->method_title = __('EasyCheckout', 'easycheckout');
         $this->method_description = __('Accept payments with Credit Cards, TWINT, and Swiss QR-Bill via EasyCheckout.', 'easycheckout');
@@ -56,6 +57,21 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
         add_action('woocommerce_api_easycheckout', [$this, 'handle_return']);
         add_action('woocommerce_api_easycheckout_cancel', [$this, 'handle_cancel']);
+    }
+
+    /**
+     * Gateway-Icon (EasyCheckout-Emblem) mit fester Anzeigehoehe, damit es in
+     * jedem Theme sauber neben dem Zahlungsart-Namen erscheint.
+     *
+     * @return string
+     */
+    public function get_icon() {
+        if (empty($this->icon)) {
+            return apply_filters('woocommerce_gateway_icon', '', $this->id);
+        }
+        $html = '<img src="' . esc_url($this->icon) . '" alt="' . esc_attr($this->get_title())
+            . '" style="max-height:24px;width:auto;vertical-align:middle;margin-left:6px;display:inline-block;" />';
+        return apply_filters('woocommerce_gateway_icon', $html, $this->id);
     }
 
     /**

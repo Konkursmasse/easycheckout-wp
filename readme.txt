@@ -4,7 +4,7 @@ Tags: checkout, payments, twint, woocommerce, qr-bill
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.0.55
+Stable tag: 1.0.56
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -87,6 +87,9 @@ Ja, die WooCommerce Cart- und Checkout-Blocks werden unterstützt, ebenso HPOS.
 4. Natives EasyCheckout-Dashboard im WP-Admin: Bestellungen, Kunden, Rechnungen.
 
 == Changelog ==
+
+= 1.0.56 =
+* WooCommerce-Zahlungsart zeigt jetzt das EasyCheckout-Logo neben dem Namen.
 
 = 1.0.55 =
 * Veröffentlichung vorbereitet: readme.txt, GPLv2-Lizenz, saubere Deinstallation (uninstall.php).
