@@ -161,6 +161,7 @@ class Shortcodes {
             if (!empty($parts['query'])) { parse_str($parts['query'], $q); }
             if ($token === '') { return; }
 
+            wp_enqueue_style('easycheckout-local-checkout', EASYCHECKOUT_PLUGIN_URL . 'assets/css/local-checkout.css', [], EASYCHECKOUT_VERSION);
             wp_register_script('stripe-js', 'https://js.stripe.com/v3/', [], null, true);
             wp_register_script('easycheckout-pay-checkout', EASYCHECKOUT_PLUGIN_URL . 'assets/js/pay-checkout.js', ['stripe-js'], EASYCHECKOUT_VERSION, true);
             wp_localize_script('easycheckout-pay-checkout', 'ecPay', [
@@ -169,6 +170,7 @@ class Shortcodes {
                 'token'      => $token,
                 'successUrl' => $q['success_url'] ?? '',
                 'cancelUrl'  => $q['cancel_url'] ?? '',
+                'brandColor' => \EasyCheckout\Design::color(),
             ]);
             wp_enqueue_script('easycheckout-pay-checkout');
 
@@ -178,6 +180,7 @@ class Shortcodes {
             echo '<title>' . esc_html__('Checkout', 'easycheckout') . '</title>';
             wp_print_styles();
             wp_print_head_scripts();
+            \EasyCheckout\Design::head();
             echo '</head><body style="margin:0;background:#f8fafc;"><div id="ec-pay-checkout"></div>';
             wp_print_footer_scripts();
             echo '</body></html>';
@@ -212,6 +215,7 @@ class Shortcodes {
         echo '<title>' . $title . '</title>';
         wp_print_styles();
         wp_print_head_scripts();
+        \EasyCheckout\Design::head();
         echo '</head><body style="margin:0;">';
         echo $html;
         wp_print_footer_scripts();
@@ -305,6 +309,7 @@ class Shortcodes {
     private function render_account_checkout($slug, $atts) {
         wp_register_style('easycheckout-local-checkout', EASYCHECKOUT_PLUGIN_URL . 'assets/css/local-checkout.css', [], EASYCHECKOUT_VERSION);
         wp_enqueue_style('easycheckout-local-checkout');
+        \EasyCheckout\Design::enqueue_inline(); // Markenfarbe + Custom CSS
         // Stripe.js (unsichtbar/white-label) fuer die native Kartenzahlung.
         wp_register_script('stripe-js', 'https://js.stripe.com/v3/', [], null, true);
         wp_enqueue_script('stripe-js');
@@ -418,6 +423,7 @@ class Shortcodes {
         $handle = 'easycheckout-local-checkout';
         wp_register_style($handle, EASYCHECKOUT_PLUGIN_URL . 'assets/css/local-checkout.css', [], EASYCHECKOUT_VERSION);
         wp_enqueue_style($handle);
+        \EasyCheckout\Design::enqueue_inline($handle); // Markenfarbe + Custom CSS
         wp_register_script('easycheckout-qrgen', EASYCHECKOUT_PLUGIN_URL . 'assets/js/qrcode-generator.js', [], '1.4.4', true);
         wp_register_script($handle, EASYCHECKOUT_PLUGIN_URL . 'assets/js/local-checkout.js', ['easycheckout-qrgen'], EASYCHECKOUT_VERSION, true);
 

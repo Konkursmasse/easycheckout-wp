@@ -60,15 +60,16 @@ class WC_Session_Builder {
      * @param string $payment_url Gehostete Zahl-URL aus create_payment_session
      * @return string
      */
-    public static function dispatch_redirect($payment_url) {
+    public static function dispatch_redirect($payment_url, $allow_native = false) {
         $mode = self::checkout_mode();
         if (empty($payment_url) || $mode === 'extern') {
             return $payment_url;
         }
         $id = wp_generate_password(24, false);
         set_transient('ec_embed_' . $id, $payment_url, 30 * MINUTE_IN_SECONDS);
-        // inline = natives DOM-Rendering (?ec_pay), embedded = iFrame (?ec_embed).
-        $param = ($mode === 'inline') ? 'ec_pay' : 'ec_embed';
+        // Die native Zwei-Spalten-Kasse (?ec_pay) nur beim VOLLSTÄNDIGEN Kassen-Ersatz
+        // ($allow_native). Buy-Now/Express/Gateway zeigen das /pay-Terminal (?ec_embed).
+        $param = ($mode === 'inline' && $allow_native) ? 'ec_pay' : 'ec_embed';
         return home_url('/?' . $param . '=' . $id);
     }
 

@@ -137,6 +137,22 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
                 ],
                 'desc_tip' => true,
             ],
+            'brand_color' => [
+                'title' => __('Markenfarbe (Design)', 'easycheckout'),
+                'type' => 'text',
+                'description' => __('Primärfarbe der Kasse (Buttons/Akzente), z. B. #0891b2 oder #4F46E5. Gilt für die native WooCommerce-Kasse und /pay. Entwickler können sie auch per Filter easycheckout_checkout_color überschreiben.', 'easycheckout'),
+                'default' => '#4F46E5',
+                'placeholder' => '#4F46E5',
+                'desc_tip' => true,
+            ],
+            'custom_css' => [
+                'title' => __('Eigenes CSS (Design)', 'easycheckout'),
+                'type' => 'textarea',
+                'css' => 'width:100%;height:150px;font-family:monospace;',
+                'description' => __('Eigenes CSS zum Anpassen der Kasse (Klassen: .eclc-*, Container #ec-pay-checkout / .ec-local-checkout, Variable --ec-p). Wird auf allen Kassen-Seiten eingebunden. Per Filter easycheckout_checkout_css erweiterbar.', 'easycheckout'),
+                'default' => '',
+                'desc_tip' => true,
+            ],
             'payment_methods' => [
                 'title' => __('Payment Methods', 'easycheckout'),
                 'type' => 'multiselect',

@@ -63,11 +63,21 @@ class WC_Checkout_Replace {
             exit;
         }
 
-        if (!WC()->cart || WC()->cart->is_empty()) {
-            return;
-        }
         // Rückkehr nach Abbruch: normale Kasse zeigen, nicht sofort wieder wegleiten.
         if (isset($_GET['ec_cancelled'])) {
+            return;
+        }
+
+        // Option C: editierbare cart-getriebene native Kasse (Modus inline + Woo-Warenkorb).
+        // Kein Order/Session-Upfront – die Kasse liest den LIVE-Warenkorb und erzeugt die
+        // Bestellung erst beim Bezahlen (mit den final gewählten Mengen).
+        $wcCart = WC_Native_Cart::url();
+        if ($wcCart !== '') {
+            wp_redirect($wcCart);
+            exit;
+        }
+
+        if (!WC()->cart || WC()->cart->is_empty()) {
             return;
         }
 
@@ -105,7 +115,8 @@ class WC_Checkout_Replace {
         }
 
         $data        = (isset($response['data']) && is_array($response['data'])) ? $response['data'] : $response;
-        $redirect    = WC_Session_Builder::dispatch_redirect($data['payment_url'] ?? '');
+        // Vollständiger Kassen-Ersatz → native Zwei-Spalten-Kasse erlauben.
+        $redirect    = WC_Session_Builder::dispatch_redirect($data['payment_url'] ?? '', true);
         $ec_order_id = $data['order_id'] ?? '';
 
         if (empty($redirect)) {

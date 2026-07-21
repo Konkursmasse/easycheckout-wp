@@ -134,6 +134,7 @@ class EasyCheckout {
         require_once EASYCHECKOUT_PLUGIN_DIR . 'woocommerce/class-wc-blocks.php';
         require_once EASYCHECKOUT_PLUGIN_DIR . 'woocommerce/class-wc-express.php';
         require_once EASYCHECKOUT_PLUGIN_DIR . 'woocommerce/class-wc-buynow.php';
+        require_once EASYCHECKOUT_PLUGIN_DIR . 'woocommerce/class-wc-native-cart.php';
         require_once EASYCHECKOUT_PLUGIN_DIR . 'woocommerce/class-wc-checkout-replace.php';
 
         // Register payment gateway
@@ -150,6 +151,9 @@ class EasyCheckout {
 
         // Sofort-Kauf-Button auf Produktseiten -> volle EasyCheckout-Kasse.
         new WooCommerce\WC_BuyNow();
+
+        // Cart-getriebene native Kasse (editierbare Mengen, ?ec_wccart).
+        new WooCommerce\WC_Native_Cart();
 
         // Optional (Opt-in): WooCommerce-Kasse komplett durch EasyCheckout ersetzen.
         new WooCommerce\WC_Checkout_Replace();
