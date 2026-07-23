@@ -175,6 +175,27 @@ class EasyCheckout {
                 'admin.php?page=wc-settings&tab=checkout&section=easycheckout'
             );
         }, 60);
+
+        // Eigener Tab "EasyCheckout" in der WooCommerce-Einstellungs-Tab-Leiste
+        // (Allgemein | Produkte | ... | EasyCheckout). Rendert dieselben
+        // Gateway-Einstellungen wie Zahlungen -> EasyCheckout und speichert in
+        // denselben Options-Key (woocommerce_easycheckout_settings).
+        add_filter('woocommerce_settings_tabs_array', function($tabs) {
+            $tabs['easycheckout'] = __('EasyCheckout', 'easycheckout');
+            return $tabs;
+        }, 60);
+        add_action('woocommerce_settings_tabs_easycheckout', function() {
+            $gateways = WC()->payment_gateways ? WC()->payment_gateways->payment_gateways() : [];
+            if (isset($gateways['easycheckout'])) {
+                $gateways['easycheckout']->admin_options();
+            }
+        });
+        add_action('woocommerce_update_options_easycheckout', function() {
+            $gateways = WC()->payment_gateways ? WC()->payment_gateways->payment_gateways() : [];
+            if (isset($gateways['easycheckout'])) {
+                $gateways['easycheckout']->process_admin_options();
+            }
+        });
     }
 
     /**
