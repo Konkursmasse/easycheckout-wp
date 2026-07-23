@@ -154,7 +154,10 @@
         });
         var wrap = h('div', { class: 'eclc-wrap' }, [
             back,
-            h('div', { class: 'eclc-header' }, [h('h1', { class: 'eclc-title', text: ecWcCart.company || 'Checkout' })]),
+            h('div', { class: 'eclc-header' }, [
+                ecWcCart.logo ? h('img', { class: 'eclc-logo', src: ecWcCart.logo, alt: ecWcCart.company || '' }) : null,
+                h('h1', { class: 'eclc-title', text: ecWcCart.company || 'Checkout' }),
+            ]),
             h('div', { class: 'eclc-grid' }, [left, cart]),
             powered(),
         ]);

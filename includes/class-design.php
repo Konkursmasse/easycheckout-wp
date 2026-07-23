@@ -48,11 +48,52 @@ class Design {
         return preg_replace('/[^#a-zA-Z0-9(),.%\s-]/', '', (string) $c);
     }
 
+    /** Globale Design-Option (Logo, Farben, Radius, Schrift) aus dem Settings-Tab. */
+    public static function design() {
+        $d = get_option('easycheckout_design', []);
+        return is_array($d) ? $d : [];
+    }
+
+    /** Logo-URL für Kassen-Kopf + Mails ('' = kein Logo). */
+    public static function logo_url() {
+        $d = self::design();
+        return isset($d['logoUrl']) ? esc_url_raw((string) $d['logoUrl']) : '';
+    }
+
     /**
-     * CSS-String: setzt --ec-p auf allen Kassen-Containern + hängt Custom CSS an.
+     * CSS-String: setzt --ec-p auf allen Kassen-Containern, wendet die
+     * Design-Optionen (Hintergrund/Text/Button/Radius/Schrift) an und hängt
+     * Custom CSS an. Nicht gesetzte Optionen erzeugen KEINE Regeln, damit das
+     * Standard-Design unangetastet bleibt.
      */
     public static function inline_css() {
         $out = ':root,.ec-local-checkout,#ec-pay-checkout{--ec-p:' . self::safe_color(self::color()) . ';}';
+
+        $d = self::design();
+        $bg     = isset($d['bg']) ? trim((string) $d['bg']) : '';
+        $text   = isset($d['text']) ? trim((string) $d['text']) : '';
+        $btnTxt = isset($d['buttonText']) ? trim((string) $d['buttonText']) : '';
+        $radius = isset($d['radius']) && $d['radius'] !== '' ? (int) $d['radius'] : null;
+        if ($bg !== '' && strcasecmp($bg, '#F9FAFB') !== 0) {
+            $out .= '.ec-local-checkout,#ec-pay-checkout{background:' . self::safe_color($bg) . ';}';
+        }
+        if ($text !== '' && strcasecmp($text, '#111827') !== 0) {
+            $out .= '.ec-local-checkout{color:' . self::safe_color($text) . ';}'
+                . '.ec-local-checkout .eclc-title,.ec-local-checkout .eclc-col-h{color:' . self::safe_color($text) . ';}';
+        }
+        if ($btnTxt !== '' && strcasecmp($btnTxt, '#FFFFFF') !== 0) {
+            $out .= '.eclc-btn{color:' . self::safe_color($btnTxt) . ';}';
+        }
+        if ($radius !== null && $radius !== 8) {
+            $r = max(0, min(32, $radius));
+            $out .= '.eclc-btn,.eclc-input,.eclc-field input{border-radius:' . $r . 'px;}';
+        }
+        if (isset($d['font']) && $d['font'] === 'system') {
+            // #id-Spezifität des Inline-„font-family:inherit" überstimmen.
+            $out .= '#ec-pay-checkout,.ec-local-checkout,#ec-pay-checkout input,#ec-pay-checkout select,#ec-pay-checkout button'
+                . '{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif !important;}';
+        }
+
         $custom = self::css();
         if (trim($custom) !== '') {
             $out .= "\n" . $custom;

@@ -55,7 +55,8 @@ class WC_Native_Cart {
             'nonce'      => wp_create_nonce('easycheckout_front'),
             'apiBase'    => rtrim(get_option('easycheckout_api_url', 'https://www.easycheckout.ch'), '/'),
             'cartUrl'    => wc_get_cart_url(),
-            'company'    => get_bloginfo('name'),
+            'company'    => ($co = \EasyCheckout\Native_Dashboard::get_company()) && !empty($co['name']) ? $co['name'] : get_bloginfo('name'),
+            'logo'       => \EasyCheckout\Design::logo_url(),
             'brandColor' => \EasyCheckout\Design::color(),
         ]);
         wp_enqueue_script('easycheckout-wc-cart');

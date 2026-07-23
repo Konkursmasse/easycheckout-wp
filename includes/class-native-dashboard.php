@@ -640,7 +640,33 @@ class Native_Dashboard {
             }
             $modeTxt = ($mode === 'delivery') ? "Lieferung" : "Abholung";
             $delivTxt = ($mode === 'delivery' && !$sameAddr) ? ("Lieferadresse:\n" . $name . "\n" . $fmtAddr($delivery) . "\n\n") : '';
-            $body = "Vielen Dank für deine Bestellung ({$ref}).\n\n"
+
+            // Rechnungs-Optionen (Zahlungsfrist + Fußtext) + Mail-Vorlage aus
+            // dem Settings-Tab. Leere Vorlagen -> Standard-Texte.
+            $inv = (array) get_option('easycheckout_invoice', []);
+            $dueDays = isset($inv['due_days']) && $inv['due_days'] !== '' ? (int) $inv['due_days'] : 30;
+            $footer  = isset($inv['footer']) ? trim((string) $inv['footer']) : '';
+            $tpl = (array) get_option('easycheckout_emails', []);
+
+            // Platzhalter für Betreff + Inhalt (Doku in der E-Mails-Sektion).
+            $tokens = [
+                '{ref}'              => $ref,
+                '{name}'             => $name,
+                '{firma}'            => $company,
+                '{positionen}'       => rtrim($itemsTxt),
+                '{total}'            => number_format($total, 2, '.', "'"),
+                '{waehrung}'         => $cur,
+                '{iban}'             => $bank['iban'] ?: '—',
+                '{empfaenger}'       => $bank['holder'] ?: '—',
+                '{bank}'             => $bank['bankName'] ?: '',
+                '{zahlungsfrist}'    => $dueDays > 0 ? (string) $dueDays : '',
+                '{rechnungsadresse}' => $name . ($company ? "\n{$company}" : '') . "\n" . $fmtAddr($billing),
+                '{lieferadresse}'    => ($mode === 'delivery' && !$sameAddr) ? ($name . "\n" . $fmtAddr($delivery)) : '',
+                '{art}'              => $modeTxt,
+                '{fusszeile}'        => $footer,
+            ];
+
+            $defaultBody = "Vielen Dank für deine Bestellung ({$ref}).\n\n"
                 . $issuer
                 . "Rechnungsadresse:\n" . $name . ($company ? "\n{$company}" : '') . "\n" . $fmtAddr($billing) . "\n\n"
                 . $delivTxt
@@ -652,10 +678,25 @@ class Native_Dashboard {
                 . "IBAN: " . ($bank['iban'] ?: '—') . "\n"
                 . "Empfänger: " . ($bank['holder'] ?: '—') . "\n"
                 . ($bank['bankName'] ? ("Bank: " . $bank['bankName'] . "\n") : '')
-                . "Verwendungszweck: {$ref}\n";
+                . "Verwendungszweck: {$ref}\n"
+                . ($dueDays > 0 ? "Zahlbar innert {$dueDays} Tagen.\n" : '')
+                . ($footer !== '' ? "\n" . $footer . "\n" : '');
+
+            $subject = !empty($tpl['subject'])
+                ? strtr($tpl['subject'], $tokens)
+                : sprintf(__('Bestellbestätigung %s', 'easycheckout'), $ref);
+            $body = !empty($tpl['body']) ? strtr($tpl['body'], $tokens) : $defaultBody;
+
+            // Absender: E-Mails-Sektion -> Firma -> WP-Default.
+            $fromName  = !empty($tpl['from_name']) ? $tpl['from_name'] : ($co['name'] ?: get_bloginfo('name'));
+            $fromEmail = !empty($tpl['from_email']) ? $tpl['from_email'] : $co['email'];
             $headers = [];
-            if ($co['email']) { $headers[] = 'From: ' . ($co['name'] ?: get_bloginfo('name')) . ' <' . $co['email'] . '>'; }
-            @wp_mail($email, sprintf(__('Bestellbestätigung %s', 'easycheckout'), $ref), $body, $headers);
+            if ($fromEmail) { $headers[] = 'From: ' . $fromName . ' <' . $fromEmail . '>'; }
+            if (!empty($tpl['bcc_shop']) && $tpl['bcc_shop'] === 'yes') {
+                $shopMail = $co['email'] ?: get_option('admin_email');
+                if ($shopMail) { $headers[] = 'Bcc: ' . $shopMail; }
+            }
+            @wp_mail($email, $subject, $body, $headers);
         }
 
         // Swiss-QR-Rechnung (nur wenn IBAN hinterlegt)
