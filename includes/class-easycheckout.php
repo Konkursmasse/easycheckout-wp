@@ -161,6 +161,20 @@ class EasyCheckout {
 
         // Optional (Opt-in): WooCommerce-Kasse komplett durch EasyCheckout ersetzen.
         new WooCommerce\WC_Checkout_Replace();
+
+        // Direkter Menuepunkt "EasyCheckout" im WooCommerce-Menue -> springt
+        // ohne Umweg (Einstellungen -> Zahlungen -> EasyCheckout) direkt in
+        // die Gateway-Einstellungen. Slug mit ".php" wird von WP als Link
+        // gerendert, es wird keine eigene Seite registriert.
+        add_action('admin_menu', function() {
+            add_submenu_page(
+                'woocommerce',
+                __('EasyCheckout', 'easycheckout'),
+                __('EasyCheckout', 'easycheckout'),
+                'manage_woocommerce',
+                'admin.php?page=wc-settings&tab=checkout&section=easycheckout'
+            );
+        }, 60);
     }
 
     /**
