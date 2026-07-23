@@ -135,6 +135,83 @@ class WC_Settings_Tab {
             return;
         }
         woocommerce_admin_fields($this->fields($current_section));
+        if ($current_section === 'emails') {
+            $this->output_platform_templates();
+        }
+    }
+
+    /**
+     * Plattform-Mail-Vorlagen (Online-Zahlungen über das easyCheckout-Konto):
+     * Bestellbestätigung an den Käufer + „Neue Bestellung" an den Händler.
+     * Werden per JWT-API im Konto gespeichert (gleiche Vorlagen wie im
+     * easyCheckout-Dashboard unter „E-Mails").
+     */
+    private function platform_types() {
+        return [
+            'confirmation'   => __('Bestellbestätigung an Käufer (Online-Zahlung)', 'easycheckout'),
+            'merchant_order' => __('„Neue Bestellung" an dich (Online-Zahlung)', 'easycheckout'),
+        ];
+    }
+
+    private function output_platform_templates() {
+        $api = new Native_API();
+        echo '<h2>' . esc_html__('Online-Zahlungs-Mails (easyCheckout-Konto)', 'easycheckout') . '</h2>';
+
+        $res = $api->request('GET', '/api/emails');
+        if (is_wp_error($res)) {
+            echo '<p class="description">'
+                . esc_html__('Diese Mails versendet die easyCheckout-Plattform bei Karten-/TWINT-Zahlungen. Zum Bearbeiten muss das Plugin mit deinem easyCheckout-Konto verbunden sein (Menü „EasyCheckout" → Anmelden).', 'easycheckout')
+                . '</p>';
+            return;
+        }
+        $templates = [];
+        foreach ((array) ($res['body']['templates'] ?? []) as $t) {
+            if (!empty($t['type'])) { $templates[$t['type']] = $t; }
+        }
+
+        echo '<p class="description">'
+            . esc_html__('Vorlagen für die Mails, die easyCheckout bei Online-Zahlungen (Karte/TWINT) versendet — identisch mit „E-Mails" im easyCheckout-Dashboard. Leer = Standard-Vorlage. Platzhalter: {{customer_name}}, {{order_number}}, {{items}}, {{total}}, {{subtotal}}, {{vat_amount}}, {{company_name}}, {{company_address}}, {{company_email}}, {{date}}.', 'easycheckout')
+            . ' ' . esc_html__('Absender ist easycheckout.ch; eine eigene Absender-Domain kannst du im easyCheckout-Dashboard unter Einstellungen verifizieren.', 'easycheckout')
+            . '</p>';
+        echo '<table class="form-table">';
+        foreach ($this->platform_types() as $type => $label) {
+            $t = $templates[$type] ?? null;
+            $subject = $t['subject'] ?? '';
+            $body = $t['body'] ?? '';
+            echo '<tr valign="top"><th scope="row" class="titledesc">' . esc_html($label) . '</th><td class="forminp">';
+            echo '<input type="text" name="ec_platform_mail[' . esc_attr($type) . '][subject]" style="width:40em;margin-bottom:6px;" placeholder="' . esc_attr__('Betreff (leer = Standard)', 'easycheckout') . '" value="' . esc_attr($subject) . '" /><br/>';
+            echo '<textarea name="ec_platform_mail[' . esc_attr($type) . '][body]" style="width:40em;height:10em;" placeholder="' . esc_attr__('Inhalt (HTML möglich; leer = Standard)', 'easycheckout') . '">' . esc_textarea($body) . '</textarea>';
+            echo '</td></tr>';
+        }
+        echo '</table>';
+    }
+
+    /** Plattform-Vorlagen speichern (Upsert via JWT-API; leer = löschen). */
+    private function save_platform_templates() {
+        if (!isset($_POST['ec_platform_mail']) || !is_array($_POST['ec_platform_mail'])) {
+            return;
+        }
+        $api = new Native_API();
+        $existing = [];
+        $res = $api->request('GET', '/api/emails');
+        if (!is_wp_error($res)) {
+            foreach ((array) ($res['body']['templates'] ?? []) as $t) {
+                if (!empty($t['type'])) { $existing[$t['type']] = $t; }
+            }
+        }
+        foreach ($this->platform_types() as $type => $label) {
+            $in = wp_unslash($_POST['ec_platform_mail'][$type] ?? []);
+            $subject = trim((string) ($in['subject'] ?? ''));
+            $body = trim((string) ($in['body'] ?? ''));
+            if ($subject !== '' && $body !== '') {
+                $api->request('POST', '/api/emails', [
+                    'type' => $type, 'subject' => $subject, 'body' => $body, 'isActive' => true,
+                ]);
+            } elseif ($subject === '' && $body === '' && isset($existing[$type]['id'])) {
+                // Beide Felder geleert -> zurück zur Standard-Vorlage.
+                $api->request('DELETE', '/api/emails/' . (int) $existing[$type]['id']);
+            }
+        }
     }
 
     public function save() {
@@ -147,6 +224,10 @@ class WC_Settings_Tab {
             return;
         }
         woocommerce_update_options($this->fields($current_section));
+
+        if ($current_section === 'emails') {
+            $this->save_platform_templates();
+        }
 
         // Primärfarbe in die Gateway-Einstellung spiegeln, damit native Kasse
         // (--ec-p via Design::color) und Design-Sektion nie auseinanderlaufen.
