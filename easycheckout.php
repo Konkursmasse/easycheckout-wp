@@ -3,7 +3,7 @@
  * Plugin Name: EasyCheckout
  * Plugin URI: https://easycheckout.ch
  * Description: Accept payments with EasyCheckout - Credit Cards, TWINT, and Swiss QR-Bill. Works standalone or with WooCommerce.
- * Version: 1.0.59
+ * Version: 1.0.60
  * Author: EasyCheckout
  * Author URI: https://easycheckout.ch
  * License: GPL v2 or later
@@ -13,13 +13,13 @@
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * WC requires at least: 7.0
- * WC tested up to: 8.5
+ * WC tested up to: 10.9
  */
 
 defined('ABSPATH') || exit;
 
 // Plugin constants
-define('EASYCHECKOUT_VERSION', '1.0.59');
+define('EASYCHECKOUT_VERSION', '1.0.60');
 define('EASYCHECKOUT_PLUGIN_FILE', __FILE__);
 define('EASYCHECKOUT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EASYCHECKOUT_PLUGIN_URL', plugin_dir_url(__FILE__));
