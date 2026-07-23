@@ -3,7 +3,7 @@
  * Plugin Name: EasyCheckout
  * Plugin URI: https://easycheckout.ch
  * Description: Accept payments with EasyCheckout - Credit Cards, TWINT, and Swiss QR-Bill. Works standalone or with WooCommerce.
- * Version: 1.0.58
+ * Version: 1.0.59
  * Author: EasyCheckout
  * Author URI: https://easycheckout.ch
  * License: GPL v2 or later
@@ -19,7 +19,7 @@
 defined('ABSPATH') || exit;
 
 // Plugin constants
-define('EASYCHECKOUT_VERSION', '1.0.58');
+define('EASYCHECKOUT_VERSION', '1.0.59');
 define('EASYCHECKOUT_PLUGIN_FILE', __FILE__);
 define('EASYCHECKOUT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EASYCHECKOUT_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -132,6 +132,20 @@ function easycheckout_init() {
     EasyCheckout\EasyCheckout::instance();
 }
 add_action('plugins_loaded', 'easycheckout_init', 10);
+
+/**
+ * Rewrite-Rules nach Plugin-Updates automatisch neu schreiben: Auto-Updates
+ * durchlaufen KEINEN Activation-Hook, Rewrite-Aenderungen (z.B. CPT-Slug
+ * checkout -> ec-checkout) griffen sonst erst nach manuellem Speichern der
+ * Permalinks. Laeuft einmal pro Versionswechsel, spaet auf init (nach der
+ * CPT-/Endpoint-Registrierung).
+ */
+add_action('init', function() {
+    if (get_option('easycheckout_rewrite_version') !== EASYCHECKOUT_VERSION) {
+        flush_rewrite_rules();
+        update_option('easycheckout_rewrite_version', EASYCHECKOUT_VERSION);
+    }
+}, 99);
 
 /**
  * Declare WooCommerce HPOS compatibility

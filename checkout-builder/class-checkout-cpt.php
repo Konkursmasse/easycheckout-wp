@@ -63,7 +63,10 @@ class Checkout_CPT {
             // demselben Warenkorb-Icon direkt neben dem nativen Dashboard.
             'show_in_menu' => false,
             'query_var' => true,
-            'rewrite' => ['slug' => 'checkout', 'with_front' => false],
+            // WICHTIG: Slug darf NICHT 'checkout' sein — das kollidiert mit der
+            // WooCommerce-Kassen-Seite (/checkout/): die CPT-Rule schluckt dann
+            // /checkout/order-received/<id>/ und die Danke-Seite wird 404.
+            'rewrite' => ['slug' => 'ec-checkout', 'with_front' => false],
             'capability_type' => 'post',
             'has_archive' => false,
             'hierarchical' => false,
