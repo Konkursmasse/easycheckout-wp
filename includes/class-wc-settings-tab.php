@@ -173,7 +173,23 @@ class WC_Settings_Tab {
             . esc_html__('Vorlagen für die Mails, die easyCheckout bei Online-Zahlungen (Karte/TWINT) versendet — identisch mit „E-Mails" im easyCheckout-Dashboard. Leer = Standard-Vorlage. Platzhalter: {{customer_name}}, {{order_number}}, {{items}}, {{total}}, {{subtotal}}, {{vat_amount}}, {{company_name}}, {{company_address}}, {{company_email}}, {{date}}.', 'easycheckout')
             . ' ' . esc_html__('Absender ist easycheckout.ch; eine eigene Absender-Domain kannst du im easyCheckout-Dashboard unter Einstellungen verifizieren.', 'easycheckout')
             . '</p>';
+        // Versand-Schalter: welche Plattform-Mails überhaupt rausgehen.
+        $flags = ['sendOrderConfirmationEmail' => true, 'sendOrderInvoiceEmail' => true];
+        $fres = $api->request('GET', '/api/emails/settings');
+        if (!is_wp_error($fres) && is_array($fres['body'] ?? null)) {
+            foreach (array_keys($flags) as $k) {
+                if (isset($fres['body'][$k])) { $flags[$k] = (bool) $fres['body'][$k]; }
+            }
+        }
         echo '<table class="form-table">';
+        echo '<tr valign="top"><th scope="row" class="titledesc">' . esc_html__('Versand', 'easycheckout') . '</th><td class="forminp">';
+        echo '<label style="display:block;margin-bottom:6px;"><input type="checkbox" name="ec_platform_flags[sendOrderConfirmationEmail]" value="1" ' . checked($flags['sendOrderConfirmationEmail'], true, false) . ' /> '
+            . esc_html__('easyCheckout-Bestellbestätigung an den Käufer senden', 'easycheckout') . '</label>';
+        echo '<label style="display:block;"><input type="checkbox" name="ec_platform_flags[sendOrderInvoiceEmail]" value="1" ' . checked($flags['sendOrderInvoiceEmail'], true, false) . ' /> '
+            . esc_html__('Rechnung (mit PDF-Anhang) an den Käufer senden', 'easycheckout') . '</label>';
+        echo '<p class="description">' . esc_html__('Abschalten, wenn WooCommerce die Kunden-Mails übernehmen soll (vermeidet doppelte Mails). Die „Neue Bestellung"-Mail an dich bleibt davon unberührt.', 'easycheckout') . '</p>';
+        echo '<input type="hidden" name="ec_platform_flags[_present]" value="1" />';
+        echo '</td></tr>';
         foreach ($this->platform_types() as $type => $label) {
             $t = $templates[$type] ?? null;
             $subject = $t['subject'] ?? '';
@@ -192,6 +208,15 @@ class WC_Settings_Tab {
             return;
         }
         $api = new Native_API();
+
+        // Versand-Schalter (nur wenn der Block gerendert war, erkennbar am
+        // _present-Marker — sonst würden fehlende Checkboxen als "aus" gedeutet).
+        if (isset($_POST['ec_platform_flags']['_present'])) {
+            $api->request('PATCH', '/api/emails/settings', [
+                'sendOrderConfirmationEmail' => !empty($_POST['ec_platform_flags']['sendOrderConfirmationEmail']),
+                'sendOrderInvoiceEmail'      => !empty($_POST['ec_platform_flags']['sendOrderInvoiceEmail']),
+            ]);
+        }
         $existing = [];
         $res = $api->request('GET', '/api/emails');
         if (!is_wp_error($res)) {
