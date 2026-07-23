@@ -72,7 +72,11 @@ class WC_Native_Cart {
             . '#ec-pay-checkout .eclc-col-h,#ec-pay-checkout .eclc-pname{font-family:inherit}</style>';
         // Entwickler-Design: Markenfarbe (--ec-p) + Custom CSS.
         \EasyCheckout\Design::head();
-        echo '</head><body class="' . esc_attr(implode(' ', get_body_class('ec-native-checkout'))) . '"><div id="ec-pay-checkout"></div>';
+        // WICHTIG: Klasse ec-local-checkout aktiviert den CSS-Scope aus
+        // local-checkout.css (box-sizing-Reset + Typo-Basis) — ohne sie ragen
+        // die Eingabefelder ueber die Karte hinaus und Theme-Schriftgroessen
+        // schlagen ungefiltert durch.
+        echo '</head><body class="' . esc_attr(implode(' ', get_body_class('ec-native-checkout'))) . '"><div id="ec-pay-checkout" class="ec-local-checkout"></div>';
         wp_footer();
         echo '</body></html>';
         exit;

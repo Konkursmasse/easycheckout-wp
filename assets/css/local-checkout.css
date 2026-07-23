@@ -1,6 +1,10 @@
 /* EasyCheckout – lokaler Checkout, Design an easycheckout.ch angelehnt */
 .ec-local-checkout { --ec-p:#4F46E5; --ec-text:#111827; --ec-muted:#6B7280; background:#F9FAFB; min-height:100vh; padding:32px 16px; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:var(--ec-text); box-sizing:border-box; }
 .ec-local-checkout *, .ec-local-checkout *::before, .ec-local-checkout *::after { box-sizing:border-box; }
+/* Theme-Rauschen neutralisieren: Basisgroesse fixieren + Element-Margins nullen
+   (:where haelt die Spezifitaet bei 0, damit die eclc-Klassen unten gewinnen). */
+.ec-local-checkout { font-size:16px; line-height:1.5; }
+.ec-local-checkout :where(h1,h2,h3,h4,p,ul,li,figure) { margin:0; padding:0; font-size:inherit; }
 .eclc-wrap { max-width:896px; margin:0 auto; }
 .eclc-header { text-align:center; margin-bottom:32px; }
 .eclc-logo { height:96px; max-width:320px; margin:0 auto 20px; object-fit:contain; display:block; }
@@ -17,9 +21,9 @@
 .eclc-img { width:80px; height:80px; object-fit:cover; border-radius:6px; flex:0 0 auto; }
 .eclc-img-empty { width:80px; height:80px; border-radius:6px; background:#f3f4f6; flex:0 0 auto; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:26px; }
 .eclc-pinfo { flex:1; min-width:0; }
-.eclc-pname { font-weight:500; margin:0; }
+.eclc-pname { font-weight:500; margin:0; font-size:16px; }
 .eclc-pdesc { font-size:14px; color:#6b7280; margin:4px 0 0; }
-.eclc-pprice { font-weight:600; margin:4px 0 0; color:var(--ec-p); }
+.eclc-pprice { font-weight:600; margin:4px 0 0; color:var(--ec-p); font-size:15px; }
 .eclc-pprice .eclc-vat { font-size:12px; color:#9ca3af; font-weight:400; margin-left:4px; }
 .eclc-qty { display:flex; align-items:center; gap:8px; flex:0 0 auto; }
 .eclc-qbtn { width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1px solid #d1d5db; border-radius:8px; background:#fff; cursor:pointer; font-size:18px; line-height:1; color:#374151; padding:0; }
@@ -38,7 +42,7 @@
 
 .eclc-field { display:block; margin-bottom:12px; }
 .eclc-field span { display:block; font-size:13px; font-weight:500; margin-bottom:6px; color:#374151; }
-.eclc-field input { width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; }
+.eclc-field input { width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; box-sizing:border-box; }
 .eclc-field input:focus { outline:none; border-color:var(--ec-p); box-shadow:0 0 0 3px rgba(79,70,229,.12); }
 .eclc-btn { width:100%; padding:12px 16px; border:0; border-radius:12px; background:var(--ec-p); color:#fff; font-size:15px; font-weight:600; cursor:pointer; margin-top:4px; }
 .eclc-btn:hover { filter:brightness(.95); }
@@ -55,10 +59,10 @@
 
 /* Kundenformular (wie easycheckout.ch) */
 .eclc-sec { margin-top:18px; }
-.eclc-sec-h { font-size:13px; font-weight:600; margin:0 0 8px; color:#374151; }
+.eclc-sec-h { font-size:12px; font-weight:700; margin:0 0 8px; color:#6b7280; text-transform:uppercase; letter-spacing:.06em; }
 .eclc-stack > * { margin-bottom:12px; }
 .eclc-stack > *:last-child { margin-bottom:0; }
-.eclc-input { width:100%; padding:11px 14px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; background:#fff; }
+.eclc-input { width:100%; padding:11px 14px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; background:#fff; box-sizing:border-box; }
 .eclc-input:focus { outline:none; border-color:var(--ec-p); box-shadow:0 0 0 3px rgba(79,70,229,.12); }
 .eclc-3 { display:grid; grid-template-columns:1fr 2fr; gap:12px; }
 .eclc-check { display:flex; align-items:center; gap:8px; margin-top:12px; cursor:pointer; font-size:14px; color:#374151; }
