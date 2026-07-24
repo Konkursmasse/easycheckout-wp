@@ -127,6 +127,12 @@ class WC_Settings_Tab {
 
     public function output() {
         global $current_section;
+        // WICHTIG: Sektions-Navigation (Zahlung & Kasse | Design | …) selbst
+        // rendern. WooCommerce zeichnet die Links nur automatisch für seine
+        // eigenen WC_Settings_Page-Klassen — für unseren filter-basierten Tab
+        // erschienen die Unter-Sektionen sonst NIE (Logo-Feld unerreichbar).
+        $this->output_section_nav();
+
         if ($current_section === '' || $current_section === null) {
             $gateways = WC()->payment_gateways ? WC()->payment_gateways->payment_gateways() : [];
             if (isset($gateways['easycheckout'])) {
@@ -138,6 +144,25 @@ class WC_Settings_Tab {
         if ($current_section === 'emails') {
             $this->output_platform_templates();
         }
+    }
+
+    /** Sektions-Navigation als WooCommerce-typische „subsubsub"-Linkleiste. */
+    private function output_section_nav() {
+        global $current_section;
+        $sections = $this->sections([]);
+        if (empty($sections) || count($sections) < 2) {
+            return;
+        }
+        $cur  = ($current_section === null) ? '' : $current_section;
+        $keys = array_keys($sections);
+        $last = end($keys);
+        echo '<ul class="subsubsub">';
+        foreach ($sections as $id => $label) {
+            $url = admin_url('admin.php?page=wc-settings&tab=' . self::TAB . ($id ? '&section=' . sanitize_title($id) : ''));
+            echo '<li><a href="' . esc_url($url) . '" class="' . ($cur === $id ? 'current' : '') . '">'
+                . esc_html($label) . '</a>' . ($id === $last ? '' : ' | ') . '</li>';
+        }
+        echo '</ul><br class="clear" />';
     }
 
     /**
