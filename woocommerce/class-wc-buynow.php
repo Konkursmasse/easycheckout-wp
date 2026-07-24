@@ -84,8 +84,11 @@ class WC_BuyNow {
             );
             return;
         }
+        // Klassen „button alt" spiegeln den Shop-Primärbutton („In den Warenkorb"),
+        // damit der Sofort-kaufen-Button im Theme identisch aussieht. Feinjustage
+        // über die Klasse .easycheckout-buynow-btn im Custom-CSS möglich.
         printf(
-            '<button type="button" class="button easycheckout-buynow-btn" id="easycheckout-buynow-btn" data-product-id="%d" style="margin-top:10px;width:100%%;">%s</button>',
+            '<button type="button" class="button alt easycheckout-buynow-btn" id="easycheckout-buynow-btn" data-product-id="%d" style="margin-top:10px;width:100%%;">%s</button>',
             (int) $product->get_id(),
             esc_html__('Sofort kaufen', 'easycheckout')
         );

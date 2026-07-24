@@ -14,6 +14,11 @@
 .eclc-grid { display:grid; grid-template-columns:3fr 2fr; gap:32px; align-items:start; }
 @media (max-width:820px){ .eclc-grid { grid-template-columns:1fr; } }
 .eclc-col-h { font-size:18px; font-weight:600; margin:0 0 16px; }
+/* „Produkte" auf gleicher Höhe wie „Bestellung": die Bestell-Karte hat 24px
+   Innenabstand -> die linke Spalte bekommt denselben oberen Versatz, damit
+   beide Überschriften bündig starten. */
+.eclc-left { padding-top:24px; }
+@media (max-width:820px){ .eclc-left { padding-top:0; } }
 
 .eclc-prod { background:#f7f8fa; border:1px solid #eef0f3; border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,.04); padding:16px; margin-bottom:16px; }
 .eclc-prod-so { opacity:.6; }
@@ -104,7 +109,10 @@
 .eclc-lsub { display:block; font-size:12px; color:#9ca3af; margin-top:2px; }
 .eclc-line-fee .eclc-lname { color:#6b7280; font-size:13px; }
 
-/* Powered-by-Hinweis */
-.eclc-powered { text-align:center; margin-top:22px; font-size:12px; }
-.eclc-powered a { color:#9ca3af; text-decoration:none; }
-.eclc-powered a:hover { color:var(--ec-p); text-decoration:underline; }
+/* Powered-by-Hinweis — 1:1 wie im Original-Checkout (easycheckout.ch):
+   „Powered by [Icon] easyCheckout", zentriert, dezent grau. */
+.eclc-powered { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:24px; font-size:12px; color:#9ca3af; }
+.eclc-powered-link { display:inline-flex; align-items:center; gap:6px; text-decoration:none; }
+.eclc-powered-link:hover { opacity:.8; }
+.eclc-powered-ico { height:16px; width:auto; display:inline-block; vertical-align:middle; }
+.eclc-powered-name { font-weight:500; color:#6b7280; }

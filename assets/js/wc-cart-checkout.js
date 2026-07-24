@@ -12,7 +12,8 @@
     if (!root || typeof ecWcCart === 'undefined') { return; }
 
     var stripe = null, elements = null, CART = null, CUR = 'CHF', busy = false;
-    var form = { email: '', name: '', company: '', phone: '', street: '', postalCode: '', city: '', country: 'CH' };
+    var form = { email: '', name: '', company: '', phone: '', street: '', postalCode: '', city: '', country: 'CH',
+        sameAddress: true, deliveryStreet: '', deliveryPostalCode: '', deliveryCity: '', deliveryCountry: 'CH' };
 
     function h(tag, attrs, children) {
         var e = document.createElement(tag);
@@ -46,7 +47,17 @@
         sel.value = val || 'CH';
         return sel;
     }
-    function powered() { return h('p', { class: 'eclc-powered', html: 'Sichere Zahlung über <b>easyCheckout</b>' }); }
+    function powered() {
+        // 1:1 wie im Original-Checkout (easycheckout.ch): „Powered by [Icon] easyCheckout".
+        var link = h('a', {
+            href: 'https://easycheckout.ch', target: '_blank', rel: 'noopener noreferrer',
+            class: 'eclc-powered-link',
+        }, [
+            ecWcCart.ecIcon ? h('img', { class: 'eclc-powered-ico', src: ecWcCart.ecIcon, alt: 'easyCheckout', width: '16', height: '16' }) : null,
+            h('span', { class: 'eclc-powered-name', text: 'easyCheckout' }),
+        ]);
+        return h('div', { class: 'eclc-powered' }, [h('span', { text: 'Powered by' }), link]);
+    }
     function loading(m) { root.innerHTML = ''; root.appendChild(h('div', { class: 'eclc-wrap' }, [h('div', { class: 'eclc-cart', style: 'max-width:520px;margin:40px auto;text-align:center' }, [h('p', { class: 'eclc-empty', text: m || 'Lädt…' })])])); }
     function errView(m) { root.innerHTML = ''; root.appendChild(h('div', { class: 'eclc-wrap' }, [h('div', { class: 'eclc-cart', style: 'max-width:520px;margin:40px auto' }, [h('div', { class: 'eclc-err', text: m }), h('p', { style: 'text-align:center;margin-top:12px' }, [h('a', { href: ecWcCart.cartUrl, text: 'Zurück zum Warenkorb' })])])])); }
 
@@ -84,7 +95,7 @@
         root.style.setProperty('--ec-p', (window.ecWcCart && ecWcCart.brandColor) ? ecWcCart.brandColor : '#4F46E5');
         var items = CART.items || [];
 
-        var left = h('div', {}, [h('h2', { class: 'eclc-col-h', text: 'Produkte' })]);
+        var left = h('div', { class: 'eclc-left' }, [h('h2', { class: 'eclc-col-h', text: 'Produkte' })]);
         var pw = h('div', {});
         items.forEach(function (it) { pw.appendChild(prodCard(it)); });
         left.appendChild(pw);
@@ -111,6 +122,31 @@
         });
         bCountry.addEventListener('change', function () { form.country = bCountry.value; });
 
+        // Lieferadresse — wie im Original-Checkout: Standard = gleich wie
+        // Rechnungsadresse; beim Abwählen erscheinen eigene Liefer-Felder.
+        var dStreet = h('input', { class: 'eclc-input', type: 'text', placeholder: 'Strasse und Hausnummer *' }); dStreet.value = form.deliveryStreet;
+        var dZip = h('input', { class: 'eclc-input', type: 'text', placeholder: 'PLZ *' }); dZip.value = form.deliveryPostalCode;
+        var dCity = h('input', { class: 'eclc-input', type: 'text', placeholder: 'Ort *' }); dCity.value = form.deliveryCity;
+        var dCountry = countrySel(form.deliveryCountry);
+        [[dStreet, 'deliveryStreet'], [dZip, 'deliveryPostalCode'], [dCity, 'deliveryCity']].forEach(function (p) {
+            p[0].addEventListener('input', function () { form[p[1]] = p[0].value; });
+        });
+        dCountry.addEventListener('change', function () { form.deliveryCountry = dCountry.value; });
+
+        var deliveryFields = h('div', { class: 'eclc-sec eclc-delivery-fields' }, [
+            h('h3', { class: 'eclc-sec-h', text: 'Lieferadresse' }),
+            h('div', { class: 'eclc-stack' }, [dStreet, h('div', { class: 'eclc-3' }, [dZip, dCity]), dCountry]),
+        ]);
+        deliveryFields.style.display = form.sameAddress ? 'none' : '';
+
+        var sameCb = h('input', { type: 'checkbox' });
+        sameCb.checked = form.sameAddress;
+        sameCb.addEventListener('change', function () {
+            form.sameAddress = sameCb.checked;
+            deliveryFields.style.display = sameCb.checked ? 'none' : '';
+        });
+        var sameRow = h('label', { class: 'eclc-check' }, [sameCb, h('span', { text: 'Lieferadresse entspricht Rechnungsadresse' })]);
+
         var errEl = h('div', { class: 'eclc-err' }); errEl.style.display = 'none';
         var payWrap = h('div', {});
         var btn = h('button', { class: 'eclc-btn', type: 'button', text: 'Weiter zur Zahlung' });
@@ -121,8 +157,13 @@
             if (!emailI.value.trim()) { return fail('Bitte E-Mail-Adresse eingeben.'); }
             if (!nameI.value.trim()) { return fail('Bitte Namen eingeben.'); }
             if (!bStreet.value.trim() || !bZip.value.trim() || !bCity.value.trim()) { return fail('Bitte vollständige Rechnungsadresse eingeben.'); }
+            if (!form.sameAddress && (!dStreet.value.trim() || !dZip.value.trim() || !dCity.value.trim())) { return fail('Bitte vollständige Lieferadresse eingeben.'); }
             btn.disabled = true; btn.textContent = 'Zahlung wird vorbereitet…';
             var customer = { email: emailI.value.trim(), name: nameI.value.trim(), company: companyI.value.trim(), phone: phoneI.value.trim(), address: { street: bStreet.value.trim(), postalCode: bZip.value.trim(), city: bCity.value.trim(), country: bCountry.value } };
+            customer.sameAddress = form.sameAddress;
+            if (!form.sameAddress) {
+                customer.delivery = { street: dStreet.value.trim(), postalCode: dZip.value.trim(), city: dCity.value.trim(), country: dCountry.value };
+            }
             var TOKEN = null, SUCCESS = null;
             post('wc_cart_pay', { customer: JSON.stringify(customer) }).then(function (d) {
                 TOKEN = d.token; SUCCESS = d.successUrl;
@@ -142,7 +183,8 @@
             h('div', { class: 'eclc-divider' }, [h('div', { class: 'eclc-total' }, [h('span', { text: 'Total' }), totalEl])]),
             errEl,
             h('div', { class: 'eclc-sec' }, [h('h3', { class: 'eclc-sec-h', text: 'Kontaktdaten' }), h('div', { class: 'eclc-stack' }, [emailI, nameI, companyI, phoneI])]),
-            h('div', { class: 'eclc-sec' }, [h('h3', { class: 'eclc-sec-h', text: 'Rechnungsadresse' }), h('div', { class: 'eclc-stack' }, [bStreet, h('div', { class: 'eclc-3' }, [bZip, bCity]), bCountry])]),
+            h('div', { class: 'eclc-sec' }, [h('h3', { class: 'eclc-sec-h', text: 'Rechnungsadresse' }), h('div', { class: 'eclc-stack' }, [bStreet, h('div', { class: 'eclc-3' }, [bZip, bCity]), bCountry]), sameRow]),
+            deliveryFields,
             payWrap,
             h('div', { style: 'margin-top:18px;' }, [btn]),
         ]);

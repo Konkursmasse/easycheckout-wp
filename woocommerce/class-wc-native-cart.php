@@ -58,6 +58,7 @@ class WC_Native_Cart {
             'company'    => ($co = \EasyCheckout\Native_Dashboard::get_company()) && !empty($co['name']) ? $co['name'] : get_bloginfo('name'),
             'logo'       => \EasyCheckout\Design::logo_url(),
             'brandColor' => \EasyCheckout\Design::color(),
+            'ecIcon'     => EASYCHECKOUT_PLUGIN_URL . 'assets/images/easycheckout-icon.png',
         ]);
         wp_enqueue_script('easycheckout-wc-cart');
 
@@ -164,7 +165,24 @@ class WC_Native_Cart {
             'country' => sanitize_text_field($addr['country'] ?? 'CH'),
         ];
         $order->set_address($billing, 'billing');
-        $order->set_address($billing, 'shipping');
+
+        // Lieferadresse: Standard = Rechnungsadresse; bei abgewählter Checkbox
+        // die separat erfasste Lieferadresse als Versandadresse übernehmen.
+        $same = !isset($c['sameAddress']) || !empty($c['sameAddress']);
+        if (!$same && is_array($c['delivery'] ?? null)) {
+            $d = $c['delivery'];
+            $shipping = [
+                'first_name' => $first, 'last_name' => $last,
+                'company'   => $billing['company'],
+                'address_1' => sanitize_text_field($d['street'] ?? ''),
+                'postcode'  => sanitize_text_field($d['postalCode'] ?? ''),
+                'city'      => sanitize_text_field($d['city'] ?? ''),
+                'country'   => sanitize_text_field($d['country'] ?? 'CH'),
+            ];
+            $order->set_address($shipping, 'shipping');
+        } else {
+            $order->set_address($billing, 'shipping');
+        }
         $order->save();
 
         $order_id = $order->get_id();
