@@ -84,11 +84,17 @@ class WC_BuyNow {
             );
             return;
         }
-        // Klassen „button alt" spiegeln den Shop-Primärbutton („In den Warenkorb"),
-        // damit der Sofort-kaufen-Button im Theme identisch aussieht. Feinjustage
-        // über die Klasse .easycheckout-buynow-btn im Custom-CSS möglich.
+        // Klassen 1:1 vom Shop-Warenkorb-Button („In den Warenkorb") übernehmen,
+        // damit der Sofort-kaufen-Button im jeweiligen Theme IDENTISCH aussieht
+        // (viele Themes stylen gezielt .single_add_to_cart_button, nicht .button).
+        // Bei Produktvarianten schaltet das WooCommerce-Varianten-Script beide
+        // Buttons synchron frei/aus. Feinjustage über .easycheckout-buynow-btn
+        // im Custom-CSS möglich. type=button -> löst kein Formular-Submit aus.
+        // wp-element-button: Block-Themes (z. B. Twenty Twenty-Four) geben die
+        // gefüllte Button-Optik über DIESE Klasse, nicht über .single_add_to_cart_button.
+        // Für klassische Themes (Storefront etc.) ist sie wirkungslos -> beide abgedeckt.
         printf(
-            '<button type="button" class="button alt easycheckout-buynow-btn" id="easycheckout-buynow-btn" data-product-id="%d" style="margin-top:10px;width:100%%;">%s</button>',
+            '<button type="button" class="single_add_to_cart_button button alt wp-element-button easycheckout-buynow-btn" id="easycheckout-buynow-btn" data-product-id="%d" style="margin-top:10px;width:100%%;">%s</button>',
             (int) $product->get_id(),
             esc_html__('Sofort kaufen', 'easycheckout')
         );
