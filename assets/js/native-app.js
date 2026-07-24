@@ -922,11 +922,23 @@
 
 	// --- Invoices -----------------------------------------------------------
 
-	function InvoicesView() {
-		var s = useState( { items: null, error: '', editing: null } );
+	function InvoicesView( props ) {
+		var s = useState( { items: null, error: '', editing: null, canInvoice: null, plan: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
 		function load() { api( 'GET', '/api/invoices' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.invoices ) || [], error: '' } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } ); }
-		useEffect( function () { load(); }, [] );
+		function loadPlan() { api( 'GET', '/api/auth/me' ).then( function ( b ) { var m = ( b && b.merchant ) || b || {}; var lim = m.planLimits || {}; set( function ( p ) { return Object.assign( {}, p, { canInvoice: !! lim.invoices, plan: m.plan || '' } ); } ); } ).catch( function () { set( function ( p ) { return Object.assign( {}, p, { canInvoice: true } ); } ); } ); }
+		useEffect( function () { loadPlan(); load(); }, [] );
+		if ( st.canInvoice === null ) { return Spinner(); }
+		if ( st.canInvoice === false ) {
+			return el( 'div', null,
+				el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Rechnungen' ) ),
+				el( 'div', { className: 'ec-alert' },
+					el( 'p', null, el( 'strong', null, 'Rechnungen sind in deinem Tarif nicht enthalten.' ) ),
+					el( 'p', { className: 'ec-muted' }, 'Verfügbar ab Tarif „Rechnungen", „Basic" oder „Pro". Aktueller Tarif: ' + ( st.plan || 'Free' ) + '.' ),
+					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { if ( props.navigate ) { props.navigate( 'billing' ); } } }, 'Tarif ansehen' )
+				)
+			);
+		}
 		function act( inv, what ) {
 			var p;
 			if ( what === 'send' ) { p = api( 'POST', '/api/invoices/' + inv.id + '/send', {} ); }
@@ -1862,7 +1874,7 @@
 				case 'orders': content = el( OrdersView, null ); break;
 				case 'customers': content = el( CustomersView, null ); break;
 				case 'settings': content = el( SettingsView, null ); break;
-				case 'invoices': content = el( InvoicesView, null ); break;
+				case 'invoices': content = el( InvoicesView, { navigate: navigate } ); break;
 				case 'onboarding': content = el( OnboardingView, null ); break;
 				case 'emails': content = el( EmailsView, null ); break;
 				case 'marketing': content = el( MarketingView, null ); break;
