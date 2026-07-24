@@ -348,7 +348,7 @@ class Admin {
                                placeholder="<?php echo get_option('easycheckout_api_key') ? '••••••••' : ''; ?>"
                                autocomplete="off">
                         <p class="description">
-                            <?php _e('Your EasyCheckout API key. Find it in your EasyCheckout dashboard under Settings > API.', 'easycheckout'); ?>
+                            <?php _e('Optional. In der Regel nicht nötig: Verbinde dein Konto einfach über das Menü „EasyCheckout" → Anmelden — der Schlüssel wird dann automatisch erstellt. Dieses Feld ist nur für die manuelle Verbindung mit einem bestehenden API-Schlüssel (Format eck_live_… / eck_test_…).', 'easycheckout'); ?>
                         </p>
                     </td>
                 </tr>

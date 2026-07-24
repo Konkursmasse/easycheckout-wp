@@ -157,7 +157,7 @@ class WC_Settings_Tab {
         $api = new Native_API();
         echo '<h2>' . esc_html__('Online-Zahlungs-Mails (easyCheckout-Konto)', 'easycheckout') . '</h2>';
 
-        $res = $api->request('GET', '/api/emails');
+        $res = $api->request('GET', '/api/emails', null, ['keep_session_on_401' => true]);
         if (is_wp_error($res)) {
             echo '<p class="description">'
                 . esc_html__('Diese Mails versendet die easyCheckout-Plattform bei Karten-/TWINT-Zahlungen. Zum Bearbeiten muss das Plugin mit deinem easyCheckout-Konto verbunden sein (Menü „EasyCheckout" → Anmelden).', 'easycheckout')
@@ -175,7 +175,7 @@ class WC_Settings_Tab {
             . '</p>';
         // Versand-Schalter: welche Plattform-Mails überhaupt rausgehen.
         $flags = ['sendOrderConfirmationEmail' => true, 'sendOrderInvoiceEmail' => true];
-        $fres = $api->request('GET', '/api/emails/settings');
+        $fres = $api->request('GET', '/api/emails/settings', null, ['keep_session_on_401' => true]);
         if (!is_wp_error($fres) && is_array($fres['body'] ?? null)) {
             foreach (array_keys($flags) as $k) {
                 if (isset($fres['body'][$k])) { $flags[$k] = (bool) $fres['body'][$k]; }
@@ -215,10 +215,10 @@ class WC_Settings_Tab {
             $api->request('PATCH', '/api/emails/settings', [
                 'sendOrderConfirmationEmail' => !empty($_POST['ec_platform_flags']['sendOrderConfirmationEmail']),
                 'sendOrderInvoiceEmail'      => !empty($_POST['ec_platform_flags']['sendOrderInvoiceEmail']),
-            ]);
+            ], ['keep_session_on_401' => true]);
         }
         $existing = [];
-        $res = $api->request('GET', '/api/emails');
+        $res = $api->request('GET', '/api/emails', null, ['keep_session_on_401' => true]);
         if (!is_wp_error($res)) {
             foreach ((array) ($res['body']['templates'] ?? []) as $t) {
                 if (!empty($t['type'])) { $existing[$t['type']] = $t; }
@@ -231,10 +231,10 @@ class WC_Settings_Tab {
             if ($subject !== '' && $body !== '') {
                 $api->request('POST', '/api/emails', [
                     'type' => $type, 'subject' => $subject, 'body' => $body, 'isActive' => true,
-                ]);
+                ], ['keep_session_on_401' => true]);
             } elseif ($subject === '' && $body === '' && isset($existing[$type]['id'])) {
                 // Beide Felder geleert -> zurück zur Standard-Vorlage.
-                $api->request('DELETE', '/api/emails/' . (int) $existing[$type]['id']);
+                $api->request('DELETE', '/api/emails/' . (int) $existing[$type]['id'], null, ['keep_session_on_401' => true]);
             }
         }
     }

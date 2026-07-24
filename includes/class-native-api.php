@@ -116,7 +116,7 @@ class Native_API {
      * @param mixed  $data
      * @return array { status:int, body:mixed } | \WP_Error
      */
-    public function request($method, $path, $data = null) {
+    public function request($method, $path, $data = null, $opts = []) {
         $token = $this->get_token();
         if (!$token) {
             return new \WP_Error('ec_not_authenticated', __('Nicht angemeldet.', 'easycheckout'), ['status' => 401]);
@@ -151,7 +151,10 @@ class Native_API {
         $body   = json_decode(wp_remote_retrieve_body($response), true);
 
         // Token expired/invalid -> drop it so the UI shows the login screen.
-        if ($status === 401) {
+        // Ausnahme: unkritische Hintergrund-Abfragen (z. B. das Laden der
+        // E-Mail-Vorlagen beim Öffnen der Einstellungen) dürfen die bestehende
+        // Verbindung NICHT lautlos trennen -> keep_session_on_401.
+        if ($status === 401 && empty($opts['keep_session_on_401'])) {
             $this->logout();
         }
 
