@@ -934,6 +934,23 @@
 			else if ( what === 'delete' ) { if ( ! window.confirm( 'Rechnung löschen?' ) ) { return; } p = api( 'DELETE', '/api/invoices/' + inv.id ); }
 			p.then( function ( b ) { if ( what === 'send' && b && b.invoiceUrl ) { window.alert( 'Rechnung gesendet. Link: ' + b.invoiceUrl ); } load(); } ).catch( function ( err ) { window.alert( err.message ); } );
 		}
+		// Rechnung ansehen / als PDF öffnen: erst (falls nötig) einen öffentlichen
+		// Freigabe-Token erzeugen, dann die Ansicht bzw. das PDF in einem neuen Tab
+		// öffnen. Läuft ohne vorheriges Versenden.
+		function openInvoice( inv, mode ) {
+			var appUrl = ( ecNative.appUrl || 'https://www.easycheckout.ch' ).replace( /\/$/, '' );
+			function go( token ) {
+				if ( ! token ) { window.alert( 'Vorschau-Link konnte nicht erstellt werden.' ); return; }
+				var url = ( mode === 'pdf' )
+					? ( appUrl + '/api/public/invoice/' + token + '/pdf' )
+					: ( appUrl + '/rechnung/' + token );
+				window.open( url, '_blank' );
+			}
+			if ( inv.publicToken ) { go( inv.publicToken ); return; }
+			api( 'POST', '/api/invoices/' + inv.id + '/preview', {} )
+				.then( function ( b ) { go( b && b.publicToken ); } )
+				.catch( function ( err ) { window.alert( err.message ); } );
+		}
 		return el( 'div', null,
 			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Rechnungen' ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { editing: {} } ) ); } }, '+ Neue Rechnung' ) ),
 			ErrorBox( st.error ),
@@ -949,6 +966,8 @@
 							el( 'td', null, fmtDate( inv.dueDate ) ),
 							el( 'td', null, invStatus( inv.status ) ),
 							el( 'td', { className: 'ec-row-actions' },
+								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { openInvoice( inv, 'view' ); } }, 'Ansehen' ), ' ',
+								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { openInvoice( inv, 'pdf' ); } }, 'PDF' ), ' ',
 								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { editing: Object.assign( {}, inv ) } ) ); } }, 'Bearbeiten' ), ' ',
 								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { act( inv, 'send' ); } }, 'Senden' ), ' ',
 								( inv.status === 'sent' || inv.status === 'overdue' ) && el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { act( inv, 'reminder' ); } }, 'Mahnen' ), ' ',
