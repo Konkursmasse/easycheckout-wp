@@ -176,8 +176,12 @@
             }).catch(function (e) { fail(e.message); });
         });
 
-        var cart = h('div', { class: 'eclc-cart' }, [
+        // Überschrift „Bestellung" bewusst AUSSERHALB der Karte — spiegelbildlich
+        // zur linken Spalte („Produkte" + Karten). So starten Überschriften UND
+        // Karten in beiden Spalten exakt bündig, unabhängig von Logo/Inhalt.
+        var cart = h('div', { class: 'eclc-right' }, [
             h('h2', { class: 'eclc-col-h', text: 'Bestellung' }),
+            h('div', { class: 'eclc-cart' }, [
             summaryBox,
             (Number(CART.vat) > 0) ? h('p', { class: 'eclc-vatnote', text: 'inkl. MwSt ' + money(CART.vat) }) : null,
             h('div', { class: 'eclc-divider' }, [h('div', { class: 'eclc-total' }, [h('span', { text: 'Total' }), totalEl])]),
@@ -187,6 +191,7 @@
             deliveryFields,
             payWrap,
             h('div', { style: 'margin-top:18px;' }, [btn]),
+            ]),
         ]);
 
         var back = h('a', {

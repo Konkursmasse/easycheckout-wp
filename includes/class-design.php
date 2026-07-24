@@ -54,10 +54,24 @@ class Design {
         return is_array($d) ? $d : [];
     }
 
-    /** Logo-URL für Kassen-Kopf + Mails ('' = kein Logo). */
+    /**
+     * Logo-URL für Kassen-Kopf + Mails.
+     * Reihenfolge: eigenes Design-Logo → WordPress-Website-Logo (Customizer)
+     * → '' (kein Logo). So erscheint auch ohne Konfiguration automatisch das
+     * Shop-Logo in der Kasse.
+     */
     public static function logo_url() {
         $d = self::design();
-        return isset($d['logoUrl']) ? esc_url_raw((string) $d['logoUrl']) : '';
+        $url = isset($d['logoUrl']) ? trim((string) $d['logoUrl']) : '';
+        if ($url === '') {
+            // WordPress-Website-Logo (Customizer → „Logo") als Fallback.
+            $custom_logo_id = get_theme_mod('custom_logo');
+            if ($custom_logo_id) {
+                $src = wp_get_attachment_image_src($custom_logo_id, 'full');
+                if ($src && !empty($src[0])) { $url = $src[0]; }
+            }
+        }
+        return $url !== '' ? esc_url_raw($url) : '';
     }
 
     /**
