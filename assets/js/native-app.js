@@ -605,7 +605,7 @@
 		function up( o ) { set( Object.assign( {}, st, { error: '' }, o ) ); }
 		function save( e ) {
 			e.preventDefault(); set( Object.assign( {}, st, { busy: true, error: '' } ) );
-			var payload = { email: st.email, name: st.name, phone: st.phone, street: st.street, postalCode: st.postalCode, city: st.city, country: st.country || 'CH', notes: st.notes };
+			var payload = { email: st.email, name: st.name, company: st.company, phone: st.phone, street: st.street, postalCode: st.postalCode, city: st.city, country: st.country || 'CH', notes: st.notes };
 			var pr = st.id ? api( 'PUT', '/api/customers/' + st.id, payload ) : api( 'POST', '/api/customers', payload );
 			pr.then( function () { props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
 		}
@@ -613,6 +613,7 @@
 			el( 'h3', null, st.id ? 'Kunde bearbeiten' : 'Neuer Kunde' ), ErrorBox( st.error ),
 			Field( 'E-Mail', el( 'input', { type: 'email', required: true, value: st.email || '', onChange: function ( e ) { up( { email: e.target.value } ); } } ) ),
 			Field( 'Name', el( 'input', { value: st.name || '', onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
+			Field( 'Firma', el( 'input', { value: st.company || '', onChange: function ( e ) { up( { company: e.target.value } ); } } ) ),
 			Field( 'Telefon', el( 'input', { value: st.phone || '', onChange: function ( e ) { up( { phone: e.target.value } ); } } ) ),
 			el( 'div', { className: 'ec-two' },
 				Field( 'PLZ', el( 'input', { value: st.postalCode || '', onChange: function ( e ) { up( { postalCode: e.target.value } ); } } ) ),
