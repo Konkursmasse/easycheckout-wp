@@ -4,7 +4,7 @@ Tags: checkout, payments, twint, woocommerce, qr-bill
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.0.73
+Stable tag: 1.0.74
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -33,6 +33,15 @@ Das Plugin funktioniert in zwei Betriebsarten:
 * **Webhooks** für Zahlungsstatus, Bestellungen und Rückerstattungen inkl. Entwickler-Hooks
 * **Rechnungen**, Kunden- und Bestellverwaltung im nativen Dashboard
 
+= So richtest du es ein (Kurzüberblick) =
+
+1. **Installieren & aktivieren** – ZIP hochladen, aktivieren. Es erscheinen das Menü „EasyCheckout" und ein Tab in den WooCommerce-Einstellungen.
+2. **Konto verbinden** – unter „EasyCheckout → Übersicht" mit E-Mail/Passwort anmelden (oder kostenlos registrieren). Der Zahlungs-Schlüssel und der Bestell-Webhook werden dabei automatisch erstellt.
+3. **Einstellungen** – unter „WooCommerce → Einstellungen → EasyCheckout" in fünf Sektionen: **Zahlung & Kasse**, **Design** (Logo, Farben), **Shop & Firma**, **Rechnung** (IBAN, Zahlungsfrist), **E-Mails** (Vorlagen, Versand-Schalter).
+4. **Verkaufen** – die Kasse ist aktiv; optional „Sofort kaufen", Express-Checkout oder vollständiger Kassen-Ersatz.
+
+Ausführliches Handbuch mit Screenshots: siehe Abschnitt **Installation** unten.
+
 = Für Entwickler =
 
 Actions: `easycheckout_order_paid`, `easycheckout_order_failed`, `easycheckout_order_refunded`, `easycheckout_order_created`, `easycheckout_wc_order_completed`, `easycheckout_wc_order_failed`, `easycheckout_wc_order_refunded`.
@@ -55,12 +64,34 @@ Anbieter-Bedingungen: https://stripe.com/legal – Datenschutz: https://stripe.c
 
 == Installation ==
 
-1. Lade die Plugin-ZIP unter **Plugins → Installieren → Plugin hochladen** hoch, installiere und aktiviere sie. Es erscheint ein neues Menü **„EasyCheckout"**.
-2. Öffne **EasyCheckout** im WP-Admin und melde dich mit deinem EasyCheckout-Konto an (oder trage unter **Einstellungen → Verbindung** deinen API-Schlüssel ein).
-3. Baue einen Checkout mit dem Shortcode `[easycheckout slug="dein-checkout"]` auf einer beliebigen Seite ein.
-4. Optional: Aktiviere bei installiertem WooCommerce unter **WooCommerce → Einstellungen → Zahlungen → EasyCheckout** die Zahlungsart und wähle den Kassen-Modus.
+= 1. Plugin installieren =
+Lade die Plugin-ZIP unter **Plugins → Installieren → Plugin hochladen** hoch, installiere und aktiviere sie. Danach erscheinen das Menü **„EasyCheckout"** (linke Seitenleiste) und ein eigener Tab unter **WooCommerce → Einstellungen → EasyCheckout**. Künftige Updates kommen automatisch.
 
-Ein EasyCheckout-Konto ist erforderlich. Du kannst kostenlos unter https://easycheckout.ch starten.
+= 2. Konto verbinden =
+Öffne **EasyCheckout → Übersicht** und melde dich mit E-Mail und Passwort deines EasyCheckout-Kontos an – oder registriere dich kostenlos direkt im Fenster. Beim Anmelden erzeugt das Plugin automatisch den nötigen **Zahlungs-Schlüssel** und registriert den **Bestell-Webhook**; du musst nichts kopieren. (Das separate „API key"-Feld ist optional und nur für die manuelle Verbindung mit einem bestehenden `eck_live_…`-Schlüssel gedacht.)
+
+= 3. Einstellungen (WooCommerce → Einstellungen → EasyCheckout) =
+Die Optionen sind in fünf Sektionen gegliedert (Linkleiste oben):
+
+* **Zahlung & Kasse** – Bezahlweg aktivieren, Titel/Beschreibung, Produktquelle, Express-Checkout, „Sofort kaufen", WooCommerce-Kasse ersetzen, Darstellung sowie ein Feld für eigenes CSS.
+* **Design** – Logo (Button „Bild wählen" öffnet die Mediathek), Primär-/Hintergrund-/Text-/Button-Farbe, Ecken-Radius und Schrift. Ohne eigenes Logo wird automatisch das WordPress-Website-Logo verwendet.
+* **Shop & Firma** – Firmenname, Adresse, E-Mail, Telefon, MwSt-Nummer. Erscheint als Rechnungssteller und Mail-Absender.
+* **Rechnung** – IBAN/QR-IBAN, Kontoinhaber, Bank, Zahlungsfrist und Fußtext (Grundlage für Banküberweisung und Swiss-QR-Rechnung).
+* **E-Mails** – Absender und Vorlage der Bestellbestätigung (Platzhalter wie `{ref}`, `{total}`, `{positionen}`) sowie Versand-Schalter, um Bestätigung/Rechnung an den Käufer an- oder abzuschalten.
+
+= 4. Kassen-Varianten =
+Es gibt drei Wege in die Kasse, alle enden in der EasyCheckout-Zahlung:
+
+* **Zur Kasse** (aus dem Warenkorb) – die native Zwei-Spalten-Kasse mit dem gesamten Warenkorb.
+* **Sofort kaufen** (Produktseite) – direkter Kauf nur dieses Produkts. Der Button übernimmt automatisch das Design deines Shop-Buttons „In den Warenkorb".
+* **Express** (Warenkorb) – Adresse und Zahlung in einem schnellen Schritt.
+
+Die **Darstellung** (in „Zahlung & Kasse") legt fest, wie die Kasse erscheint: **Nativ** auf deiner Website (empfohlen, kein iFrame), **Eingebettet** (iFrame) oder **Weiterleitung** zu easycheckout.ch.
+
+= 5. Ohne WooCommerce (Standalone) =
+Baue einen Checkout mit dem Shortcode `[easycheckout slug="dein-checkout"]` auf jede beliebige Seite ein.
+
+Ein EasyCheckout-Konto ist erforderlich. Du kannst kostenlos unter https://easycheckout.ch starten. Das vollständige Handbuch mit Screenshots findest du unter https://easycheckout.ch/handbuch/woocommerce
 
 == Frequently Asked Questions ==
 
@@ -79,14 +110,35 @@ Ja. Markenfarbe und eigenes CSS lassen sich in den Einstellungen setzen. Entwick
 = Ist das Plugin mit dem Block-Checkout von WooCommerce kompatibel? =
 Ja, die WooCommerce Cart- und Checkout-Blocks werden unterstützt, ebenso HPOS.
 
+= Wo lade ich mein Logo hoch? =
+Unter **WooCommerce → Einstellungen → EasyCheckout → Design** beim Feld „Logo" auf „Bild wählen" klicken. Ist dort nichts hinterlegt, verwendet die Kasse automatisch dein WordPress-Website-Logo.
+
+= Kann ich Rechnungen ansehen und als PDF speichern? =
+Ja. Unter **EasyCheckout → Rechnungen** hat jede Rechnung die Aktionen „Ansehen" (Web-Ansicht) und „PDF" – beides funktioniert sofort nach dem Erstellen, ohne vorheriges Versenden. Rechnungen sind ab dem Tarif „Rechnungen", „Basic" oder „Pro" verfügbar.
+
+= Mein Kunde bekommt doppelte E-Mails =
+Sowohl WooCommerce als auch EasyCheckout können Bestell-Mails senden. In der Sektion **E-Mails** die Versand-Schalter für Bestätigung und/oder Rechnung abschalten, wenn WooCommerce die Kundenmails übernehmen soll.
+
+= Ich sehe eine Änderung nicht =
+Meist Browser- oder CDN-Cache. Seite mit Strg+Shift+R neu laden oder ein privates Fenster nutzen; hinter einem CDN (z. B. Cloudflare) dort den Cache leeren.
+
 == Screenshots ==
 
-1. Fertige Checkout-Seite mit Karten- und TWINT-Zahlung, an das Theme angepasst.
-2. Native WooCommerce-Kasse mit editierbarem Warenkorb (Mengen direkt änderbar).
-3. Zahlungsart-Einstellungen inkl. Design-Optionen (Markenfarbe, eigenes CSS).
-4. Natives EasyCheckout-Dashboard im WP-Admin: Bestellungen, Kunden, Rechnungen.
+1. Native WooCommerce-Kasse: zweispaltig, im Theme-Design, mit „Powered by easyCheckout".
+2. Einstellungen – Sektion „Design": Logo-Upload, Farben, Radius, Schrift.
+3. Einstellungen – Sektion „Zahlung & Kasse" mit allen Checkout-Optionen.
+4. Einstellungen – Sektion „E-Mails": Vorlagen und Versand-Schalter.
+5. Natives EasyCheckout-Dashboard im WP-Admin: Übersicht mit Bestellungen, Kunden, Rechnungen.
+6. Produktseite mit „Sofort kaufen"-Button im Shop-Design.
 
 == Changelog ==
+
+= 1.0.73 =
+* Gebündelter Einstellungs-Tab mit Sektionen: Zahlung & Kasse, Design (Logo/Farben), Shop & Firma, Rechnung, E-Mails – inkl. sichtbarer Sektions-Navigation.
+* Rechnungen: „Ansehen" und „PDF" direkt aus der Liste, ohne vorheriges Versenden; planabhängige Freischaltung.
+* Kunden: Firma-Feld ergänzt.
+* Kasse: Produkte/Bestellung bündig ausgerichtet, Checkbox „Lieferadresse entspricht Rechnungsadresse", „Powered by easyCheckout"-Logo, „Sofort kaufen"-Button im Shop-Design; automatischer Logo-Rückfall auf das Website-Logo.
+* Direkter Menüpunkt „EasyCheckout" im WooCommerce-Menü.
 
 = 1.0.57 =
 * Block-Checkout (WooCommerce Cart/Checkout-Blocks): EasyCheckout erscheint jetzt korrekt als Zahlungsart inkl. Logo. Zuvor fehlte das Integrations-Script.
