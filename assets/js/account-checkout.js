@@ -104,7 +104,12 @@
 		sel.value = val || 'CH'; return sel;
 	}
 	function powered() {
-		return h( 'div', { class: 'eclc-powered' }, [ h( 'a', { href: 'https://easycheckout.ch', target: '_blank', rel: 'noopener', text: 'Powered by easyCheckout' } ) ] );
+		var icon = ( window.ecAccount && ecAccount.ecIcon ) ? ecAccount.ecIcon : '';
+		var link = h( 'a', { href: 'https://easycheckout.ch', target: '_blank', rel: 'noopener noreferrer', class: 'eclc-powered-link' }, [
+			icon ? h( 'img', { class: 'eclc-powered-ico', src: icon, alt: 'easyCheckout', width: '16', height: '16' } ) : null,
+			h( 'span', { class: 'eclc-powered-name', text: 'easyCheckout' } )
+		] );
+		return h( 'div', { class: 'eclc-powered' }, [ h( 'span', { text: 'Powered by' } ), link ] );
 	}
 	function loadingView( msg ) { root.innerHTML = ''; root.appendChild( h( 'div', { class: 'eclc-wrap' }, [ h( 'div', { class: 'eclc-cart', style: 'max-width:520px;margin:0 auto;text-align:center' }, [ h( 'p', { class: 'eclc-empty', text: msg || 'Lädt…' } ) ] ) ] ) ); }
 	function errorView( msg ) { root.innerHTML = ''; root.appendChild( h( 'div', { class: 'eclc-wrap' }, [ h( 'div', { class: 'eclc-cart', style: 'max-width:520px;margin:0 auto' }, [ h( 'div', { class: 'eclc-err', text: msg } ) ] ) ] ) ); }

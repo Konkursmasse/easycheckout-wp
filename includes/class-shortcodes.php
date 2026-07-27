@@ -322,6 +322,7 @@ class Shortcodes {
             'nonce'   => wp_create_nonce('easycheckout_front'),
             'slug'    => $slug,
             'primary' => $primary,
+            'ecIcon'  => EASYCHECKOUT_PLUGIN_URL . 'assets/images/easycheckout-icon.png',
         ]);
         wp_enqueue_script('easycheckout-account-checkout');
         $style = $primary ? ' style="--ec-p:' . esc_attr($primary) . ';"' : '';
@@ -461,6 +462,7 @@ class Shortcodes {
         wp_localize_script($handle, 'ecLocal', [
             'ajaxUrl'  => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('easycheckout_front'),
+            'ecIcon'   => EASYCHECKOUT_PLUGIN_URL . 'assets/images/easycheckout-icon.png',
             'checkout' => [
                 'slug'       => $c['slug'],
                 'name'       => $c['name'],
