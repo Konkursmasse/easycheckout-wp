@@ -225,11 +225,43 @@ class WC_Settings_Tab {
      * Werden per JWT-API im Konto gespeichert (gleiche Vorlagen wie im
      * easyCheckout-Dashboard unter „E-Mails").
      */
+    /** Hat der verbundene Tarif die Rechnungs-Funktion? (gecacht) */
+    private function plan_has_invoices() {
+        static $cache = null;
+        if ($cache !== null) { return $cache; }
+        $api = new Native_API();
+        $res = $api->request('GET', '/api/auth/me', null, ['keep_session_on_401' => true]);
+        $cache = false;
+        if (!is_wp_error($res) && is_array($res['body'] ?? null)) {
+            $m = $res['body']['merchant'] ?? $res['body'];
+            $cache = !empty($m['planLimits']['invoices']);
+        }
+        return $cache;
+    }
+
+    /**
+     * Vorlagen-Typen. Gelten für ALLE Bestellungen (WooCommerce wie Standalone),
+     * da beide dieselben Plattform-Mail-Funktionen durchlaufen.
+     * Rechnung + Mahnung erscheinen NUR, wenn der Tarif Rechnungen enthält.
+     */
     private function platform_types() {
-        return [
-            'confirmation'   => __('Bestellbestätigung an Käufer (Online-Zahlung)', 'easycheckout'),
-            'merchant_order' => __('„Neue Bestellung" an dich (Online-Zahlung)', 'easycheckout'),
+        $types = [
+            'confirmation'   => ['label' => __('Bestellbestätigung an Käufer', 'easycheckout'),
+                'vars' => '{{customer_name}}, {{order_number}}, {{items}}, {{total}}, {{subtotal}}, {{vat_amount}}, {{company_name}}, {{company_address}}, {{company_email}}, {{date}}'],
+            'merchant_order' => ['label' => __('„Neue Bestellung" an dich', 'easycheckout'),
+                'vars' => '{{customer_name}}, {{customer_email}}, {{order_number}}, {{items}}, {{total}}, {{company_name}}, {{date}}'],
+            'decline'        => ['label' => __('Zahlung fehlgeschlagen (an Käufer)', 'easycheckout'),
+                'vars' => '{{customer_name}}, {{order_number}}, {{total}}, {{company_name}}'],
+            'refund'         => ['label' => __('Rückerstattung bestätigt (an Käufer)', 'easycheckout'),
+                'vars' => '{{customer_name}}, {{order_number}}, {{total}}, {{company_name}}'],
         ];
+        if ($this->plan_has_invoices()) {
+            $types['invoice']  = ['label' => __('Rechnung an Käufer', 'easycheckout'),
+                'vars' => '{{customer_name}}, {{invoice_number}}, {{invoice_date}}, {{due_date}}, {{total}}, {{invoice_url}}, {{company_name}}, {{company_email}}'];
+            $types['reminder'] = ['label' => __('Mahnung / Zahlungserinnerung', 'easycheckout'),
+                'vars' => '{{customer_name}}, {{invoice_number}}, {{due_date}}, {{total}}, {{invoice_url}}, {{company_name}}'];
+        }
+        return $types;
     }
 
     private function output_platform_templates() {
@@ -249,9 +281,14 @@ class WC_Settings_Tab {
         }
 
         echo '<p class="description">'
-            . esc_html__('Vorlagen für die Mails, die easyCheckout bei Online-Zahlungen (Karte/TWINT) versendet — identisch mit „E-Mails" im easyCheckout-Dashboard. Leer = Standard-Vorlage. Platzhalter: {{customer_name}}, {{order_number}}, {{items}}, {{total}}, {{subtotal}}, {{vat_amount}}, {{company_name}}, {{company_address}}, {{company_email}}, {{date}}.', 'easycheckout')
-            . ' ' . esc_html__('Absender ist easycheckout.ch; eine eigene Absender-Domain kannst du im easyCheckout-Dashboard unter Einstellungen verifizieren.', 'easycheckout')
+            . esc_html__('Diese Vorlagen gelten für ALLE Bestellungen — WooCommerce wie Standalone. Leer = Standard-Vorlage.', 'easycheckout')
+            . ' <strong>' . esc_html__('HTML oder reiner Text:', 'easycheckout') . '</strong> '
+            . esc_html__('Schreibst du HTML, wird es als HTML gesendet; reiner Text wird mit deinen Zeilenumbrüchen als Text gesendet — beides funktioniert.', 'easycheckout')
+            . ' ' . esc_html__('Absender ist easycheckout.ch; eine eigene Absender-Domain kannst du im easyCheckout-Dashboard verifizieren.', 'easycheckout')
             . '</p>';
+        if (!$this->plan_has_invoices()) {
+            echo '<p class="description">' . esc_html__('Hinweis: Die Vorlagen für Rechnung und Mahnung erscheinen hier, sobald dein Tarif Rechnungen enthält (ab „Rechnungen“ / „Basic“ / „Pro“).', 'easycheckout') . '</p>';
+        }
         // Versand-Schalter: welche Plattform-Mails überhaupt rausgehen.
         $flags = ['sendOrderConfirmationEmail' => true, 'sendOrderInvoiceEmail' => true];
         $fres = $api->request('GET', '/api/emails/settings', null, ['keep_session_on_401' => true]);
@@ -269,13 +306,14 @@ class WC_Settings_Tab {
         echo '<p class="description">' . esc_html__('Abschalten, wenn WooCommerce die Kunden-Mails übernehmen soll (vermeidet doppelte Mails). Die „Neue Bestellung"-Mail an dich bleibt davon unberührt.', 'easycheckout') . '</p>';
         echo '<input type="hidden" name="ec_platform_flags[_present]" value="1" />';
         echo '</td></tr>';
-        foreach ($this->platform_types() as $type => $label) {
+        foreach ($this->platform_types() as $type => $def) {
             $t = $templates[$type] ?? null;
             $subject = $t['subject'] ?? '';
             $body = $t['body'] ?? '';
-            echo '<tr valign="top"><th scope="row" class="titledesc">' . esc_html($label) . '</th><td class="forminp">';
+            echo '<tr valign="top"><th scope="row" class="titledesc">' . esc_html($def['label']) . '</th><td class="forminp">';
             echo '<input type="text" name="ec_platform_mail[' . esc_attr($type) . '][subject]" style="width:40em;margin-bottom:6px;" placeholder="' . esc_attr__('Betreff (leer = Standard)', 'easycheckout') . '" value="' . esc_attr($subject) . '" /><br/>';
-            echo '<textarea name="ec_platform_mail[' . esc_attr($type) . '][body]" style="width:40em;height:10em;" placeholder="' . esc_attr__('Inhalt (HTML möglich; leer = Standard)', 'easycheckout') . '">' . esc_textarea($body) . '</textarea>';
+            echo '<textarea name="ec_platform_mail[' . esc_attr($type) . '][body]" style="width:40em;height:10em;" placeholder="' . esc_attr__('Inhalt – HTML oder reiner Text (leer = Standard)', 'easycheckout') . '">' . esc_textarea($body) . '</textarea>';
+            echo '<p class="description">' . esc_html__('Platzhalter:', 'easycheckout') . ' <code>' . esc_html($def['vars']) . '</code></p>';
             echo '</td></tr>';
         }
         echo '</table>';
@@ -303,7 +341,7 @@ class WC_Settings_Tab {
                 if (!empty($t['type'])) { $existing[$t['type']] = $t; }
             }
         }
-        foreach ($this->platform_types() as $type => $label) {
+        foreach ($this->platform_types() as $type => $def) {
             $in = wp_unslash($_POST['ec_platform_mail'][$type] ?? []);
             $subject = trim((string) ($in['subject'] ?? ''));
             $body = trim((string) ($in['body'] ?? ''));
