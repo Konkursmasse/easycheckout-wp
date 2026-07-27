@@ -1,0 +1,1426 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: EasyCheckout\n"
+"Report-Msgid-Bugs-To: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Domain: easycheckout\n"
+"Language: \n"
+
+#: checkout-builder/class-checkout-cpt.php:42 includes/class-native-dashboard.php:31
+msgid "Checkouts"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:43 includes/class-shortcodes.php:143 includes/class-shortcodes.php:183 woocommerce/class-wc-native-cart.php:69
+msgid "Checkout"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:44
+msgid "Add New"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:45
+msgid "Add New Checkout"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:46
+msgid "Edit Checkout"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:47
+msgid "New Checkout"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:48 checkout-builder/class-checkout-cpt.php:554
+msgid "View Checkout"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:49
+msgid "Search Checkouts"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:50
+msgid "No checkouts found"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:51
+msgid "No checkouts found in trash"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:52 checkout-builder/class-checkout-editor.php:131 includes/class-dashboard-page.php:52 includes/class-dashboard-page.php:53 includes/class-easycheckout.php:172 includes/class-easycheckout.php:173 includes/class-native-dashboard.php:95 includes/class-native-dashboard.php:96 includes/class-wc-settings-tab.php:41 woocommerce/class-wc-buynow.php:128 woocommerce/class-wc-cart-order.php:79 woocommerce/class-wc-gateway.php:37
+msgid "EasyCheckout"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:120
+msgid "Checkout Settings"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:129 checkout-builder/class-checkout-cpt.php:518 checkout-builder/class-checkout-frontend.php:150
+msgid "Products"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:138 checkout-builder/class-checkout-cpt.php:517 includes/class-checkouts-page.php:116
+msgid "Shortcode"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:147 includes/class-admin.php:291 includes/class-wc-settings-tab.php:48
+msgid "Design"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:175 checkout-builder/class-checkout-editor.php:135
+msgid "Checkout Slug"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:180
+msgid "Slug des Checkouts aus deinem EasyCheckout-Konto. Produkte und Design werden von dort übernommen; der Button leitet auf die gehostete Bezahlseite (/c/{slug}). Einbetten z. B. mit [easycheckout slug=\"dein-slug\"]."
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:185 checkout-builder/class-checkout-cpt.php:382 woocommerce/class-wc-gateway.php:96
+msgid "Description"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:191
+msgid "Currency"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:201
+msgid "VAT Rate (%)"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:205
+msgid "Leave at 0 for no VAT."
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:209 includes/class-admin.php:281 woocommerce/class-wc-gateway.php:173
+msgid "Payment Methods"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:214 woocommerce/class-wc-gateway.php:178
+msgid "Credit/Debit Cards"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:219 checkout-builder/class-checkout-frontend.php:291 includes/class-admin.php:425 templates/payment-form.php:87 woocommerce/class-wc-blocks.php:164 woocommerce/class-wc-gateway.php:179 woocommerce/class-wc-gateway.php:280
+msgid "TWINT"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:224 woocommerce/class-wc-gateway.php:180 woocommerce/class-wc-gateway.php:281
+msgid "Bank Transfer (QR-Bill)"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:229
+msgid "Success URL"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:233
+msgid "Redirect URL after successful payment."
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:237
+msgid "Cancel URL"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:244
+msgid "Terms URL"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:251
+msgid "Email Notifications"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:256
+msgid "Send email notifications for orders"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:273
+msgid "Hinweis: Produkte werden in deinem EasyCheckout-Konto verwaltet und beim Einbetten automatisch aus dem Checkout (per Slug oben) geladen. Diese lokale Liste ist nur ein optionaler Fallback und wird nicht ins EasyCheckout-Konto synchronisiert."
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:283
+msgid "Add Product"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:357
+msgid "Product #%s"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:358
+msgid "Remove"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:362 includes/class-checkouts-page.php:112
+msgid "Name"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:367
+msgid "Price"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:372
+msgid "SKU"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:377
+msgid "Max Quantity"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:386
+msgid "Image URL"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:402
+msgid "Publish the checkout to get the shortcode."
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:406
+msgid "Copy this shortcode to embed the checkout:"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:409
+msgid "Or use the direct URL:"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:424
+msgid "Logo URL"
+msgstr ""
+
+#: checkout-builder/class-checkout-cpt.php:428
+msgid "Primary Color"
+msgstr ""
+
+#: checkout-builder/class-checkout-editor.php:132
+msgid "Embed an EasyCheckout payment form."
+msgstr ""
+
+#: checkout-builder/class-checkout-editor.php:133
+msgid "Select Checkout"
+msgstr ""
+
+#: checkout-builder/class-checkout-editor.php:134
+msgid "Checkout ID"
+msgstr ""
+
+#: checkout-builder/class-checkout-editor.php:136
+msgid "Theme"
+msgstr ""
+
+#: checkout-builder/class-checkout-editor.php:137
+msgid "Light"
+msgstr ""
+
+#: checkout-builder/class-checkout-editor.php:138
+msgid "Dark"
+msgstr ""
+
+#: checkout-builder/class-checkout-editor.php:139
+msgid "Show Header"
+msgstr ""
+
+#: checkout-builder/class-checkout-editor.php:140
+msgid "Button Text"
+msgstr ""
+
+#: checkout-builder/class-checkout-editor.php:141
+msgid "EasyCheckout Button"
+msgstr ""
+
+#: checkout-builder/class-checkout-editor.php:142
+msgid "Add a payment button."
+msgstr ""
+
+#: checkout-builder/class-checkout-editor.php:143
+msgid "Product ID"
+msgstr ""
+
+#: checkout-builder/class-checkout-editor.php:144
+msgid "No checkouts found. Create one first."
+msgstr ""
+
+#: checkout-builder/class-checkout-editor.php:145
+msgid "Preview"
+msgstr ""
+
+#: checkout-builder/class-checkout-editor.php:165 checkout-builder/class-checkout-editor.php:206
+msgid "Please select a checkout in the block settings."
+msgstr ""
+
+#: checkout-builder/class-checkout-editor.php:200
+msgid "Buy Now"
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:169
+msgid "Decrease quantity"
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:170
+msgid "Quantity"
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:171
+msgid "Increase quantity"
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:180
+msgid "Your Information"
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:182
+msgid "Email"
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:186
+msgid "Full Name"
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:192 includes/class-admin.php:695 templates/payment-form.php:23
+msgid "Payment Method"
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:220
+msgid "You will be redirected to the TWINT app to complete your payment."
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:228
+msgid "A QR-Bill will be generated for you to complete payment via bank transfer."
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:235
+msgid "Subtotal"
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:240
+msgid "VAT (%s%%)"
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:245
+msgid "Total"
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:255
+msgid "I agree to the %s"
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:256
+msgid "Terms and Conditions"
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:264 templates/payment-form.php:17
+msgid "Pay Now"
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:267 includes/class-easycheckout.php:227 templates/payment-form.php:70
+msgid "Processing..."
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:275
+msgid "Secured by"
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:290 templates/payment-form.php:86 woocommerce/class-wc-gateway.php:279
+msgid "Credit/Debit Card"
+msgstr ""
+
+#: checkout-builder/class-checkout-frontend.php:292 templates/payment-form.php:88
+msgid "Bank Transfer"
+msgstr ""
+
+#: easycheckout.php:163
+msgid "Settings"
+msgstr ""
+
+#: includes/class-admin.php:45
+msgid "Keine Berechtigung."
+msgstr ""
+
+#: includes/class-admin.php:50
+msgid "Bitte zuerst den API-Schlüssel speichern."
+msgstr ""
+
+#: includes/class-admin.php:68
+msgid "Webhook registriert."
+msgstr ""
+
+#: includes/class-admin.php:96
+msgid "EasyCheckout ist noch nicht verbunden. <a href=\"%s\">Jetzt API-Schlüssel hinterlegen</a>."
+msgstr ""
+
+#: includes/class-admin.php:107
+msgid "EasyCheckout Settings"
+msgstr ""
+
+#: includes/class-admin.php:108
+msgid "EasyCheckout Einstellungen"
+msgstr ""
+
+#: includes/class-admin.php:252
+msgid "Testing..."
+msgstr ""
+
+#: includes/class-admin.php:253 includes/class-admin.php:745
+msgid "Connection successful!"
+msgstr ""
+
+#: includes/class-admin.php:254
+msgid "Connection failed:"
+msgstr ""
+
+#: includes/class-admin.php:255
+msgid "Clearing..."
+msgstr ""
+
+#: includes/class-admin.php:256 includes/class-admin.php:761
+msgid "Cache cleared!"
+msgstr ""
+
+#: includes/class-admin.php:277
+msgid "Connection"
+msgstr ""
+
+#: includes/class-admin.php:286
+msgid "WooCommerce"
+msgstr ""
+
+#: includes/class-admin.php:295
+msgid "Webhooks"
+msgstr ""
+
+#: includes/class-admin.php:299
+msgid "Logs"
+msgstr ""
+
+#: includes/class-admin.php:341
+msgid "API Key"
+msgstr ""
+
+#: includes/class-admin.php:351
+msgid "Optional. In der Regel nicht nötig: Verbinde dein Konto einfach über das Menü „EasyCheckout\" → Anmelden — der Schlüssel wird dann automatisch erstellt. Dieses Feld ist nur für die manuelle Verbindung mit einem bestehenden API-Schlüssel (Format eck_live_… / eck_test_…)."
+msgstr ""
+
+#: includes/class-admin.php:357
+msgid "API URL"
+msgstr ""
+
+#: includes/class-admin.php:366
+msgid "EasyCheckout API URL. Only change this for development."
+msgstr ""
+
+#: includes/class-admin.php:372
+msgid "Test Mode"
+msgstr ""
+
+#: includes/class-admin.php:381
+msgid "Enable test mode (no real payments will be processed)"
+msgstr ""
+
+#: includes/class-admin.php:388 includes/class-admin.php:658
+msgid "Save Settings"
+msgstr ""
+
+#: includes/class-admin.php:390
+msgid "Test Connection"
+msgstr ""
+
+#: includes/class-admin.php:409
+msgid "Enabled Payment Methods"
+msgstr ""
+
+#: includes/class-admin.php:417
+msgid "Kredit-/Debitkarten"
+msgstr ""
+
+#: includes/class-admin.php:433
+msgid "Bank Transfer (Swiss QR-Bill)"
+msgstr ""
+
+#: includes/class-admin.php:450
+msgid "WooCommerce is not installed."
+msgstr ""
+
+#: includes/class-admin.php:454
+msgid "WooCommerce gateway settings are managed in WooCommerce > Settings > Payments."
+msgstr ""
+
+#: includes/class-admin.php:457
+msgid "Configure WooCommerce Gateway"
+msgstr ""
+
+#: includes/class-admin.php:476
+msgid "Design des eingebetteten Checkouts"
+msgstr ""
+
+#: includes/class-admin.php:478
+msgid "Diese Einstellungen werden an die eingebettete Checkout-Seite übergeben (Farben, Eckenradius, Schriftart). Leere Felder = Standard des Checkouts. Pro Einbettung überschreibbar via Shortcode-Attribute, z. B. [easycheckout slug=\"x\" primary=\"#ff0000\" font=\"site\"]."
+msgstr ""
+
+#: includes/class-admin.php:484
+msgid "Akzentfarbe (Primary)"
+msgstr ""
+
+#: includes/class-admin.php:488 includes/class-wc-settings-tab.php:68
+msgid "Textfarbe"
+msgstr ""
+
+#: includes/class-admin.php:492
+msgid "Hintergrundfarbe"
+msgstr ""
+
+#: includes/class-admin.php:496
+msgid "Button-Farbe"
+msgstr ""
+
+#: includes/class-admin.php:500 includes/class-wc-settings-tab.php:69
+msgid "Button-Textfarbe"
+msgstr ""
+
+#: includes/class-admin.php:504
+msgid "Eckenradius (px)"
+msgstr ""
+
+#: includes/class-admin.php:508
+msgid "Schriftart"
+msgstr ""
+
+#: includes/class-admin.php:511
+msgid "Standard (Inter)"
+msgstr ""
+
+#: includes/class-admin.php:512
+msgid "Schriftart dieser Website übernehmen"
+msgstr ""
+
+#: includes/class-admin.php:513
+msgid "Eigene (Google Font)"
+msgstr ""
+
+#: includes/class-admin.php:515
+msgid "„Schriftart dieser Website übernehmen\" liest die Font deiner Seite aus und wendet sie im Checkout an (passende Google-Font wird geladen)."
+msgstr ""
+
+#: includes/class-admin.php:519
+msgid "Eigene Schriftart (Name)"
+msgstr ""
+
+#: includes/class-admin.php:522
+msgid "Google-Font-Name, z. B. „Poppins\" oder „Roboto\" (nur bei Auswahl „Eigene\")."
+msgstr ""
+
+#: includes/class-admin.php:537
+msgid "Webhook Configuration"
+msgstr ""
+
+#: includes/class-admin.php:541
+msgid "Webhook URL"
+msgstr ""
+
+#: includes/class-admin.php:545
+msgid "Copy"
+msgstr ""
+
+#: includes/class-admin.php:548
+msgid "Add this URL to your EasyCheckout dashboard under Settings > Webhooks."
+msgstr ""
+
+#: includes/class-admin.php:560
+msgid "Webhook Secret"
+msgstr ""
+
+#: includes/class-admin.php:570
+msgid "Webhook signing secret from your EasyCheckout dashboard."
+msgstr ""
+
+#: includes/class-admin.php:579
+msgid "Webhook Events"
+msgstr ""
+
+#: includes/class-admin.php:580
+msgid "The following events are supported:"
+msgstr ""
+
+#: includes/class-admin.php:582
+msgid "Triggered when a payment is completed"
+msgstr ""
+
+#: includes/class-admin.php:583
+msgid "Triggered when a payment fails"
+msgstr ""
+
+#: includes/class-admin.php:584
+msgid "Triggered when a refund is processed"
+msgstr ""
+
+#: includes/class-admin.php:587
+msgid "Automatische Registrierung"
+msgstr ""
+
+#: includes/class-admin.php:588
+msgid "Registriert diese Webhook-URL direkt in deinem EasyCheckout-Konto (API-Key mit Scope webhooks:write nötig). Der Signing-Secret wird automatisch übernommen."
+msgstr ""
+
+#: includes/class-admin.php:590
+msgid "Webhook automatisch registrieren"
+msgstr ""
+
+#: includes/class-admin.php:601
+msgid "Registriere…"
+msgstr ""
+
+#: includes/class-admin.php:609
+msgid "Fehler"
+msgstr ""
+
+#: includes/class-admin.php:619
+msgid "Fehler bei der Registrierung"
+msgstr ""
+
+#: includes/class-admin.php:639
+msgid "Debug Mode"
+msgstr ""
+
+#: includes/class-admin.php:648
+msgid "Enable debug logging"
+msgstr ""
+
+#: includes/class-admin.php:651
+msgid "Logs will be written to WooCommerce logs (if available) or PHP error log."
+msgstr ""
+
+#: includes/class-admin.php:660
+msgid "Clear Cache"
+msgstr ""
+
+#: includes/class-admin.php:666
+msgid "Recent Transactions"
+msgstr ""
+
+#: includes/class-admin.php:683
+msgid "No transactions yet."
+msgstr ""
+
+#: includes/class-admin.php:690
+msgid "Date"
+msgstr ""
+
+#: includes/class-admin.php:691
+msgid "EC Order ID"
+msgstr ""
+
+#: includes/class-admin.php:692
+msgid "WC Order"
+msgstr ""
+
+#: includes/class-admin.php:693
+msgid "Amount"
+msgstr ""
+
+#: includes/class-admin.php:694 includes/class-checkouts-page.php:115
+msgid "Status"
+msgstr ""
+
+#: includes/class-admin.php:696
+msgid "Webhook"
+msgstr ""
+
+#: includes/class-admin.php:735 includes/class-admin.php:755
+msgid "Permission denied"
+msgstr ""
+
+#: includes/class-checkouts-page.php:40
+msgid "Checkout einbetten"
+msgstr ""
+
+#: includes/class-checkouts-page.php:41
+msgid "Einbetten"
+msgstr ""
+
+#: includes/class-checkouts-page.php:64
+msgid "EasyCheckout — Checkout einbetten"
+msgstr ""
+
+#: includes/class-checkouts-page.php:66
+msgid "Wähle einen deiner EasyCheckout-Checkouts und kopiere den Shortcode auf jede beliebige Seite. Käufer werden zur sicheren, gehosteten Bezahlseite weitergeleitet — ganz ohne WooCommerce."
+msgstr ""
+
+#: includes/class-checkouts-page.php:95
+msgid "Manuell per Slug einbetten"
+msgstr ""
+
+#: includes/class-checkouts-page.php:96
+msgid "Du kannst einen Checkout auch direkt über seinen Slug einbetten, ohne ihn hier auszuwählen:"
+msgstr ""
+
+#: includes/class-checkouts-page.php:113
+msgid "Slug"
+msgstr ""
+
+#: includes/class-checkouts-page.php:114
+msgid "Produkte"
+msgstr ""
+
+#: includes/class-checkouts-page.php:117
+msgid "Links"
+msgstr ""
+
+#: includes/class-checkouts-page.php:136
+msgid "Aktiv"
+msgstr ""
+
+#: includes/class-checkouts-page.php:138
+msgid "Inaktiv"
+msgstr ""
+
+#: includes/class-checkouts-page.php:145
+msgid "Klicken zum Kopieren"
+msgstr ""
+
+#: includes/class-checkouts-page.php:148
+msgid "Vorschau"
+msgstr ""
+
+#: includes/class-checkouts-page.php:168
+msgid "Bitte hinterlege zuerst deinen EasyCheckout-API-Schlüssel unter <a href=\"%s\">Einstellungen → EasyCheckout</a>."
+msgstr ""
+
+#: includes/class-checkouts-page.php:185
+msgid "Checkouts konnten nicht geladen werden:"
+msgstr ""
+
+#: includes/class-checkouts-page.php:187
+msgid "Dein API-Schlüssel hat möglicherweise keine Dashboard-Leserechte (checkouts:read). Du kannst Checkouts trotzdem manuell per Slug einbetten:"
+msgstr ""
+
+#: includes/class-checkouts-page.php:204
+msgid "Noch keine Checkouts vorhanden. Erstelle einen in deinem <a href=\"%s\" target=\"_blank\" rel=\"noopener\">EasyCheckout-Konto</a> und lade diese Seite neu."
+msgstr ""
+
+#: includes/class-dashboard-page.php:88
+msgid "EasyCheckout Dashboard"
+msgstr ""
+
+#: includes/class-easycheckout.php:228
+msgid "An error occurred. Please try again."
+msgstr ""
+
+#: includes/class-easycheckout.php:229
+msgid "Payment successful!"
+msgstr ""
+
+#: includes/class-easycheckout.php:230
+msgid "Redirecting to payment..."
+msgstr ""
+
+#: includes/class-easycheckout.php:231
+msgid "Please enter a valid email address."
+msgstr ""
+
+#: includes/class-easycheckout.php:232
+msgid "Please enter your name."
+msgstr ""
+
+#: includes/class-easycheckout.php:233
+msgid "Please accept the terms and conditions."
+msgstr ""
+
+#: includes/class-native-api.php:71
+msgid "Anmeldung fehlgeschlagen."
+msgstr ""
+
+#: includes/class-native-api.php:122 includes/class-native-api.php:175
+msgid "Nicht angemeldet."
+msgstr ""
+
+#: includes/class-native-api.php:243
+msgid "Anfrage fehlgeschlagen."
+msgstr ""
+
+#: includes/class-native-dashboard.php:30
+msgid "Übersicht"
+msgstr ""
+
+#: includes/class-native-dashboard.php:32
+msgid "Einbindung"
+msgstr ""
+
+#: includes/class-native-dashboard.php:33
+msgid "Bestellungen"
+msgstr ""
+
+#: includes/class-native-dashboard.php:34
+msgid "Kunden"
+msgstr ""
+
+#: includes/class-native-dashboard.php:35
+msgid "Rechnungen"
+msgstr ""
+
+#: includes/class-native-dashboard.php:36 includes/class-wc-settings-tab.php:51
+msgid "E-Mails"
+msgstr ""
+
+#: includes/class-native-dashboard.php:37
+msgid "Marketing"
+msgstr ""
+
+#: includes/class-native-dashboard.php:38
+msgid "Verifizierung"
+msgstr ""
+
+#: includes/class-native-dashboard.php:39
+msgid "Tarif"
+msgstr ""
+
+#: includes/class-native-dashboard.php:40
+msgid "Support"
+msgstr ""
+
+#: includes/class-native-dashboard.php:41
+msgid "Einstellungen"
+msgstr ""
+
+#: includes/class-native-dashboard.php:179
+msgid "Im kostenlosen Modus ist ein Checkout möglich. Für weitere Checkouts und Online-Zahlung erstelle ein Konto auf easycheckout.ch."
+msgstr ""
+
+#: includes/class-native-dashboard.php:491
+msgid "Ungültige Anfrage."
+msgstr ""
+
+#: includes/class-native-dashboard.php:495 includes/class-shortcodes.php:650
+msgid "Checkout nicht gefunden."
+msgstr ""
+
+#: includes/class-native-dashboard.php:526
+msgid "Bitte eine Auswahl für „%1$s\" bei „%2$s\" treffen."
+msgstr ""
+
+#: includes/class-native-dashboard.php:546
+msgid "Bitte „%1$s\" bei „%2$s\" ausfüllen."
+msgstr ""
+
+#: includes/class-native-dashboard.php:566
+msgid "Warenkorb ist leer."
+msgstr ""
+
+#: includes/class-native-dashboard.php:572
+msgid "Bitte Name und gültige E-Mail angeben."
+msgstr ""
+
+#: includes/class-native-dashboard.php:581
+msgid "Bitte vollständige Rechnungsadresse angeben."
+msgstr ""
+
+#: includes/class-native-dashboard.php:687
+msgid "Bestellbestätigung %s"
+msgstr ""
+
+#: includes/class-native-dashboard.php:739
+msgid "Nicht erlaubt."
+msgstr ""
+
+#: includes/class-native-dashboard.php:781
+msgid "Bitte zuerst mit deinem EasyCheckout-Konto anmelden."
+msgstr ""
+
+#: includes/class-native-dashboard.php:803
+msgid "Nicht mit EasyCheckout verbunden."
+msgstr ""
+
+#: includes/class-native-dashboard.php:810
+msgid "Gateway-Key konnte nicht erstellt werden."
+msgstr ""
+
+#: includes/class-native-dashboard.php:813
+msgid "Kein Key erhalten."
+msgstr ""
+
+#: includes/class-native-dashboard.php:846
+msgid "WooCommerce-Gateway aktiviert."
+msgstr ""
+
+#: includes/class-native-dashboard.php:894
+msgid "EasyCheckout ist verbunden, aber das WooCommerce-Gateway ist noch nicht aktiviert. „Sofort kaufen\", der Kassen-Ersatz und die Bezahlung sind deshalb inaktiv."
+msgstr ""
+
+#: includes/class-native-dashboard.php:895
+msgid "Gateway jetzt aktivieren"
+msgstr ""
+
+#: includes/class-native-dashboard.php:897
+msgid "EasyCheckout ist als Zahlart aktiviert, aber nicht mit deinem Konto verbunden. „Sofort kaufen\", der Kassen-Ersatz und die Bezahlung sind deshalb inaktiv."
+msgstr ""
+
+#: includes/class-native-dashboard.php:898
+msgid "Mit EasyCheckout verbinden"
+msgstr ""
+
+#: includes/class-shortcodes.php:258 includes/class-shortcodes.php:502 includes/class-shortcodes.php:542
+msgid "Jetzt kaufen"
+msgstr ""
+
+#: includes/class-shortcodes.php:414
+msgid "Diesem Checkout ist kein EasyCheckout-Slug zugeordnet."
+msgstr ""
+
+#: includes/class-shortcodes.php:417 includes/class-shortcodes.php:630
+msgid "Bitte gib einen Checkout-Slug an: [easycheckout slug=\"dein-slug\"]."
+msgstr ""
+
+#: includes/class-shortcodes.php:567
+msgid "Produkt nicht gefunden."
+msgstr ""
+
+#: includes/class-shortcodes.php:623
+msgid "Diesem Checkout ist kein EasyCheckout-Slug zugeordnet. Trage den Slug aus deinem EasyCheckout-Konto ein."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:47
+msgid "Zahlung & Kasse"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:49 includes/class-wc-settings-tab.php:85
+msgid "Shop & Firma"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:50
+msgid "Rechnung"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:60
+msgid "Checkout-Design"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:61
+msgid "Gilt für die native Kasse, Shortcode-Checkouts und die Bestellbestätigung. Feinschliff ist zusätzlich über „Eigenes CSS\" in Zahlung & Kasse möglich."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:63
+msgid "Logo"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:64
+msgid "Wird oben in der Kasse und in Bestell-Mails (Absendername) verwendet."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:65
+msgid "Primärfarbe"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:66
+msgid "Buttons, Preise, Akzente."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:67
+msgid "Hintergrund"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:70
+msgid "Ecken-Radius (px)"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:72
+msgid "Schrift"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:74
+msgid "Schrift der Website (empfohlen)"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:75
+msgid "Neutrale System-Schrift"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:77
+msgid "„Powered by\"-Hinweis"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:78
+msgid "„Powered by easyCheckout\" unten in der Kasse anzeigen"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:80
+msgid "Standardmäßig aus. Aktiviert erscheint ein kleiner Link zu easycheckout.ch am Ende der Kasse."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:86
+msgid "Erscheint als Rechnungssteller auf Bestellbestätigungen, Swiss-QR-Rechnungen und als Mail-Absender."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:87
+msgid "Firmenname"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:88
+msgid "Strasse & Nr."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:89
+msgid "PLZ"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:90
+msgid "Ort"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:91
+msgid "Land"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:92
+msgid "E-Mail"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:93
+msgid "Telefon"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:94
+msgid "MwSt-Nummer"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:99
+msgid "Rechnung & Bankverbindung"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:100
+msgid "Grundlage für Banküberweisung und Swiss-QR-Rechnung bei lokalen Bestellungen."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:101
+msgid "IBAN / QR-IBAN"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:102
+msgid "Kontoinhaber"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:103
+msgid "Bank"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:104
+msgid "Zahlungsfrist (Tage)"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:106
+msgid "0 = keine Frist anzeigen."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:107
+msgid "Fußtext"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:109
+msgid "Erscheint am Ende von Bestellbestätigung und Mail (z. B. Dankestext, rechtliche Hinweise)."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:114
+msgid "Bestellbestätigung (E-Mail)"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:115
+msgid "Vorlage für die Bestellbestätigung bei lokalen Bestellungen (Banküberweisung/QR). Leere Felder nutzen die Standard-Vorlage. Platzhalter: {ref}, {name}, {firma}, {positionen}, {total}, {waehrung}, {iban}, {empfaenger}, {bank}, {zahlungsfrist}, {rechnungsadresse}, {lieferadresse}, {art}, {fusszeile}. Hinweis: Mails des WooCommerce-Bestellflusses werden unter WooCommerce → Einstellungen → E-Mails verwaltet."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:116
+msgid "Absender-Name"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:117
+msgid "Leer = Firmenname aus Shop & Firma."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:118
+msgid "Absender-Adresse"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:119
+msgid "Leer = E-Mail aus Shop & Firma."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:120
+msgid "Betreff"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:121
+msgid "Bestellbestätigung {ref}"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:122
+msgid "Inhalt"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:123
+msgid "Leer = Standard-Vorlage"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:124
+msgid "Kopie an Shop"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:125
+msgid "Jede Bestellbestätigung als Blindkopie an die Shop-E-Mail senden."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:200
+msgid "Im easyCheckout-Onboarding hinterlegte Bank: %1$s (IBAN endet auf %2$s). Der Zahlungsabwickler gibt aus Sicherheitsgründen nur die letzten Stellen frei — bitte trage oben die vollständige IBAN ein, damit sie auf QR-Rechnungen erscheint."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:253
+msgid "Bestellbestätigung an Käufer"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:255
+msgid "„Neue Bestellung\" an dich"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:257
+msgid "Zahlung fehlgeschlagen (an Käufer)"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:259
+msgid "Rückerstattung bestätigt (an Käufer)"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:263
+msgid "Rechnung an Käufer"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:265
+msgid "Mahnung / Zahlungserinnerung"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:273
+msgid "Online-Zahlungs-Mails (easyCheckout-Konto)"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:278
+msgid "Diese Mails versendet die easyCheckout-Plattform bei Karten-/TWINT-Zahlungen. Zum Bearbeiten muss das Plugin mit deinem easyCheckout-Konto verbunden sein (Menü „EasyCheckout\" → Anmelden)."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:288
+msgid "Diese Vorlagen gelten für ALLE Bestellungen — WooCommerce wie Standalone. Leer = Standard-Vorlage."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:289
+msgid "HTML oder reiner Text:"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:290
+msgid "Schreibst du HTML, wird es als HTML gesendet; reiner Text wird mit deinen Zeilenumbrüchen als Text gesendet — beides funktioniert."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:291
+msgid "Absender ist easycheckout.ch; eine eigene Absender-Domain kannst du im easyCheckout-Dashboard verifizieren."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:294
+msgid "Hinweis: Die Vorlagen für Rechnung und Mahnung erscheinen hier, sobald dein Tarif Rechnungen enthält (ab „Rechnungen“ / „Basic“ / „Pro“)."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:305
+msgid "Versand"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:307
+msgid "easyCheckout-Bestellbestätigung an den Käufer senden"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:309
+msgid "Rechnung (mit PDF-Anhang) an den Käufer senden"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:310
+msgid "Abschalten, wenn WooCommerce die Kunden-Mails übernehmen soll (vermeidet doppelte Mails). Die „Neue Bestellung\"-Mail an dich bleibt davon unberührt."
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:318
+msgid "Betreff (leer = Standard)"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:319
+msgid "Inhalt – HTML oder reiner Text (leer = Standard)"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:320
+msgid "Platzhalter:"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:421
+msgid "Bild wählen"
+msgstr ""
+
+#: includes/class-wc-settings-tab.php:431
+msgid "Logo wählen"
+msgstr ""
+
+#: includes/class-webhook-handler.php:484
+msgid "Treuepunkte-Gutschein"
+msgstr ""
+
+#: includes/class-webhook-handler.php:498
+msgid "Zahlung via EasyCheckout bestätigt (Referenz: %s)."
+msgstr ""
+
+#: includes/class-webhook-handler.php:599
+msgid "Zahlung fehlgeschlagen"
+msgstr ""
+
+#: includes/class-webhook-handler.php:603
+msgid "Zahlung via EasyCheckout fehlgeschlagen: %s"
+msgstr ""
+
+#: includes/class-webhook-handler.php:607
+msgid "Zahlung fehlgeschlagen."
+msgstr ""
+
+#: includes/class-webhook-handler.php:647
+msgid "Rückerstattung via EasyCheckout"
+msgstr ""
+
+#: includes/class-webhook-handler.php:659
+msgid "Rückerstattung von %s via EasyCheckout verbucht."
+msgstr ""
+
+#: templates/payment-form.php:49
+msgid "You will be redirected to TWINT to complete your payment."
+msgstr ""
+
+#: templates/payment-form.php:56
+msgid "A Swiss QR-Bill will be generated for bank transfer."
+msgstr ""
+
+#: templates/payment-form.php:62
+msgid "Total:"
+msgstr ""
+
+#: woocommerce/class-wc-blocks.php:160
+msgid "Credit Card"
+msgstr ""
+
+#: woocommerce/class-wc-buynow.php:62 woocommerce/class-wc-express.php:84
+msgid "Einen Moment …"
+msgstr ""
+
+#: woocommerce/class-wc-buynow.php:63
+msgid "Sofort-Kauf konnte nicht gestartet werden. Bitte erneut versuchen."
+msgstr ""
+
+#: woocommerce/class-wc-buynow.php:83 woocommerce/class-wc-express.php:100
+msgid "Zum Checkout"
+msgstr ""
+
+#: woocommerce/class-wc-buynow.php:99 woocommerce/class-wc-gateway.php:129
+msgid "Sofort kaufen"
+msgstr ""
+
+#: woocommerce/class-wc-buynow.php:118
+msgid "Produkt nicht verfügbar."
+msgstr ""
+
+#: woocommerce/class-wc-buynow.php:134 woocommerce/class-wc-express.php:135 woocommerce/class-wc-express.php:139 woocommerce/class-wc-native-cart.php:150
+msgid "Bestellung konnte nicht erstellt werden."
+msgstr ""
+
+#: woocommerce/class-wc-buynow.php:150 woocommerce/class-wc-checkout-replace.php:113 woocommerce/class-wc-express.php:165
+msgid "EasyCheckout payment session konnte nicht erstellt werden."
+msgstr ""
+
+#: woocommerce/class-wc-buynow.php:159 woocommerce/class-wc-checkout-replace.php:123 woocommerce/class-wc-express.php:174
+msgid "Keine Bezahl-URL von EasyCheckout erhalten."
+msgstr ""
+
+#: woocommerce/class-wc-buynow.php:160 woocommerce/class-wc-express.php:175 woocommerce/class-wc-native-cart.php:204
+msgid "Zahlung konnte nicht gestartet werden."
+msgstr ""
+
+#: woocommerce/class-wc-buynow.php:164
+msgid "Sofort-Kauf gestartet – warte auf Zahlung via EasyCheckout."
+msgstr ""
+
+#: woocommerce/class-wc-checkout-replace.php:128
+msgid "Kasse via EasyCheckout gestartet – warte auf Zahlung."
+msgstr ""
+
+#: woocommerce/class-wc-express.php:85
+msgid "Express-Checkout konnte nicht gestartet werden. Bitte erneut versuchen."
+msgstr ""
+
+#: woocommerce/class-wc-express.php:107 woocommerce/class-wc-gateway.php:121
+msgid "Express-Checkout"
+msgstr ""
+
+#: woocommerce/class-wc-express.php:111
+msgid "Schnell bezahlen – Adresse und Zahlung in einem Schritt."
+msgstr ""
+
+#: woocommerce/class-wc-express.php:125 woocommerce/class-wc-native-cart.php:141
+msgid "Der Warenkorb ist leer."
+msgstr ""
+
+#: woocommerce/class-wc-express.php:180
+msgid "Express-Checkout gestartet – warte auf Zahlung via EasyCheckout."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:38
+msgid "Accept payments with Credit Cards, TWINT, and Swiss QR-Bill via EasyCheckout."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:83
+msgid "Enable/Disable"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:85
+msgid "Enable EasyCheckout"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:89
+msgid "Title"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:91
+msgid "This controls the title shown during checkout."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:92
+msgid "Credit Card / TWINT / Bank Transfer"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:98
+msgid "This controls the description shown during checkout."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:99
+msgid "Pay securely with your preferred payment method."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:103
+msgid "Produktquelle"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:105
+msgid "„WooCommerce-Warenkorb\": die im Shop gewählten Artikel werden verarbeitet. „EasyCheckout-Checkout\": es wird dein im EasyCheckout hinterlegter Checkout (mit dessen Produkten) geöffnet – dazu unten den Slug angeben."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:108
+msgid "WooCommerce-Warenkorb"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:109
+msgid "EasyCheckout-Checkout (Slug)"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:114
+msgid "Checkout Slug (optional)"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:116
+msgid "Nur für Standalone-Nutzung ohne WooCommerce. Im WooCommerce-Betrieb wird immer der WooCommerce-Warenkorb verarbeitet."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:123
+msgid "Express-Checkout-Button im Warenkorb anzeigen"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:124
+msgid "Zeigt zusätzlich zum normalen Checkout einen Direkt-Button im Warenkorb, der Adresse und Zahlung in einem schnellen Schritt erfasst."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:131
+msgid "„Sofort kaufen\"-Button auf Produktseiten anzeigen"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:132
+msgid "Zeigt auf jeder Produktseite unter „In den Warenkorb\" einen Direkt-Kauf-Button, der sofort zur EasyCheckout-Kasse führt."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:137
+msgid "WooCommerce-Kasse ersetzen"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:139
+msgid "Die WooCommerce-Kasse vollständig durch die EasyCheckout-Kasse ersetzen"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:140
+msgid "Beim Aufruf der Kasse wird der Warenkorb direkt an die EasyCheckout-Kasse übergeben (Adresse + Zahlung dort). Die Standard-WooCommerce-Kasse wird übersprungen."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:145
+msgid "Darstellung der Kasse"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:147
+msgid "Wie die EasyCheckout-Kasse angezeigt wird, wenn sie die WooCommerce-Kasse ersetzt (oder bei „Sofort kaufen“)."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:150
+msgid "Nativ auf Ihrer Website (empfohlen) – kein iFrame, gleiche Domain"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:151
+msgid "Eingebettet (iFrame)"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:152
+msgid "Weiterleitung zu easycheckout.ch"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:157
+msgid "Markenfarbe (Design)"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:159
+msgid "Primärfarbe der Kasse (Buttons/Akzente), z. B. #0891b2 oder #4F46E5. Gilt für die native WooCommerce-Kasse und /pay. Entwickler können sie auch per Filter easycheckout_checkout_color überschreiben."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:165
+msgid "Eigenes CSS (Design)"
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:168
+msgid "Eigenes CSS zum Anpassen der Kasse (Klassen: .eclc-*, Container #ec-pay-checkout / .ec-local-checkout, Variable --ec-p). Wird auf allen Kassen-Seiten eingebunden. Per Filter easycheckout_checkout_css erweiterbar."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:176
+msgid "Select which payment methods to display. Actual availability depends on EasyCheckout configuration."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:223
+msgid "Nach dem Absenden der Bestellung wirst du sicher zu EasyCheckout weitergeleitet – dort wählst du deine Zahlungsart und bezahlst."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:335
+msgid "Zahlung konnte nicht gestartet werden. Bitte versuche es erneut."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:358
+msgid "Awaiting payment via EasyCheckout."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:404
+msgid "Payment received via EasyCheckout, awaiting webhook confirmation."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:444
+msgid "Payment cancelled by customer."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:447
+msgid "Payment was cancelled. Please try again."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:466
+msgid "Invalid order."
+msgstr ""
+
+#: woocommerce/class-wc-gateway.php:474
+msgid "Rückerstattungen werden direkt im EasyCheckout-Konto durchgeführt (keine API verfügbar)."
+msgstr ""
+
+#: woocommerce/class-wc-native-cart.php:144
+msgid "Bitte Name und E-Mail angeben."
+msgstr ""
+
+#: woocommerce/class-wc-session-builder.php:164
+msgid "Bestellung %s"
+msgstr ""
+

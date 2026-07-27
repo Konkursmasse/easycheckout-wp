@@ -1,0 +1,1071 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: EasyCheckout\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fr_FR\n"
+"X-Domain: easycheckout\n"
+
+msgid "Checkouts"
+msgstr "Paiements"
+
+msgid "Checkout"
+msgstr "Paiement"
+
+msgid "Add New"
+msgstr "Ajouter"
+
+msgid "Add New Checkout"
+msgstr "Ajouter un paiement"
+
+msgid "Edit Checkout"
+msgstr "Modifier le paiement"
+
+msgid "New Checkout"
+msgstr "Nouveau paiement"
+
+msgid "View Checkout"
+msgstr "Voir le paiement"
+
+msgid "Search Checkouts"
+msgstr "Rechercher des paiements"
+
+msgid "No checkouts found"
+msgstr "Aucun paiement trouvé"
+
+msgid "No checkouts found in trash"
+msgstr "Aucun paiement dans la corbeille"
+
+msgid "EasyCheckout"
+msgstr "EasyCheckout"
+
+msgid "Checkout Settings"
+msgstr "Réglages du paiement"
+
+msgid "Products"
+msgstr "Produits"
+
+msgid "Shortcode"
+msgstr "Code court"
+
+msgid "Design"
+msgstr "Design"
+
+msgid "Checkout Slug"
+msgstr "Slug du paiement"
+
+msgid "Slug des Checkouts aus deinem EasyCheckout-Konto. Produkte und Design werden von dort übernommen; der Button leitet auf die gehostete Bezahlseite (/c/{slug}). Einbetten z. B. mit [easycheckout slug=\"dein-slug\"]."
+msgstr "Slug du paiement issu de votre compte EasyCheckout. Les produits et le design en sont repris ; le bouton redirige vers la page de paiement hébergée (/c/{slug}). Intégration p. ex. avec [easycheckout slug=\"votre-slug\"]."
+
+msgid "Description"
+msgstr "Description"
+
+msgid "Currency"
+msgstr "Devise"
+
+msgid "VAT Rate (%)"
+msgstr "Taux de TVA (%)"
+
+msgid "Leave at 0 for no VAT."
+msgstr "Laissez à 0 pour aucune TVA."
+
+msgid "Payment Methods"
+msgstr "Moyens de paiement"
+
+msgid "Credit/Debit Cards"
+msgstr "Cartes de crédit/débit"
+
+msgid "TWINT"
+msgstr "TWINT"
+
+msgid "Bank Transfer (QR-Bill)"
+msgstr "Virement bancaire (QR-facture)"
+
+msgid "Success URL"
+msgstr "URL de succès"
+
+msgid "Redirect URL after successful payment."
+msgstr "URL de redirection après un paiement réussi."
+
+msgid "Cancel URL"
+msgstr "URL d’annulation"
+
+msgid "Terms URL"
+msgstr "URL des conditions"
+
+msgid "Email Notifications"
+msgstr "Notifications par e-mail"
+
+msgid "Send email notifications for orders"
+msgstr "Envoyer des notifications par e-mail pour les commandes"
+
+msgid "Hinweis: Produkte werden in deinem EasyCheckout-Konto verwaltet und beim Einbetten automatisch aus dem Checkout (per Slug oben) geladen. Diese lokale Liste ist nur ein optionaler Fallback und wird nicht ins EasyCheckout-Konto synchronisiert."
+msgstr "Remarque : les produits sont gérés dans votre compte EasyCheckout et chargés automatiquement depuis le paiement (via le slug ci-dessus) lors de l’intégration. Cette liste locale n’est qu’une solution de repli facultative et n’est pas synchronisée avec le compte EasyCheckout."
+
+msgid "Add Product"
+msgstr "Ajouter un produit"
+
+msgid "Product #%s"
+msgstr "Produit n° %s"
+
+msgid "Remove"
+msgstr "Supprimer"
+
+msgid "Name"
+msgstr "Nom"
+
+msgid "Price"
+msgstr "Prix"
+
+msgid "SKU"
+msgstr "SKU"
+
+msgid "Max Quantity"
+msgstr "Quantité max."
+
+msgid "Image URL"
+msgstr "URL de l’image"
+
+msgid "Publish the checkout to get the shortcode."
+msgstr "Publiez le paiement pour obtenir le code court."
+
+msgid "Copy this shortcode to embed the checkout:"
+msgstr "Copiez ce code court pour intégrer le paiement :"
+
+msgid "Or use the direct URL:"
+msgstr "Ou utilisez l’URL directe :"
+
+msgid "Logo URL"
+msgstr "URL du logo"
+
+msgid "Primary Color"
+msgstr "Couleur principale"
+
+msgid "Embed an EasyCheckout payment form."
+msgstr "Intégrer un formulaire de paiement EasyCheckout."
+
+msgid "Select Checkout"
+msgstr "Sélectionner le paiement"
+
+msgid "Checkout ID"
+msgstr "ID du paiement"
+
+msgid "Theme"
+msgstr "Thème"
+
+msgid "Light"
+msgstr "Clair"
+
+msgid "Dark"
+msgstr "Sombre"
+
+msgid "Show Header"
+msgstr "Afficher l’en-tête"
+
+msgid "Button Text"
+msgstr "Texte du bouton"
+
+msgid "EasyCheckout Button"
+msgstr "Bouton EasyCheckout"
+
+msgid "Add a payment button."
+msgstr "Ajouter un bouton de paiement."
+
+msgid "Product ID"
+msgstr "ID du produit"
+
+msgid "No checkouts found. Create one first."
+msgstr "Aucun paiement trouvé. Créez-en un d’abord."
+
+msgid "Preview"
+msgstr "Aperçu"
+
+msgid "Please select a checkout in the block settings."
+msgstr "Veuillez sélectionner un paiement dans les réglages du bloc."
+
+msgid "Buy Now"
+msgstr "Acheter maintenant"
+
+msgid "Decrease quantity"
+msgstr "Diminuer la quantité"
+
+msgid "Quantity"
+msgstr "Quantité"
+
+msgid "Increase quantity"
+msgstr "Augmenter la quantité"
+
+msgid "Your Information"
+msgstr "Vos informations"
+
+msgid "Email"
+msgstr "E-mail"
+
+msgid "Full Name"
+msgstr "Nom complet"
+
+msgid "Payment Method"
+msgstr "Moyen de paiement"
+
+msgid "You will be redirected to the TWINT app to complete your payment."
+msgstr "Vous serez redirigé vers l’application TWINT pour finaliser votre paiement."
+
+msgid "A QR-Bill will be generated for you to complete payment via bank transfer."
+msgstr "Une QR-facture sera générée pour finaliser le paiement par virement bancaire."
+
+msgid "Subtotal"
+msgstr "Sous-total"
+
+msgid "VAT (%s%%)"
+msgstr "TVA (%s%%)"
+
+msgid "Total"
+msgstr "Total"
+
+msgid "I agree to the %s"
+msgstr "J’accepte les %s"
+
+msgid "Terms and Conditions"
+msgstr "Conditions générales"
+
+msgid "Pay Now"
+msgstr "Payer maintenant"
+
+msgid "Processing..."
+msgstr "Traitement…"
+
+msgid "Secured by"
+msgstr "Sécurisé par"
+
+msgid "Credit/Debit Card"
+msgstr "Carte de crédit/débit"
+
+msgid "Bank Transfer"
+msgstr "Virement bancaire"
+
+msgid "Settings"
+msgstr "Réglages"
+
+msgid "Keine Berechtigung."
+msgstr "Autorisation refusée."
+
+msgid "Bitte zuerst den API-Schlüssel speichern."
+msgstr "Veuillez d’abord enregistrer la clé API."
+
+msgid "Webhook registriert."
+msgstr "Webhook enregistré."
+
+msgid "EasyCheckout ist noch nicht verbunden. <a href=\"%s\">Jetzt API-Schlüssel hinterlegen</a>."
+msgstr "EasyCheckout n’est pas encore connecté. <a href=\"%s\">Renseignez maintenant la clé API</a>."
+
+msgid "EasyCheckout Settings"
+msgstr "Réglages EasyCheckout"
+
+msgid "EasyCheckout Einstellungen"
+msgstr "Réglages EasyCheckout"
+
+msgid "Testing..."
+msgstr "Test en cours…"
+
+msgid "Connection successful!"
+msgstr "Connexion réussie !"
+
+msgid "Connection failed:"
+msgstr "Échec de la connexion :"
+
+msgid "Clearing..."
+msgstr "Effacement…"
+
+msgid "Cache cleared!"
+msgstr "Cache vidé !"
+
+msgid "Connection"
+msgstr "Connexion"
+
+msgid "WooCommerce"
+msgstr "WooCommerce"
+
+msgid "Webhooks"
+msgstr "Webhooks"
+
+msgid "Logs"
+msgstr "Journaux"
+
+msgid "API Key"
+msgstr "Clé API"
+
+msgid "Optional. In der Regel nicht nötig: Verbinde dein Konto einfach über das Menü „EasyCheckout\" → Anmelden — der Schlüssel wird dann automatisch erstellt. Dieses Feld ist nur für die manuelle Verbindung mit einem bestehenden API-Schlüssel (Format eck_live_… / eck_test_…)."
+msgstr "Facultatif. Généralement inutile : connectez votre compte via le menu « EasyCheckout » → Se connecter — la clé est alors créée automatiquement. Ce champ ne sert qu’à la connexion manuelle avec une clé API existante (format eck_live_… / eck_test_…)."
+
+msgid "API URL"
+msgstr "URL de l’API"
+
+msgid "EasyCheckout API URL. Only change this for development."
+msgstr "URL de l’API EasyCheckout. À modifier uniquement pour le développement."
+
+msgid "Test Mode"
+msgstr "Mode test"
+
+msgid "Enable test mode (no real payments will be processed)"
+msgstr "Activer le mode test (aucun paiement réel ne sera traité)"
+
+msgid "Save Settings"
+msgstr "Enregistrer les réglages"
+
+msgid "Test Connection"
+msgstr "Tester la connexion"
+
+msgid "Enabled Payment Methods"
+msgstr "Moyens de paiement activés"
+
+msgid "Kredit-/Debitkarten"
+msgstr "Cartes de crédit/débit"
+
+msgid "Bank Transfer (Swiss QR-Bill)"
+msgstr "Virement bancaire (QR-facture suisse)"
+
+msgid "WooCommerce is not installed."
+msgstr "WooCommerce n’est pas installé."
+
+msgid "WooCommerce gateway settings are managed in WooCommerce > Settings > Payments."
+msgstr "Les réglages de la passerelle WooCommerce se gèrent dans WooCommerce > Réglages > Paiements."
+
+msgid "Configure WooCommerce Gateway"
+msgstr "Configurer la passerelle WooCommerce"
+
+msgid "Design des eingebetteten Checkouts"
+msgstr "Design du paiement intégré"
+
+msgid "Diese Einstellungen werden an die eingebettete Checkout-Seite übergeben (Farben, Eckenradius, Schriftart). Leere Felder = Standard des Checkouts. Pro Einbettung überschreibbar via Shortcode-Attribute, z. B. [easycheckout slug=\"x\" primary=\"#ff0000\" font=\"site\"]."
+msgstr "Ces réglages sont transmis à la page de paiement intégrée (couleurs, rayon des coins, police). Champs vides = valeurs par défaut du paiement. Remplaçables par intégration via les attributs du code court, p. ex. [easycheckout slug=\"x\" primary=\"#ff0000\" font=\"site\"]."
+
+msgid "Akzentfarbe (Primary)"
+msgstr "Couleur d’accent (principale)"
+
+msgid "Textfarbe"
+msgstr "Couleur du texte"
+
+msgid "Hintergrundfarbe"
+msgstr "Couleur d’arrière-plan"
+
+msgid "Button-Farbe"
+msgstr "Couleur du bouton"
+
+msgid "Button-Textfarbe"
+msgstr "Couleur du texte du bouton"
+
+msgid "Eckenradius (px)"
+msgstr "Rayon des coins (px)"
+
+msgid "Schriftart"
+msgstr "Police"
+
+msgid "Standard (Inter)"
+msgstr "Par défaut (Inter)"
+
+msgid "Schriftart dieser Website übernehmen"
+msgstr "Reprendre la police de ce site"
+
+msgid "Eigene (Google Font)"
+msgstr "Personnalisée (Google Font)"
+
+msgid "„Schriftart dieser Website übernehmen\" liest die Font deiner Seite aus und wendet sie im Checkout an (passende Google-Font wird geladen)."
+msgstr "« Reprendre la police de ce site » lit la police de votre site et l’applique au paiement (la Google Font correspondante est chargée)."
+
+msgid "Eigene Schriftart (Name)"
+msgstr "Police personnalisée (nom)"
+
+msgid "Google-Font-Name, z. B. „Poppins\" oder „Roboto\" (nur bei Auswahl „Eigene\")."
+msgstr "Nom de la Google Font, p. ex. « Poppins » ou « Roboto » (uniquement si « Personnalisée » est sélectionné)."
+
+msgid "Webhook Configuration"
+msgstr "Configuration des webhooks"
+
+msgid "Webhook URL"
+msgstr "URL du webhook"
+
+msgid "Copy"
+msgstr "Copier"
+
+msgid "Add this URL to your EasyCheckout dashboard under Settings > Webhooks."
+msgstr "Ajoutez cette URL dans votre tableau de bord EasyCheckout sous Réglages > Webhooks."
+
+msgid "Webhook Secret"
+msgstr "Secret du webhook"
+
+msgid "Webhook signing secret from your EasyCheckout dashboard."
+msgstr "Secret de signature du webhook depuis votre tableau de bord EasyCheckout."
+
+msgid "Webhook Events"
+msgstr "Événements de webhook"
+
+msgid "The following events are supported:"
+msgstr "Les événements suivants sont pris en charge :"
+
+msgid "Triggered when a payment is completed"
+msgstr "Déclenché lorsqu’un paiement est finalisé"
+
+msgid "Triggered when a payment fails"
+msgstr "Déclenché lorsqu’un paiement échoue"
+
+msgid "Triggered when a refund is processed"
+msgstr "Déclenché lorsqu’un remboursement est traité"
+
+msgid "Automatische Registrierung"
+msgstr "Enregistrement automatique"
+
+msgid "Registriert diese Webhook-URL direkt in deinem EasyCheckout-Konto (API-Key mit Scope webhooks:write nötig). Der Signing-Secret wird automatisch übernommen."
+msgstr "Enregistre cette URL de webhook directement dans votre compte EasyCheckout (clé API avec le scope webhooks:write requise). Le secret de signature est repris automatiquement."
+
+msgid "Webhook automatisch registrieren"
+msgstr "Enregistrer le webhook automatiquement"
+
+msgid "Registriere…"
+msgstr "Enregistrement…"
+
+msgid "Fehler"
+msgstr "Erreur"
+
+msgid "Fehler bei der Registrierung"
+msgstr "Erreur lors de l’enregistrement"
+
+msgid "Debug Mode"
+msgstr "Mode débogage"
+
+msgid "Enable debug logging"
+msgstr "Activer la journalisation de débogage"
+
+msgid "Logs will be written to WooCommerce logs (if available) or PHP error log."
+msgstr "Les journaux seront écrits dans les journaux WooCommerce (si disponibles) ou dans le journal d’erreurs PHP."
+
+msgid "Clear Cache"
+msgstr "Vider le cache"
+
+msgid "Recent Transactions"
+msgstr "Transactions récentes"
+
+msgid "No transactions yet."
+msgstr "Aucune transaction pour l’instant."
+
+msgid "Date"
+msgstr "Date"
+
+msgid "EC Order ID"
+msgstr "ID de commande EC"
+
+msgid "WC Order"
+msgstr "Commande WC"
+
+msgid "Amount"
+msgstr "Montant"
+
+msgid "Status"
+msgstr "Statut"
+
+msgid "Webhook"
+msgstr "Webhook"
+
+msgid "Permission denied"
+msgstr "Autorisation refusée"
+
+msgid "Checkout einbetten"
+msgstr "Intégrer le paiement"
+
+msgid "Einbetten"
+msgstr "Intégrer"
+
+msgid "EasyCheckout — Checkout einbetten"
+msgstr "EasyCheckout — Intégrer le paiement"
+
+msgid "Wähle einen deiner EasyCheckout-Checkouts und kopiere den Shortcode auf jede beliebige Seite. Käufer werden zur sicheren, gehosteten Bezahlseite weitergeleitet — ganz ohne WooCommerce."
+msgstr "Choisissez l’un de vos paiements EasyCheckout et copiez le code court sur n’importe quelle page. Les acheteurs sont redirigés vers la page de paiement sécurisée et hébergée — sans WooCommerce."
+
+msgid "Manuell per Slug einbetten"
+msgstr "Intégration manuelle par slug"
+
+msgid "Du kannst einen Checkout auch direkt über seinen Slug einbetten, ohne ihn hier auszuwählen:"
+msgstr "Vous pouvez aussi intégrer un paiement directement via son slug, sans le sélectionner ici :"
+
+msgid "Slug"
+msgstr "Slug"
+
+msgid "Produkte"
+msgstr "Produits"
+
+msgid "Links"
+msgstr "Liens"
+
+msgid "Aktiv"
+msgstr "Actif"
+
+msgid "Inaktiv"
+msgstr "Inactif"
+
+msgid "Klicken zum Kopieren"
+msgstr "Cliquez pour copier"
+
+msgid "Vorschau"
+msgstr "Aperçu"
+
+msgid "Bitte hinterlege zuerst deinen EasyCheckout-API-Schlüssel unter <a href=\"%s\">Einstellungen → EasyCheckout</a>."
+msgstr "Veuillez d’abord renseigner votre clé API EasyCheckout sous <a href=\"%s\">Réglages → EasyCheckout</a>."
+
+msgid "Checkouts konnten nicht geladen werden:"
+msgstr "Impossible de charger les paiements :"
+
+msgid "Dein API-Schlüssel hat möglicherweise keine Dashboard-Leserechte (checkouts:read). Du kannst Checkouts trotzdem manuell per Slug einbetten:"
+msgstr "Votre clé API n’a peut-être pas les droits de lecture du tableau de bord (checkouts:read). Vous pouvez tout de même intégrer des paiements manuellement par slug :"
+
+msgid "Noch keine Checkouts vorhanden. Erstelle einen in deinem <a href=\"%s\" target=\"_blank\" rel=\"noopener\">EasyCheckout-Konto</a> und lade diese Seite neu."
+msgstr "Aucun paiement pour l’instant. Créez-en un dans votre <a href=\"%s\" target=\"_blank\" rel=\"noopener\">compte EasyCheckout</a> et rechargez cette page."
+
+msgid "EasyCheckout Dashboard"
+msgstr "Tableau de bord EasyCheckout"
+
+msgid "An error occurred. Please try again."
+msgstr "Une erreur est survenue. Veuillez réessayer."
+
+msgid "Payment successful!"
+msgstr "Paiement réussi !"
+
+msgid "Redirecting to payment..."
+msgstr "Redirection vers le paiement…"
+
+msgid "Please enter a valid email address."
+msgstr "Veuillez saisir une adresse e-mail valide."
+
+msgid "Please enter your name."
+msgstr "Veuillez saisir votre nom."
+
+msgid "Please accept the terms and conditions."
+msgstr "Veuillez accepter les conditions générales."
+
+msgid "Anmeldung fehlgeschlagen."
+msgstr "Échec de la connexion."
+
+msgid "Nicht angemeldet."
+msgstr "Non connecté."
+
+msgid "Anfrage fehlgeschlagen."
+msgstr "Échec de la requête."
+
+msgid "Übersicht"
+msgstr "Aperçu"
+
+msgid "Einbindung"
+msgstr "Intégration"
+
+msgid "Bestellungen"
+msgstr "Commandes"
+
+msgid "Kunden"
+msgstr "Clients"
+
+msgid "Rechnungen"
+msgstr "Factures"
+
+msgid "E-Mails"
+msgstr "E-mails"
+
+msgid "Marketing"
+msgstr "Marketing"
+
+msgid "Verifizierung"
+msgstr "Vérification"
+
+msgid "Tarif"
+msgstr "Forfait"
+
+msgid "Support"
+msgstr "Assistance"
+
+msgid "Einstellungen"
+msgstr "Réglages"
+
+msgid "Im kostenlosen Modus ist ein Checkout möglich. Für weitere Checkouts und Online-Zahlung erstelle ein Konto auf easycheckout.ch."
+msgstr "En mode gratuit, un seul paiement est possible. Pour d’autres paiements et le paiement en ligne, créez un compte sur easycheckout.ch."
+
+msgid "Ungültige Anfrage."
+msgstr "Requête invalide."
+
+msgid "Checkout nicht gefunden."
+msgstr "Paiement introuvable."
+
+msgid "Bitte eine Auswahl für „%1$s\" bei „%2$s\" treffen."
+msgstr "Veuillez faire un choix pour « %1$s » sur « %2$s »."
+
+msgid "Bitte „%1$s\" bei „%2$s\" ausfüllen."
+msgstr "Veuillez remplir « %1$s » sur « %2$s »."
+
+msgid "Warenkorb ist leer."
+msgstr "Le panier est vide."
+
+msgid "Bitte Name und gültige E-Mail angeben."
+msgstr "Veuillez indiquer le nom et une adresse e-mail valide."
+
+msgid "Bitte vollständige Rechnungsadresse angeben."
+msgstr "Veuillez indiquer une adresse de facturation complète."
+
+msgid "Bestellbestätigung %s"
+msgstr "Confirmation de commande %s"
+
+msgid "Nicht erlaubt."
+msgstr "Non autorisé."
+
+msgid "Bitte zuerst mit deinem EasyCheckout-Konto anmelden."
+msgstr "Veuillez d’abord vous connecter à votre compte EasyCheckout."
+
+msgid "Nicht mit EasyCheckout verbunden."
+msgstr "Non connecté à EasyCheckout."
+
+msgid "Gateway-Key konnte nicht erstellt werden."
+msgstr "Impossible de créer la clé de la passerelle."
+
+msgid "Kein Key erhalten."
+msgstr "Aucune clé reçue."
+
+msgid "WooCommerce-Gateway aktiviert."
+msgstr "Passerelle WooCommerce activée."
+
+msgid "EasyCheckout ist verbunden, aber das WooCommerce-Gateway ist noch nicht aktiviert. „Sofort kaufen\", der Kassen-Ersatz und die Bezahlung sind deshalb inaktiv."
+msgstr "EasyCheckout est connecté, mais la passerelle WooCommerce n’est pas encore activée. « Acheter maintenant », le remplacement de la caisse et le paiement sont donc inactifs."
+
+msgid "Gateway jetzt aktivieren"
+msgstr "Activer la passerelle maintenant"
+
+msgid "EasyCheckout ist als Zahlart aktiviert, aber nicht mit deinem Konto verbunden. „Sofort kaufen\", der Kassen-Ersatz und die Bezahlung sind deshalb inaktiv."
+msgstr "EasyCheckout est activé comme moyen de paiement, mais n’est pas connecté à votre compte. « Acheter maintenant », le remplacement de la caisse et le paiement sont donc inactifs."
+
+msgid "Mit EasyCheckout verbinden"
+msgstr "Connecter à EasyCheckout"
+
+msgid "Jetzt kaufen"
+msgstr "Acheter maintenant"
+
+msgid "Diesem Checkout ist kein EasyCheckout-Slug zugeordnet."
+msgstr "Aucun slug EasyCheckout n’est associé à ce paiement."
+
+msgid "Bitte gib einen Checkout-Slug an: [easycheckout slug=\"dein-slug\"]."
+msgstr "Veuillez indiquer un slug de paiement : [easycheckout slug=\"votre-slug\"]."
+
+msgid "Produkt nicht gefunden."
+msgstr "Produit introuvable."
+
+msgid "Diesem Checkout ist kein EasyCheckout-Slug zugeordnet. Trage den Slug aus deinem EasyCheckout-Konto ein."
+msgstr "Aucun slug EasyCheckout n’est associé à ce paiement. Saisissez le slug de votre compte EasyCheckout."
+
+msgid "Zahlung & Kasse"
+msgstr "Paiement & caisse"
+
+msgid "Shop & Firma"
+msgstr "Boutique & entreprise"
+
+msgid "Rechnung"
+msgstr "Facture"
+
+msgid "Checkout-Design"
+msgstr "Design du paiement"
+
+msgid "Gilt für die native Kasse, Shortcode-Checkouts und die Bestellbestätigung. Feinschliff ist zusätzlich über „Eigenes CSS\" in Zahlung & Kasse möglich."
+msgstr "S’applique à la caisse native, aux paiements par code court et à la confirmation de commande. Un ajustement fin est aussi possible via « CSS personnalisé » dans Paiement & caisse."
+
+msgid "Logo"
+msgstr "Logo"
+
+msgid "Wird oben in der Kasse und in Bestell-Mails (Absendername) verwendet."
+msgstr "Utilisé en haut de la caisse et dans les e-mails de commande (nom de l’expéditeur)."
+
+msgid "Primärfarbe"
+msgstr "Couleur principale"
+
+msgid "Buttons, Preise, Akzente."
+msgstr "Boutons, prix, accents."
+
+msgid "Hintergrund"
+msgstr "Arrière-plan"
+
+msgid "Ecken-Radius (px)"
+msgstr "Rayon des coins (px)"
+
+msgid "Schrift"
+msgstr "Police"
+
+msgid "Schrift der Website (empfohlen)"
+msgstr "Police du site (recommandé)"
+
+msgid "Neutrale System-Schrift"
+msgstr "Police système neutre"
+
+msgid "„Powered by\"-Hinweis"
+msgstr "Mention « Powered by »"
+
+msgid "„Powered by easyCheckout\" unten in der Kasse anzeigen"
+msgstr "Afficher « Powered by easyCheckout » en bas de la caisse"
+
+msgid "Standardmäßig aus. Aktiviert erscheint ein kleiner Link zu easycheckout.ch am Ende der Kasse."
+msgstr "Désactivé par défaut. Une fois activé, un petit lien vers easycheckout.ch apparaît en bas de la caisse."
+
+msgid "Erscheint als Rechnungssteller auf Bestellbestätigungen, Swiss-QR-Rechnungen und als Mail-Absender."
+msgstr "Apparaît comme émetteur de facture sur les confirmations de commande, les QR-factures suisses et comme expéditeur des e-mails."
+
+msgid "Firmenname"
+msgstr "Nom de l’entreprise"
+
+msgid "Strasse & Nr."
+msgstr "Rue & n°"
+
+msgid "PLZ"
+msgstr "Code postal"
+
+msgid "Ort"
+msgstr "Localité"
+
+msgid "Land"
+msgstr "Pays"
+
+msgid "E-Mail"
+msgstr "E-mail"
+
+msgid "Telefon"
+msgstr "Téléphone"
+
+msgid "MwSt-Nummer"
+msgstr "Numéro de TVA"
+
+msgid "Rechnung & Bankverbindung"
+msgstr "Facture & coordonnées bancaires"
+
+msgid "Grundlage für Banküberweisung und Swiss-QR-Rechnung bei lokalen Bestellungen."
+msgstr "Base pour le virement bancaire et la QR-facture suisse pour les commandes locales."
+
+msgid "IBAN / QR-IBAN"
+msgstr "IBAN / QR-IBAN"
+
+msgid "Kontoinhaber"
+msgstr "Titulaire du compte"
+
+msgid "Bank"
+msgstr "Banque"
+
+msgid "Zahlungsfrist (Tage)"
+msgstr "Délai de paiement (jours)"
+
+msgid "0 = keine Frist anzeigen."
+msgstr "0 = ne pas afficher de délai."
+
+msgid "Fußtext"
+msgstr "Texte de pied de page"
+
+msgid "Erscheint am Ende von Bestellbestätigung und Mail (z. B. Dankestext, rechtliche Hinweise)."
+msgstr "Apparaît à la fin de la confirmation de commande et de l’e-mail (p. ex. remerciements, mentions légales)."
+
+msgid "Bestellbestätigung (E-Mail)"
+msgstr "Confirmation de commande (e-mail)"
+
+msgid "Vorlage für die Bestellbestätigung bei lokalen Bestellungen (Banküberweisung/QR). Leere Felder nutzen die Standard-Vorlage. Platzhalter: {ref}, {name}, {firma}, {positionen}, {total}, {waehrung}, {iban}, {empfaenger}, {bank}, {zahlungsfrist}, {rechnungsadresse}, {lieferadresse}, {art}, {fusszeile}. Hinweis: Mails des WooCommerce-Bestellflusses werden unter WooCommerce → Einstellungen → E-Mails verwaltet."
+msgstr "Modèle pour la confirmation de commande des commandes locales (virement bancaire/QR). Les champs vides utilisent le modèle par défaut. Variables : {ref}, {name}, {firma}, {positionen}, {total}, {waehrung}, {iban}, {empfaenger}, {bank}, {zahlungsfrist}, {rechnungsadresse}, {lieferadresse}, {art}, {fusszeile}. Remarque : les e-mails du flux de commande WooCommerce se gèrent sous WooCommerce → Réglages → E-mails."
+
+msgid "Absender-Name"
+msgstr "Nom de l’expéditeur"
+
+msgid "Leer = Firmenname aus Shop & Firma."
+msgstr "Vide = nom de l’entreprise depuis Boutique & entreprise."
+
+msgid "Absender-Adresse"
+msgstr "Adresse de l’expéditeur"
+
+msgid "Leer = E-Mail aus Shop & Firma."
+msgstr "Vide = e-mail depuis Boutique & entreprise."
+
+msgid "Betreff"
+msgstr "Objet"
+
+msgid "Bestellbestätigung {ref}"
+msgstr "Confirmation de commande {ref}"
+
+msgid "Inhalt"
+msgstr "Contenu"
+
+msgid "Leer = Standard-Vorlage"
+msgstr "Vide = modèle par défaut"
+
+msgid "Kopie an Shop"
+msgstr "Copie à la boutique"
+
+msgid "Jede Bestellbestätigung als Blindkopie an die Shop-E-Mail senden."
+msgstr "Envoyer chaque confirmation de commande en copie cachée à l’e-mail de la boutique."
+
+msgid "Im easyCheckout-Onboarding hinterlegte Bank: %1$s (IBAN endet auf %2$s). Der Zahlungsabwickler gibt aus Sicherheitsgründen nur die letzten Stellen frei — bitte trage oben die vollständige IBAN ein, damit sie auf QR-Rechnungen erscheint."
+msgstr "Banque enregistrée lors de l’intégration easyCheckout : %1$s (IBAN se terminant par %2$s). Pour des raisons de sécurité, le prestataire de paiement ne divulgue que les derniers chiffres — veuillez saisir l’IBAN complet ci-dessus pour qu’il apparaisse sur les QR-factures."
+
+msgid "Bestellbestätigung an Käufer"
+msgstr "Confirmation de commande à l’acheteur"
+
+msgid "„Neue Bestellung\" an dich"
+msgstr "« Nouvelle commande » pour vous"
+
+msgid "Zahlung fehlgeschlagen (an Käufer)"
+msgstr "Paiement échoué (à l’acheteur)"
+
+msgid "Rückerstattung bestätigt (an Käufer)"
+msgstr "Remboursement confirmé (à l’acheteur)"
+
+msgid "Rechnung an Käufer"
+msgstr "Facture à l’acheteur"
+
+msgid "Mahnung / Zahlungserinnerung"
+msgstr "Rappel / relance de paiement"
+
+msgid "Online-Zahlungs-Mails (easyCheckout-Konto)"
+msgstr "E-mails de paiement en ligne (compte easyCheckout)"
+
+msgid "Diese Mails versendet die easyCheckout-Plattform bei Karten-/TWINT-Zahlungen. Zum Bearbeiten muss das Plugin mit deinem easyCheckout-Konto verbunden sein (Menü „EasyCheckout\" → Anmelden)."
+msgstr "Ces e-mails sont envoyés par la plateforme easyCheckout pour les paiements par carte/TWINT. Pour les modifier, le plugin doit être connecté à votre compte easyCheckout (menu « EasyCheckout » → Se connecter)."
+
+msgid "Diese Vorlagen gelten für ALLE Bestellungen — WooCommerce wie Standalone. Leer = Standard-Vorlage."
+msgstr "Ces modèles s’appliquent à TOUTES les commandes — WooCommerce comme autonome. Vide = modèle par défaut."
+
+msgid "HTML oder reiner Text:"
+msgstr "HTML ou texte brut :"
+
+msgid "Schreibst du HTML, wird es als HTML gesendet; reiner Text wird mit deinen Zeilenumbrüchen als Text gesendet — beides funktioniert."
+msgstr "Si vous écrivez du HTML, il est envoyé en HTML ; le texte brut est envoyé avec vos sauts de ligne — les deux fonctionnent."
+
+msgid "Absender ist easycheckout.ch; eine eigene Absender-Domain kannst du im easyCheckout-Dashboard verifizieren."
+msgstr "L’expéditeur est easycheckout.ch ; vous pouvez vérifier votre propre domaine d’expéditeur dans le tableau de bord easyCheckout."
+
+msgid "Hinweis: Die Vorlagen für Rechnung und Mahnung erscheinen hier, sobald dein Tarif Rechnungen enthält (ab „Rechnungen“ / „Basic“ / „Pro“)."
+msgstr "Remarque : les modèles de facture et de rappel apparaissent ici dès que votre forfait inclut les factures (à partir de « Factures » / « Basic » / « Pro »)."
+
+msgid "Versand"
+msgstr "Envoi"
+
+msgid "easyCheckout-Bestellbestätigung an den Käufer senden"
+msgstr "Envoyer la confirmation de commande easyCheckout à l’acheteur"
+
+msgid "Rechnung (mit PDF-Anhang) an den Käufer senden"
+msgstr "Envoyer la facture (avec pièce jointe PDF) à l’acheteur"
+
+msgid "Abschalten, wenn WooCommerce die Kunden-Mails übernehmen soll (vermeidet doppelte Mails). Die „Neue Bestellung\"-Mail an dich bleibt davon unberührt."
+msgstr "Désactivez si WooCommerce doit gérer les e-mails clients (évite les doublons). L’e-mail « Nouvelle commande » qui vous est destiné n’est pas affecté."
+
+msgid "Betreff (leer = Standard)"
+msgstr "Objet (vide = par défaut)"
+
+msgid "Inhalt – HTML oder reiner Text (leer = Standard)"
+msgstr "Contenu – HTML ou texte brut (vide = par défaut)"
+
+msgid "Platzhalter:"
+msgstr "Variables :"
+
+msgid "Bild wählen"
+msgstr "Choisir une image"
+
+msgid "Logo wählen"
+msgstr "Choisir un logo"
+
+msgid "Treuepunkte-Gutschein"
+msgstr "Bon de points de fidélité"
+
+msgid "Zahlung via EasyCheckout bestätigt (Referenz: %s)."
+msgstr "Paiement confirmé via EasyCheckout (référence : %s)."
+
+msgid "Zahlung fehlgeschlagen"
+msgstr "Paiement échoué"
+
+msgid "Zahlung via EasyCheckout fehlgeschlagen: %s"
+msgstr "Échec du paiement via EasyCheckout : %s"
+
+msgid "Zahlung fehlgeschlagen."
+msgstr "Paiement échoué."
+
+msgid "Rückerstattung via EasyCheckout"
+msgstr "Remboursement via EasyCheckout"
+
+msgid "Rückerstattung von %s via EasyCheckout verbucht."
+msgstr "Remboursement de %s enregistré via EasyCheckout."
+
+msgid "You will be redirected to TWINT to complete your payment."
+msgstr "Vous serez redirigé vers TWINT pour finaliser votre paiement."
+
+msgid "A Swiss QR-Bill will be generated for bank transfer."
+msgstr "Une QR-facture suisse sera générée pour le virement bancaire."
+
+msgid "Total:"
+msgstr "Total :"
+
+msgid "Credit Card"
+msgstr "Carte de crédit"
+
+msgid "Einen Moment …"
+msgstr "Un instant…"
+
+msgid "Sofort-Kauf konnte nicht gestartet werden. Bitte erneut versuchen."
+msgstr "Impossible de lancer l’achat immédiat. Veuillez réessayer."
+
+msgid "Zum Checkout"
+msgstr "Vers le paiement"
+
+msgid "Sofort kaufen"
+msgstr "Acheter maintenant"
+
+msgid "Produkt nicht verfügbar."
+msgstr "Produit non disponible."
+
+msgid "Bestellung konnte nicht erstellt werden."
+msgstr "Impossible de créer la commande."
+
+msgid "EasyCheckout payment session konnte nicht erstellt werden."
+msgstr "Impossible de créer la session de paiement EasyCheckout."
+
+msgid "Keine Bezahl-URL von EasyCheckout erhalten."
+msgstr "Aucune URL de paiement reçue d’EasyCheckout."
+
+msgid "Zahlung konnte nicht gestartet werden."
+msgstr "Impossible de lancer le paiement."
+
+msgid "Sofort-Kauf gestartet – warte auf Zahlung via EasyCheckout."
+msgstr "Achat immédiat lancé – en attente du paiement via EasyCheckout."
+
+msgid "Kasse via EasyCheckout gestartet – warte auf Zahlung."
+msgstr "Caisse lancée via EasyCheckout – en attente du paiement."
+
+msgid "Express-Checkout konnte nicht gestartet werden. Bitte erneut versuchen."
+msgstr "Impossible de lancer le paiement express. Veuillez réessayer."
+
+msgid "Express-Checkout"
+msgstr "Paiement express"
+
+msgid "Schnell bezahlen – Adresse und Zahlung in einem Schritt."
+msgstr "Payer rapidement – adresse et paiement en une étape."
+
+msgid "Der Warenkorb ist leer."
+msgstr "Le panier est vide."
+
+msgid "Express-Checkout gestartet – warte auf Zahlung via EasyCheckout."
+msgstr "Paiement express lancé – en attente du paiement via EasyCheckout."
+
+msgid "Accept payments with Credit Cards, TWINT, and Swiss QR-Bill via EasyCheckout."
+msgstr "Acceptez les paiements par carte de crédit, TWINT et QR-facture suisse via EasyCheckout."
+
+msgid "Enable/Disable"
+msgstr "Activer/Désactiver"
+
+msgid "Enable EasyCheckout"
+msgstr "Activer EasyCheckout"
+
+msgid "Title"
+msgstr "Titre"
+
+msgid "This controls the title shown during checkout."
+msgstr "Contrôle le titre affiché lors du paiement."
+
+msgid "Credit Card / TWINT / Bank Transfer"
+msgstr "Carte de crédit / TWINT / Virement bancaire"
+
+msgid "This controls the description shown during checkout."
+msgstr "Contrôle la description affichée lors du paiement."
+
+msgid "Pay securely with your preferred payment method."
+msgstr "Payez en toute sécurité avec votre moyen de paiement préféré."
+
+msgid "Produktquelle"
+msgstr "Source des produits"
+
+msgid "„WooCommerce-Warenkorb\": die im Shop gewählten Artikel werden verarbeitet. „EasyCheckout-Checkout\": es wird dein im EasyCheckout hinterlegter Checkout (mit dessen Produkten) geöffnet – dazu unten den Slug angeben."
+msgstr "« Panier WooCommerce » : les articles sélectionnés dans la boutique sont traités. « Paiement EasyCheckout » : votre paiement enregistré dans EasyCheckout (avec ses produits) est ouvert — indiquez le slug ci-dessous."
+
+msgid "WooCommerce-Warenkorb"
+msgstr "Panier WooCommerce"
+
+msgid "EasyCheckout-Checkout (Slug)"
+msgstr "Paiement EasyCheckout (slug)"
+
+msgid "Checkout Slug (optional)"
+msgstr "Slug du paiement (facultatif)"
+
+msgid "Nur für Standalone-Nutzung ohne WooCommerce. Im WooCommerce-Betrieb wird immer der WooCommerce-Warenkorb verarbeitet."
+msgstr "Uniquement pour un usage autonome sans WooCommerce. En mode WooCommerce, c’est toujours le panier WooCommerce qui est traité."
+
+msgid "Express-Checkout-Button im Warenkorb anzeigen"
+msgstr "Afficher le bouton de paiement express dans le panier"
+
+msgid "Zeigt zusätzlich zum normalen Checkout einen Direkt-Button im Warenkorb, der Adresse und Zahlung in einem schnellen Schritt erfasst."
+msgstr "Affiche, en plus du paiement normal, un bouton direct dans le panier qui saisit l’adresse et le paiement en une étape rapide."
+
+msgid "„Sofort kaufen\"-Button auf Produktseiten anzeigen"
+msgstr "Afficher le bouton « Acheter maintenant » sur les pages produit"
+
+msgid "Zeigt auf jeder Produktseite unter „In den Warenkorb\" einen Direkt-Kauf-Button, der sofort zur EasyCheckout-Kasse führt."
+msgstr "Affiche sur chaque page produit, sous « Ajouter au panier », un bouton d’achat direct qui mène immédiatement à la caisse EasyCheckout."
+
+msgid "WooCommerce-Kasse ersetzen"
+msgstr "Remplacer la caisse WooCommerce"
+
+msgid "Die WooCommerce-Kasse vollständig durch die EasyCheckout-Kasse ersetzen"
+msgstr "Remplacer entièrement la caisse WooCommerce par la caisse EasyCheckout"
+
+msgid "Beim Aufruf der Kasse wird der Warenkorb direkt an die EasyCheckout-Kasse übergeben (Adresse + Zahlung dort). Die Standard-WooCommerce-Kasse wird übersprungen."
+msgstr "À l’ouverture de la caisse, le panier est transmis directement à la caisse EasyCheckout (adresse + paiement là-bas). La caisse WooCommerce standard est ignorée."
+
+msgid "Darstellung der Kasse"
+msgstr "Affichage de la caisse"
+
+msgid "Wie die EasyCheckout-Kasse angezeigt wird, wenn sie die WooCommerce-Kasse ersetzt (oder bei „Sofort kaufen“)."
+msgstr "Comment la caisse EasyCheckout s’affiche lorsqu’elle remplace la caisse WooCommerce (ou lors d’un « Acheter maintenant »)."
+
+msgid "Nativ auf Ihrer Website (empfohlen) – kein iFrame, gleiche Domain"
+msgstr "Nativement sur votre site (recommandé) – sans iFrame, même domaine"
+
+msgid "Eingebettet (iFrame)"
+msgstr "Intégré (iFrame)"
+
+msgid "Weiterleitung zu easycheckout.ch"
+msgstr "Redirection vers easycheckout.ch"
+
+msgid "Markenfarbe (Design)"
+msgstr "Couleur de marque (design)"
+
+msgid "Primärfarbe der Kasse (Buttons/Akzente), z. B. #0891b2 oder #4F46E5. Gilt für die native WooCommerce-Kasse und /pay. Entwickler können sie auch per Filter easycheckout_checkout_color überschreiben."
+msgstr "Couleur principale de la caisse (boutons/accents), p. ex. #0891b2 ou #4F46E5. S’applique à la caisse WooCommerce native et à /pay. Les développeurs peuvent aussi la remplacer via le filtre easycheckout_checkout_color."
+
+msgid "Eigenes CSS (Design)"
+msgstr "CSS personnalisé (design)"
+
+msgid "Eigenes CSS zum Anpassen der Kasse (Klassen: .eclc-*, Container #ec-pay-checkout / .ec-local-checkout, Variable --ec-p). Wird auf allen Kassen-Seiten eingebunden. Per Filter easycheckout_checkout_css erweiterbar."
+msgstr "CSS personnalisé pour adapter la caisse (classes : .eclc-*, conteneurs #ec-pay-checkout / .ec-local-checkout, variable --ec-p). Inclus sur toutes les pages de caisse. Extensible via le filtre easycheckout_checkout_css."
+
+msgid "Select which payment methods to display. Actual availability depends on EasyCheckout configuration."
+msgstr "Sélectionnez les moyens de paiement à afficher. La disponibilité réelle dépend de la configuration EasyCheckout."
+
+msgid "Nach dem Absenden der Bestellung wirst du sicher zu EasyCheckout weitergeleitet – dort wählst du deine Zahlungsart und bezahlst."
+msgstr "Après avoir validé la commande, vous serez redirigé en toute sécurité vers EasyCheckout — vous y choisissez votre moyen de paiement et payez."
+
+msgid "Zahlung konnte nicht gestartet werden. Bitte versuche es erneut."
+msgstr "Impossible de lancer le paiement. Veuillez réessayer."
+
+msgid "Awaiting payment via EasyCheckout."
+msgstr "En attente du paiement via EasyCheckout."
+
+msgid "Payment received via EasyCheckout, awaiting webhook confirmation."
+msgstr "Paiement reçu via EasyCheckout, en attente de la confirmation du webhook."
+
+msgid "Payment cancelled by customer."
+msgstr "Paiement annulé par le client."
+
+msgid "Payment was cancelled. Please try again."
+msgstr "Le paiement a été annulé. Veuillez réessayer."
+
+msgid "Invalid order."
+msgstr "Commande invalide."
+
+msgid "Rückerstattungen werden direkt im EasyCheckout-Konto durchgeführt (keine API verfügbar)."
+msgstr "Les remboursements s’effectuent directement dans le compte EasyCheckout (aucune API disponible)."
+
+msgid "Bitte Name und E-Mail angeben."
+msgstr "Veuillez indiquer le nom et l’e-mail."
+
+msgid "Bestellung %s"
+msgstr "Commande %s"
+
