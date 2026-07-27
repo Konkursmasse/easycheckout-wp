@@ -382,8 +382,9 @@
 			} ).catch( function ( e ) { fail( e.message ); btn.disabled = false; btn.textContent = 'Weiter zur Zahlung'; } );
 		} );
 
-		var cart = h( 'div', { class: 'eclc-cart' }, [
+		var cart = h( 'div', { class: 'eclc-right' }, [
 			h( 'h2', { class: 'eclc-col-h', text: 'Bestellung' } ),
+			h( 'div', { class: 'eclc-cart' }, [
 			summaryBox,
 			( C.vatEnabled && C.vatRate && C.vatInclusive ) ? h( 'p', { class: 'eclc-vatnote', text: 'inkl. ' + C.vatRate + '% MwSt' } ) : null,
 			h( 'div', { class: 'eclc-divider' }, [ h( 'div', { class: 'eclc-total' }, [ h( 'span', { text: 'Total' } ), totalEl ] ) ] ),
@@ -394,6 +395,7 @@
 			deliveryWrap,
 			payWrap,
 			h( 'div', { style: 'margin-top:18px;' }, [ btn ] )
+			] )
 		] );
 
 		var wrap = h( 'div', { class: 'eclc-wrap' }, [
