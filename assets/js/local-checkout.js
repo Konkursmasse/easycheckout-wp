@@ -297,7 +297,7 @@
 
 		// Left: Fulfillment-Umschalter + Produkte (dynamischer Obertitel).
 		var prodTitle = ( C.productsTitle && String( C.productsTitle ).trim() ) ? C.productsTitle : 'Produkte';
-		var left = h( 'div', {}, [ h( 'h2', { class: 'eclc-col-h', text: prodTitle } ) ] );
+		var left = h( 'div', { class: 'eclc-left' }, [ h( 'h2', { class: 'eclc-col-h', text: prodTitle } ) ] );
 
 		if ( C.deliveryEnabled && C.pickupEnabled ) {
 			var fmodeWrap = h( 'div', { class: 'eclc-fmodes' } );
@@ -406,8 +406,9 @@
 				} );
 		} );
 
-		var cart = h( 'div', { class: 'eclc-cart' }, [
+		var cart = h( 'div', { class: 'eclc-right' }, [
 			h( 'h2', { class: 'eclc-col-h', text: 'Bestellung' } ),
+			h( 'div', { class: 'eclc-cart' }, [
 			summaryBox,
 			( C.vatEnabled && C.vatRate ) ? h( 'p', { class: 'eclc-vatnote', text: 'inkl. ' + C.vatRate + '% MwSt' } ) : null,
 			h( 'div', { class: 'eclc-divider' }, [ h( 'div', { class: 'eclc-total' }, [ h( 'span', { text: 'Total' } ), totalEl ] ) ] ),
@@ -425,6 +426,7 @@
 			deliveryWrap,
 			h( 'div', { style: 'margin-top:18px;' }, [ btn ] ),
 			h( 'p', { class: 'eclc-pay-hint', text: 'Zahlung per Banküberweisung – du erhältst die Kontodaten nach der Bestellung.' } )
+			] )
 		] );
 
 		var wrap = h( 'div', { class: 'eclc-wrap' }, [

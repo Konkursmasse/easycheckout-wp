@@ -171,6 +171,8 @@ class Shortcodes {
                 'successUrl' => $q['success_url'] ?? '',
                 'cancelUrl'  => $q['cancel_url'] ?? '',
                 'brandColor' => \EasyCheckout\Design::color(),
+                'logo'       => \EasyCheckout\Design::logo_url(),
+                'ecIcon'     => EASYCHECKOUT_PLUGIN_URL . 'assets/images/easycheckout-icon.png',
             ]);
             wp_enqueue_script('easycheckout-pay-checkout');
 

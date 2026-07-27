@@ -284,7 +284,7 @@
 
 		// --- Linke Spalte: Fulfillment-Umschalter + Produkte ---
 		var title = ( C.productsTitle && String( C.productsTitle ).trim() ) ? C.productsTitle : 'Produkte';
-		var left = h( 'div', {}, [ h( 'h2', { class: 'eclc-col-h', text: title } ) ] );
+		var left = h( 'div', { class: 'eclc-left' }, [ h( 'h2', { class: 'eclc-col-h', text: title } ) ] );
 
 		if ( C.deliveryEnabled && C.pickupEnabled ) {
 			function modeBtn( m, label ) {
