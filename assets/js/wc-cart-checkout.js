@@ -1,4 +1,6 @@
 /* global ecWcCart, Stripe */
+/* i18n: deutscher String = Key; fr/it via ecWcCart.i18n, sonst Fallback Deutsch */
+function _t(s){try{return (window.ecWcCart&&ecWcCart.i18n&&ecWcCart.i18n[s])||s;}catch(e){return s;}}
 /**
  * EasyCheckout – cart-getriebene native WooCommerce-Kasse (Option C).
  * Bildet den LIVE-WooCommerce-Warenkorb ab, inkl. Mengen-Stepper (ändert den
@@ -38,11 +40,11 @@
             method: 'POST', credentials: 'same-origin',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString(),
         }).then(function (r) { return r.json(); })
-          .then(function (j) { if (!j.success) { throw new Error((j.data && j.data.message) || 'Fehler'); } return j.data; });
+          .then(function (j) { if (!j.success) { throw new Error((j.data && j.data.message) || _t('Fehler')); } return j.data; });
     }
 
     function countrySel(val) {
-        var opts = [['CH', 'Schweiz'], ['DE', 'Deutschland'], ['AT', 'Österreich'], ['LI', 'Liechtenstein'], ['FR', 'Frankreich'], ['IT', 'Italien']];
+        var opts = [['CH', _t('Schweiz')], ['DE', _t('Deutschland')], ['AT', _t('Österreich')], ['LI', _t('Liechtenstein')], ['FR', _t('Frankreich')], ['IT', _t('Italien')]];
         var sel = h('select', { class: 'eclc-input' }, opts.map(function (o) { return h('option', { value: o[0] }, [o[1]]); }));
         sel.value = val || 'CH';
         return sel;
@@ -57,17 +59,17 @@
             ecWcCart.ecIcon ? h('img', { class: 'eclc-powered-ico', src: ecWcCart.ecIcon, alt: 'easyCheckout', width: '16', height: '16' }) : null,
             h('span', { class: 'eclc-powered-name', text: 'easyCheckout' }),
         ]);
-        return h('div', { class: 'eclc-powered' }, [h('span', { text: 'Powered by' }), link]);
+        return h('div', { class: 'eclc-powered' }, [h('span', { text: _t('Powered by') }), link]);
     }
-    function loading(m) { root.innerHTML = ''; root.appendChild(h('div', { class: 'eclc-wrap' }, [h('div', { class: 'eclc-cart', style: 'max-width:520px;margin:40px auto;text-align:center' }, [h('p', { class: 'eclc-empty', text: m || 'Lädt…' })])])); }
-    function errView(m) { root.innerHTML = ''; root.appendChild(h('div', { class: 'eclc-wrap' }, [h('div', { class: 'eclc-cart', style: 'max-width:520px;margin:40px auto' }, [h('div', { class: 'eclc-err', text: m }), h('p', { style: 'text-align:center;margin-top:12px' }, [h('a', { href: ecWcCart.cartUrl, text: 'Zurück zum Warenkorb' })])])])); }
+    function loading(m) { root.innerHTML = ''; root.appendChild(h('div', { class: 'eclc-wrap' }, [h('div', { class: 'eclc-cart', style: 'max-width:520px;margin:40px auto;text-align:center' }, [h('p', { class: 'eclc-empty', text: m || _t('Lädt…') })])])); }
+    function errView(m) { root.innerHTML = ''; root.appendChild(h('div', { class: 'eclc-wrap' }, [h('div', { class: 'eclc-cart', style: 'max-width:520px;margin:40px auto' }, [h('div', { class: 'eclc-err', text: m }), h('p', { style: 'text-align:center;margin-top:12px' }, [h('a', { href: ecWcCart.cartUrl, text: _t('Zurück zum Warenkorb') })])])])); }
 
     function setQty(key, qty) {
         if (busy) { return; }
         busy = true;
         post('wc_cart_qty', { key: key, qty: qty }).then(function (d) {
             CART = d; busy = false;
-            if (d.empty) { errView('Der Warenkorb ist leer.'); return; }
+            if (d.empty) { errView(_t('Der Warenkorb ist leer.')); return; }
             render();
         }).catch(function () { busy = false; });
     }
@@ -96,7 +98,7 @@
         root.style.setProperty('--ec-p', (window.ecWcCart && ecWcCart.brandColor) ? ecWcCart.brandColor : '#4F46E5');
         var items = CART.items || [];
 
-        var left = h('div', { class: 'eclc-left' }, [h('h2', { class: 'eclc-col-h', text: 'Produkte' })]);
+        var left = h('div', { class: 'eclc-left' }, [h('h2', { class: 'eclc-col-h', text: _t('Produkte') })]);
         var pw = h('div', {});
         items.forEach(function (it) { pw.appendChild(prodCard(it)); });
         left.appendChild(pw);
@@ -110,13 +112,13 @@
         });
         var totalEl = h('span', { text: money(CART.total) });
 
-        var emailI = h('input', { class: 'eclc-input', type: 'email', placeholder: 'E-Mail-Adresse *' }); emailI.value = form.email;
-        var nameI = h('input', { class: 'eclc-input', type: 'text', placeholder: 'Vor- und Nachname *' }); nameI.value = form.name;
-        var companyI = h('input', { class: 'eclc-input', type: 'text', placeholder: 'Firma (optional)' }); companyI.value = form.company;
-        var phoneI = h('input', { class: 'eclc-input', type: 'tel', placeholder: 'Telefonnummer' }); phoneI.value = form.phone;
-        var bStreet = h('input', { class: 'eclc-input', type: 'text', placeholder: 'Strasse und Hausnummer *' }); bStreet.value = form.street;
-        var bZip = h('input', { class: 'eclc-input', type: 'text', placeholder: 'PLZ *' }); bZip.value = form.postalCode;
-        var bCity = h('input', { class: 'eclc-input', type: 'text', placeholder: 'Ort *' }); bCity.value = form.city;
+        var emailI = h('input', { class: 'eclc-input', type: 'email', placeholder: _t('E-Mail-Adresse *') }); emailI.value = form.email;
+        var nameI = h('input', { class: 'eclc-input', type: 'text', placeholder: _t('Vor- und Nachname *') }); nameI.value = form.name;
+        var companyI = h('input', { class: 'eclc-input', type: 'text', placeholder: _t('Firma (optional)') }); companyI.value = form.company;
+        var phoneI = h('input', { class: 'eclc-input', type: 'tel', placeholder: _t('Telefonnummer') }); phoneI.value = form.phone;
+        var bStreet = h('input', { class: 'eclc-input', type: 'text', placeholder: _t('Strasse und Hausnummer *') }); bStreet.value = form.street;
+        var bZip = h('input', { class: 'eclc-input', type: 'text', placeholder: _t('PLZ *') }); bZip.value = form.postalCode;
+        var bCity = h('input', { class: 'eclc-input', type: 'text', placeholder: _t('Ort *') }); bCity.value = form.city;
         var bCountry = countrySel(form.country);
         [[emailI, 'email'], [nameI, 'name'], [companyI, 'company'], [phoneI, 'phone'], [bStreet, 'street'], [bZip, 'postalCode'], [bCity, 'city']].forEach(function (p) {
             p[0].addEventListener('input', function () { form[p[1]] = p[0].value; });
@@ -125,9 +127,9 @@
 
         // Lieferadresse — wie im Original-Checkout: Standard = gleich wie
         // Rechnungsadresse; beim Abwählen erscheinen eigene Liefer-Felder.
-        var dStreet = h('input', { class: 'eclc-input', type: 'text', placeholder: 'Strasse und Hausnummer *' }); dStreet.value = form.deliveryStreet;
-        var dZip = h('input', { class: 'eclc-input', type: 'text', placeholder: 'PLZ *' }); dZip.value = form.deliveryPostalCode;
-        var dCity = h('input', { class: 'eclc-input', type: 'text', placeholder: 'Ort *' }); dCity.value = form.deliveryCity;
+        var dStreet = h('input', { class: 'eclc-input', type: 'text', placeholder: _t('Strasse und Hausnummer *') }); dStreet.value = form.deliveryStreet;
+        var dZip = h('input', { class: 'eclc-input', type: 'text', placeholder: _t('PLZ *') }); dZip.value = form.deliveryPostalCode;
+        var dCity = h('input', { class: 'eclc-input', type: 'text', placeholder: _t('Ort *') }); dCity.value = form.deliveryCity;
         var dCountry = countrySel(form.deliveryCountry);
         [[dStreet, 'deliveryStreet'], [dZip, 'deliveryPostalCode'], [dCity, 'deliveryCity']].forEach(function (p) {
             p[0].addEventListener('input', function () { form[p[1]] = p[0].value; });
@@ -135,7 +137,7 @@
         dCountry.addEventListener('change', function () { form.deliveryCountry = dCountry.value; });
 
         var deliveryFields = h('div', { class: 'eclc-sec eclc-delivery-fields' }, [
-            h('h3', { class: 'eclc-sec-h', text: 'Lieferadresse' }),
+            h('h3', { class: 'eclc-sec-h', text: _t('Lieferadresse') }),
             h('div', { class: 'eclc-stack' }, [dStreet, h('div', { class: 'eclc-3' }, [dZip, dCity]), dCountry]),
         ]);
         deliveryFields.style.display = form.sameAddress ? 'none' : '';
@@ -146,20 +148,20 @@
             form.sameAddress = sameCb.checked;
             deliveryFields.style.display = sameCb.checked ? 'none' : '';
         });
-        var sameRow = h('label', { class: 'eclc-check' }, [sameCb, h('span', { text: 'Lieferadresse entspricht Rechnungsadresse' })]);
+        var sameRow = h('label', { class: 'eclc-check' }, [sameCb, h('span', { text: _t('Lieferadresse entspricht Rechnungsadresse') })]);
 
         var errEl = h('div', { class: 'eclc-err' }); errEl.style.display = 'none';
         var payWrap = h('div', {});
-        var btn = h('button', { class: 'eclc-btn', type: 'button', text: 'Weiter zur Zahlung' });
-        function fail(m) { errEl.textContent = m; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = 'Weiter zur Zahlung'; }
+        var btn = h('button', { class: 'eclc-btn', type: 'button', text: _t('Weiter zur Zahlung') });
+        function fail(m) { errEl.textContent = m; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = _t('Weiter zur Zahlung'); }
 
         btn.addEventListener('click', function () {
             errEl.style.display = 'none';
-            if (!emailI.value.trim()) { return fail('Bitte E-Mail-Adresse eingeben.'); }
-            if (!nameI.value.trim()) { return fail('Bitte Namen eingeben.'); }
-            if (!bStreet.value.trim() || !bZip.value.trim() || !bCity.value.trim()) { return fail('Bitte vollständige Rechnungsadresse eingeben.'); }
-            if (!form.sameAddress && (!dStreet.value.trim() || !dZip.value.trim() || !dCity.value.trim())) { return fail('Bitte vollständige Lieferadresse eingeben.'); }
-            btn.disabled = true; btn.textContent = 'Zahlung wird vorbereitet…';
+            if (!emailI.value.trim()) { return fail(_t('Bitte E-Mail-Adresse eingeben.')); }
+            if (!nameI.value.trim()) { return fail(_t('Bitte Namen eingeben.')); }
+            if (!bStreet.value.trim() || !bZip.value.trim() || !bCity.value.trim()) { return fail(_t('Bitte vollständige Rechnungsadresse eingeben.')); }
+            if (!form.sameAddress && (!dStreet.value.trim() || !dZip.value.trim() || !dCity.value.trim())) { return fail(_t('Bitte vollständige Lieferadresse eingeben.')); }
+            btn.disabled = true; btn.textContent = _t('Zahlung wird vorbereitet…');
             var customer = { email: emailI.value.trim(), name: nameI.value.trim(), company: companyI.value.trim(), phone: phoneI.value.trim(), address: { street: bStreet.value.trim(), postalCode: bZip.value.trim(), city: bCity.value.trim(), country: bCountry.value } };
             customer.sameAddress = form.sameAddress;
             if (!form.sameAddress) {
@@ -171,8 +173,8 @@
                 return post('pay_intent', { token: TOKEN, payload: JSON.stringify({}) });
             }).then(function (d) {
                 var b = d.body || {};
-                if ((d.status && d.status >= 400) || b.error) { throw new Error(b.error || 'Zahlung konnte nicht initialisiert werden.'); }
-                if (!b.clientSecret || !b.publishableKey) { throw new Error('Zahlung konnte nicht initialisiert werden.'); }
+                if ((d.status && d.status >= 400) || b.error) { throw new Error(b.error || _t('Zahlung konnte nicht initialisiert werden.')); }
+                if (!b.clientSecret || !b.publishableKey) { throw new Error(_t('Zahlung konnte nicht initialisiert werden.')); }
                 mountPayment(b, btn, errEl, payWrap, SUCCESS);
             }).catch(function (e) { fail(e.message); });
         });
@@ -181,14 +183,14 @@
         // zur linken Spalte („Produkte" + Karten). So starten Überschriften UND
         // Karten in beiden Spalten exakt bündig, unabhängig von Logo/Inhalt.
         var cart = h('div', { class: 'eclc-right' }, [
-            h('h2', { class: 'eclc-col-h', text: 'Bestellung' }),
+            h('h2', { class: 'eclc-col-h', text: _t('Bestellung') }),
             h('div', { class: 'eclc-cart' }, [
             summaryBox,
             (Number(CART.vat) > 0) ? h('p', { class: 'eclc-vatnote', text: 'inkl. MwSt ' + money(CART.vat) }) : null,
-            h('div', { class: 'eclc-divider' }, [h('div', { class: 'eclc-total' }, [h('span', { text: 'Total' }), totalEl])]),
+            h('div', { class: 'eclc-divider' }, [h('div', { class: 'eclc-total' }, [h('span', { text: _t('Total') }), totalEl])]),
             errEl,
-            h('div', { class: 'eclc-sec' }, [h('h3', { class: 'eclc-sec-h', text: 'Kontaktdaten' }), h('div', { class: 'eclc-stack' }, [emailI, nameI, companyI, phoneI])]),
-            h('div', { class: 'eclc-sec' }, [h('h3', { class: 'eclc-sec-h', text: 'Rechnungsadresse' }), h('div', { class: 'eclc-stack' }, [bStreet, h('div', { class: 'eclc-3' }, [bZip, bCity]), bCountry]), sameRow]),
+            h('div', { class: 'eclc-sec' }, [h('h3', { class: 'eclc-sec-h', text: _t('Kontaktdaten') }), h('div', { class: 'eclc-stack' }, [emailI, nameI, companyI, phoneI])]),
+            h('div', { class: 'eclc-sec' }, [h('h3', { class: 'eclc-sec-h', text: _t('Rechnungsadresse') }), h('div', { class: 'eclc-stack' }, [bStreet, h('div', { class: 'eclc-3' }, [bZip, bCity]), bCountry]), sameRow]),
             deliveryFields,
             payWrap,
             h('div', { style: 'margin-top:18px;' }, [btn]),
@@ -216,28 +218,28 @@
         root.querySelectorAll('input,select,.eclc-qbtn').forEach(function (f) { f.disabled = true; });
         try {
             stripe = Stripe(b.publishableKey, b.stripeAccountId ? { stripeAccount: b.stripeAccountId } : undefined);
-        } catch (e) { errEl.textContent = 'Zahlungssystem nicht verfügbar.'; errEl.style.display = 'block'; btn.disabled = false; return; }
+        } catch (e) { errEl.textContent = _t('Zahlungssystem nicht verfügbar.'); errEl.style.display = 'block'; btn.disabled = false; return; }
         elements = stripe.elements({ clientSecret: b.clientSecret, locale: 'de' });
         var pe = elements.create('payment', { layout: { type: 'accordion', defaultCollapsed: false, radios: true, spacedAccordionItems: true }, wallets: { applePay: 'auto', googlePay: 'auto' } });
         payWrap.innerHTML = '';
-        payWrap.appendChild(h('div', { class: 'eclc-sec' }, [h('h3', { class: 'eclc-sec-h', text: 'Zahlung' }), h('div', { id: 'ec-pe' })]));
+        payWrap.appendChild(h('div', { class: 'eclc-sec' }, [h('h3', { class: 'eclc-sec-h', text: _t('Zahlung') }), h('div', { id: 'ec-pe' })]));
         pe.mount('#ec-pe');
-        btn.disabled = false; btn.textContent = 'Jetzt bezahlen · ' + money(CART.total);
+        btn.disabled = false; btn.textContent = _t('Jetzt bezahlen · ') + money(CART.total);
         var nb = btn.cloneNode(true); btn.parentNode.replaceChild(nb, btn);
         nb.addEventListener('click', function () {
-            errEl.style.display = 'none'; nb.disabled = true; nb.textContent = 'Zahlung läuft…';
+            errEl.style.display = 'none'; nb.disabled = true; nb.textContent = _t('Zahlung läuft…');
             stripe.confirmPayment({ elements: elements, confirmParams: { return_url: successUrl || window.location.href }, redirect: 'if_required' })
                 .then(function (res) {
-                    if (res.error) { errEl.textContent = res.error.message || 'Zahlung fehlgeschlagen.'; errEl.style.display = 'block'; nb.disabled = false; nb.textContent = 'Jetzt bezahlen · ' + money(CART.total); return; }
+                    if (res.error) { errEl.textContent = res.error.message || _t('Zahlung fehlgeschlagen.'); errEl.style.display = 'block'; nb.disabled = false; nb.textContent = _t('Jetzt bezahlen · ') + money(CART.total); return; }
                     window.location.href = successUrl || window.location.origin;
                 });
         });
     }
 
-    loading('Checkout wird geladen…');
+    loading(_t('Checkout wird geladen…'));
     post('wc_cart_data', {}).then(function (d) {
         CART = d; CUR = d.currency || 'CHF';
-        if (d.empty) { errView('Der Warenkorb ist leer.'); return; }
+        if (d.empty) { errView(_t('Der Warenkorb ist leer.')); return; }
         render();
     }).catch(function (e) { errView(e.message); });
 })();

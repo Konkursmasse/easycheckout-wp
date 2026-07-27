@@ -1,4 +1,6 @@
 /* global ecLocal, qrcode */
+/* i18n: deutscher String = Key; fr/it via ecLocal.i18n, sonst Fallback Deutsch */
+function _t(s){try{return (window.ecLocal&&ecLocal.i18n&&ecLocal.i18n[s])||s;}catch(e){return s;}}
 /* EasyCheckout – lokaler Bankueberweisungs-Checkout (Frontend, ohne Konto).
    Layout/Design an die easycheckout.ch-Checkout-Seiten angelehnt. Volle Parität:
    Kategorien + Auswahlregeln, Produkt-Optionen (S/M/L/Farben) mit Aufschlag,
@@ -90,7 +92,7 @@
 			var img = new Image();
 			img.src = qr.createDataURL( 4, 8 );
 			img.className = 'eclc-qr-img';
-			img.alt = 'QR-Rechnung';
+			img.alt = _t('QR-Rechnung');
 			return img;
 		} catch ( e ) { return null; }
 	}
@@ -102,7 +104,7 @@
 			icon ? h( 'img', { class: 'eclc-powered-ico', src: icon, alt: 'easyCheckout', width: '16', height: '16' } ) : null,
 			h( 'span', { class: 'eclc-powered-name', text: 'easyCheckout' } )
 		] );
-		return h( 'div', { class: 'eclc-powered' }, [ h( 'span', { text: 'Powered by' } ), link ] );
+		return h( 'div', { class: 'eclc-powered' }, [ h( 'span', { text: _t('Powered by') } ), link ] );
 	}
 
 	function confirmation( d ) {
@@ -110,23 +112,23 @@
 		function kv( k, v, cls ) { return h( 'div', { class: 'eclc-kv' }, [ h( 'b', { text: k } ), h( 'span', { class: cls || '', text: v } ) ] ); }
 		var children = [
 			h( 'div', { class: 'eclc-ok-ico', text: '✓' } ),
-			h( 'h1', { class: 'eclc-title', text: 'Bestellung erhalten' } ),
-			h( 'p', { class: 'eclc-sub', text: 'Vielen Dank! Bitte überweise den Betrag mit dem Verwendungszweck unten. Deine Bestellung ist reserviert, bis die Zahlung eingeht.' } ),
+			h( 'h1', { class: 'eclc-title', text: _t('Bestellung erhalten') } ),
+			h( 'p', { class: 'eclc-sub', text: _t('Vielen Dank! Bitte überweise den Betrag mit dem Verwendungszweck unten. Deine Bestellung ist reserviert, bis die Zahlung eingeht.') } ),
 			h( 'div', { class: 'eclc-kvs' }, [
-				kv( 'Betrag', d.currency + ' ' + Number( d.total ).toFixed( 2 ) ),
+				kv( _t('Betrag'), d.currency + ' ' + Number( d.total ).toFixed( 2 ) ),
 				kv( 'IBAN', ( d.bank && d.bank.iban ) || '—', 'eclc-iban' ),
-				kv( 'Empfänger', ( d.bank && d.bank.holder ) || '—' ),
-				( d.bank && d.bank.bankName ) ? kv( 'Bank', d.bank.bankName ) : null,
-				kv( 'Verwendungszweck', d.ref )
+				kv( _t('Empfänger'), ( d.bank && d.bank.holder ) || '—' ),
+				( d.bank && d.bank.bankName ) ? kv( _t('Bank'), d.bank.bankName ) : null,
+				kv( _t('Verwendungszweck'), d.ref )
 			] )
 		];
 		if ( d.qr && d.qr.iban ) {
 			var img = makeQrImg( swissSpc( d.qr ) );
 			if ( img ) {
 				children.push( h( 'div', { class: 'eclc-qr' }, [
-					h( 'div', { class: 'eclc-qr-h', text: 'QR-Rechnung' } ),
+					h( 'div', { class: 'eclc-qr-h', text: _t('QR-Rechnung') } ),
 					img,
-					h( 'div', { class: 'eclc-qr-hint', text: 'Mit deiner Banking-App scannen und bezahlen.' } )
+					h( 'div', { class: 'eclc-qr-hint', text: _t('Mit deiner Banking-App scannen und bezahlen.') } )
 				] ) );
 			}
 		}
@@ -165,12 +167,12 @@
 				] ) );
 				if ( lineFee( p ) ) {
 					summaryBox.appendChild( h( 'div', { class: 'eclc-line eclc-line-fee' }, [
-						h( 'span', { class: 'eclc-lname', text: 'Liefergebühr – ' + p.name } ),
+						h( 'span', { class: 'eclc-lname', text: _t('Liefergebühr – ') + p.name } ),
 						h( 'span', { class: 'eclc-lval', text: money( lineFee( p ) ) } )
 					] ) );
 				}
 			} );
-			if ( ! any ) { summaryBox.appendChild( h( 'p', { class: 'eclc-empty', text: 'Noch keine Produkte ausgewählt' } ) ); }
+			if ( ! any ) { summaryBox.appendChild( h( 'p', { class: 'eclc-empty', text: _t('Noch keine Produkte ausgewählt') } ) ); }
 			totalEl.textContent = money( total() );
 		}
 
@@ -245,7 +247,7 @@
 
 			var ctrl;
 			if ( asToggle ) {
-				var battrs = { class: 'eclc-qbtn' + ( selected ? ' eclc-selected' : '' ), type: 'button', text: selected ? '✓' : ( cat && cat.singleProduct ? 'Wählen' : '+' ), onClick: function () { setQty( p, selected ? 0 : 1 ); } };
+				var battrs = { class: 'eclc-qbtn' + ( selected ? ' eclc-selected' : '' ), type: 'button', text: selected ? '✓' : ( cat && cat.singleProduct ? _t('Wählen') : '+' ), onClick: function () { setQty( p, selected ? 0 : 1 ); } };
 				if ( locked ) { battrs.disabled = 'disabled'; }
 				ctrl = h( 'div', { class: 'eclc-qty' }, [ h( 'button', battrs ) ] );
 			} else {
@@ -267,7 +269,7 @@
 						h( 'h3', { class: 'eclc-pname', text: p.name } ),
 						p.description ? h( 'p', { class: 'eclc-pdesc', text: p.description } ) : null,
 						price,
-						locked ? h( 'p', { class: 'eclc-pdesc', text: 'Nur aus einer Kategorie wählbar' } ) : null
+						locked ? h( 'p', { class: 'eclc-pdesc', text: _t('Nur aus einer Kategorie wählbar') } ) : null
 					] ),
 					ctrl
 				] ),
@@ -278,7 +280,7 @@
 		function renderProducts() {
 			productsWrap.innerHTML = '';
 			var prods = C.products || [];
-			if ( ! prods.length ) { productsWrap.appendChild( h( 'p', { class: 'eclc-empty', text: 'Keine Produkte verfügbar.' } ) ); return; }
+			if ( ! prods.length ) { productsWrap.appendChild( h( 'p', { class: 'eclc-empty', text: _t('Keine Produkte verfügbar.') } ) ); return; }
 			var cats = C.categories || [];
 			if ( ! cats.length ) { prods.forEach( function ( p ) { productsWrap.appendChild( prodCard( p ) ); } ); return; }
 			cats.forEach( function ( cat ) {
@@ -287,7 +289,7 @@
 				productsWrap.appendChild( h( 'div', { class: 'eclc-cat-h' }, [
 					h( 'h3', { class: 'eclc-cat-name', text: cat.name } ),
 					cat.description ? h( 'p', { class: 'eclc-cat-desc', text: cat.description } ) : null,
-					cat.singleProduct ? h( 'p', { class: 'eclc-cat-hint', text: 'Nur ein Produkt wählbar' } ) : null
+					cat.singleProduct ? h( 'p', { class: 'eclc-cat-hint', text: _t('Nur ein Produkt wählbar') } ) : null
 				] ) );
 				items.forEach( function ( p ) { productsWrap.appendChild( prodCard( p ) ); } );
 			} );
@@ -295,21 +297,21 @@
 			var unc = prods.filter( function ( p ) { return ! p.categoryId || catIds.indexOf( p.categoryId ) === -1; } );
 			if ( unc.length ) {
 				if ( cats.some( function ( c ) { return prods.some( function ( p ) { return p.categoryId === c.id; } ); } ) ) {
-					productsWrap.appendChild( h( 'div', { class: 'eclc-cat-h' }, [ h( 'h3', { class: 'eclc-cat-name', text: 'Weitere' } ) ] ) );
+					productsWrap.appendChild( h( 'div', { class: 'eclc-cat-h' }, [ h( 'h3', { class: 'eclc-cat-name', text: _t('Weitere') } ) ] ) );
 				}
 				unc.forEach( function ( p ) { productsWrap.appendChild( prodCard( p ) ); } );
 			}
 		}
 
 		// Left: Fulfillment-Umschalter + Produkte (dynamischer Obertitel).
-		var prodTitle = ( C.productsTitle && String( C.productsTitle ).trim() ) ? C.productsTitle : 'Produkte';
+		var prodTitle = ( C.productsTitle && String( C.productsTitle ).trim() ) ? C.productsTitle : _t('Produkte');
 		var left = h( 'div', { class: 'eclc-left' }, [ h( 'h2', { class: 'eclc-col-h', text: prodTitle } ) ] );
 
 		if ( C.deliveryEnabled && C.pickupEnabled ) {
 			var fmodeWrap = h( 'div', { class: 'eclc-fmodes' } );
 			function renderFmode() {
 				fmodeWrap.innerHTML = '';
-				[ [ 'pickup', 'Abholung' ], [ 'delivery', 'Lieferung' ] ].forEach( function ( m ) {
+				[ [ 'pickup', _t('Abholung') ], [ 'delivery', _t('Lieferung') ] ].forEach( function ( m ) {
 					fmodeWrap.appendChild( h( 'button', { class: 'eclc-fmode' + ( mode === m[ 0 ] ? ' eclc-fmode-on' : '' ), type: 'button', text: m[ 1 ], onClick: function () {
 						if ( mode === m[ 0 ] ) { return; }
 						mode = m[ 0 ]; renderFmode(); renderProducts(); updateSummary(); syncDeliveryUI();
@@ -320,36 +322,36 @@
 			left.appendChild( fmodeWrap );
 		}
 		if ( C.categorySelection === 'single' && ( C.categories || [] ).length ) {
-			left.appendChild( h( 'p', { class: 'eclc-cat-hint', text: 'Bitte nur Produkte aus einer Kategorie wählen.' } ) );
+			left.appendChild( h( 'p', { class: 'eclc-cat-hint', text: _t('Bitte nur Produkte aus einer Kategorie wählen.') } ) );
 		}
 		left.appendChild( productsWrap );
 		renderProducts();
 
 		// Right: cart + Kundenformular
 		function countrySel( val ) {
-			var opts = [ [ 'CH', 'Schweiz' ], [ 'DE', 'Deutschland' ], [ 'AT', 'Österreich' ], [ 'LI', 'Liechtenstein' ], [ 'FR', 'Frankreich' ], [ 'IT', 'Italien' ] ];
+			var opts = [ [ 'CH', _t('Schweiz') ], [ 'DE', _t('Deutschland') ], [ 'AT', _t('Österreich') ], [ 'LI', _t('Liechtenstein') ], [ 'FR', _t('Frankreich') ], [ 'IT', _t('Italien') ] ];
 			var sel = h( 'select', { class: 'eclc-input' }, opts.map( function ( o ) { return h( 'option', { value: o[ 0 ] }, [ o[ 1 ] ] ); } ) );
 			sel.value = val; return sel;
 		}
-		var emailI = h( 'input', { class: 'eclc-input', type: 'email', placeholder: 'E-Mail-Adresse *' } );
-		var nameI = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'Vor- und Nachname *' } );
-		var companyI = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'Firma (optional)' } );
-		var phoneI = h( 'input', { class: 'eclc-input', type: 'tel', placeholder: 'Telefonnummer' } );
+		var emailI = h( 'input', { class: 'eclc-input', type: 'email', placeholder: _t('E-Mail-Adresse *') } );
+		var nameI = h( 'input', { class: 'eclc-input', type: 'text', placeholder: _t('Vor- und Nachname *') } );
+		var companyI = h( 'input', { class: 'eclc-input', type: 'text', placeholder: _t('Firma (optional)') } );
+		var phoneI = h( 'input', { class: 'eclc-input', type: 'tel', placeholder: _t('Telefonnummer') } );
 		var newsCb = h( 'input', { type: 'checkbox' } );
-		var bStreet = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'Strasse und Hausnummer *' } );
-		var bZip = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'PLZ *' } );
-		var bCity = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'Ort *' } );
+		var bStreet = h( 'input', { class: 'eclc-input', type: 'text', placeholder: _t('Strasse und Hausnummer *') } );
+		var bZip = h( 'input', { class: 'eclc-input', type: 'text', placeholder: _t('PLZ *') } );
+		var bCity = h( 'input', { class: 'eclc-input', type: 'text', placeholder: _t('Ort *') } );
 		var bCountry = countrySel( 'CH' );
 		var sameCb = h( 'input', { type: 'checkbox' } ); sameCb.checked = true;
-		var dStreet = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'Strasse und Hausnummer *' } );
-		var dZip = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'PLZ *' } );
-		var dCity = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'Ort *' } );
+		var dStreet = h( 'input', { class: 'eclc-input', type: 'text', placeholder: _t('Strasse und Hausnummer *') } );
+		var dZip = h( 'input', { class: 'eclc-input', type: 'text', placeholder: _t('PLZ *') } );
+		var dCity = h( 'input', { class: 'eclc-input', type: 'text', placeholder: _t('Ort *') } );
 		var dCountry = countrySel( 'CH' );
 		var deliveryWrap = h( 'div', { class: 'eclc-sec' }, [
-			h( 'h3', { class: 'eclc-sec-h', text: 'Lieferadresse' } ),
+			h( 'h3', { class: 'eclc-sec-h', text: _t('Lieferadresse') } ),
 			h( 'div', { class: 'eclc-stack' }, [ dStreet, h( 'div', { class: 'eclc-3' }, [ dZip, dCity ] ), dCountry ] )
 		] );
-		var sameRow = h( 'label', { class: 'eclc-check' }, [ sameCb, h( 'span', { text: 'Lieferadresse entspricht Rechnungsadresse' } ) ] );
+		var sameRow = h( 'label', { class: 'eclc-check' }, [ sameCb, h( 'span', { text: _t('Lieferadresse entspricht Rechnungsadresse') } ) ] );
 		function syncDeliveryUI() {
 			var showDelivery = ( mode === 'delivery' );
 			sameRow.style.display = showDelivery ? 'flex' : 'none';
@@ -359,12 +361,12 @@
 
 		var errEl = h( 'div', { class: 'eclc-err' } );
 		errEl.style.display = 'none';
-		var btn = h( 'button', { class: 'eclc-btn', type: 'button', text: 'Jetzt bestellen (Banküberweisung)' } );
+		var btn = h( 'button', { class: 'eclc-btn', type: 'button', text: _t('Jetzt bestellen (Banküberweisung)') } );
 		function fail( m ) { errEl.textContent = m; errEl.style.display = 'block'; }
 		btn.addEventListener( 'click', function () {
 			errEl.style.display = 'none';
 			var chosen = ( C.products || [] ).filter( function ( p ) { return state( p ).qty > 0; } );
-			if ( ! chosen.length ) { return fail( 'Bitte mindestens ein Produkt wählen.' ); }
+			if ( ! chosen.length ) { return fail( _t('Bitte mindestens ein Produkt wählen.') ); }
 			var items = [];
 			for ( var i = 0; i < chosen.length; i++ ) {
 				var p = chosen[ i ], s = state( p );
@@ -378,11 +380,11 @@
 				}
 				items.push( { id: p.id, qty: s.qty, optionIds: selectedOptions( p ).map( function ( o ) { return o.id; } ), fieldValues: fv } );
 			}
-			if ( ! emailI.value.trim() ) { return fail( 'Bitte geben Sie Ihre E-Mail-Adresse ein.' ); }
-			if ( ! nameI.value.trim() ) { return fail( 'Bitte geben Sie Ihren Namen ein.' ); }
-			if ( ! bStreet.value.trim() || ! bZip.value.trim() || ! bCity.value.trim() ) { return fail( 'Bitte geben Sie Ihre vollständige Rechnungsadresse ein.' ); }
-			if ( mode === 'delivery' && ! sameCb.checked && ( ! dStreet.value.trim() || ! dZip.value.trim() || ! dCity.value.trim() ) ) { return fail( 'Bitte geben Sie Ihre vollständige Lieferadresse ein.' ); }
-			btn.disabled = true; btn.textContent = 'Wird gesendet…';
+			if ( ! emailI.value.trim() ) { return fail( _t('Bitte geben Sie Ihre E-Mail-Adresse ein.') ); }
+			if ( ! nameI.value.trim() ) { return fail( _t('Bitte geben Sie Ihren Namen ein.') ); }
+			if ( ! bStreet.value.trim() || ! bZip.value.trim() || ! bCity.value.trim() ) { return fail( _t('Bitte geben Sie Ihre vollständige Rechnungsadresse ein.') ); }
+			if ( mode === 'delivery' && ! sameCb.checked && ( ! dStreet.value.trim() || ! dZip.value.trim() || ! dCity.value.trim() ) ) { return fail( _t('Bitte geben Sie Ihre vollständige Lieferadresse ein.') ); }
+			btn.disabled = true; btn.textContent = _t('Wird gesendet…');
 			var billing = { street: bStreet.value, postalCode: bZip.value, city: bCity.value, country: bCountry.value };
 			var delivery = ( mode === 'delivery' && ! sameCb.checked ) ? { street: dStreet.value, postalCode: dZip.value, city: dCity.value, country: dCountry.value } : billing;
 			var body = new URLSearchParams();
@@ -402,36 +404,36 @@
 			fetch( ecLocal.ajaxUrl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() } )
 				.then( function ( r ) { return r.json(); } )
 				.then( function ( j ) {
-					if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || 'Fehler' ); }
+					if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || _t('Fehler') ); }
 					confirmation( j.data );
 					if ( window.scrollTo ) { window.scrollTo( 0, 0 ); }
 				} )
 				.catch( function ( e ) {
 					errEl.textContent = e.message; errEl.style.display = 'block';
-					btn.disabled = false; btn.textContent = 'Jetzt bestellen (Banküberweisung)';
+					btn.disabled = false; btn.textContent = _t('Jetzt bestellen (Banküberweisung)');
 				} );
 		} );
 
 		var cart = h( 'div', { class: 'eclc-right' }, [
-			h( 'h2', { class: 'eclc-col-h', text: 'Bestellung' } ),
+			h( 'h2', { class: 'eclc-col-h', text: _t('Bestellung') } ),
 			h( 'div', { class: 'eclc-cart' }, [
 			summaryBox,
 			( C.vatEnabled && C.vatRate ) ? h( 'p', { class: 'eclc-vatnote', text: 'inkl. ' + C.vatRate + '% MwSt' } ) : null,
-			h( 'div', { class: 'eclc-divider' }, [ h( 'div', { class: 'eclc-total' }, [ h( 'span', { text: 'Total' } ), totalEl ] ) ] ),
+			h( 'div', { class: 'eclc-divider' }, [ h( 'div', { class: 'eclc-total' }, [ h( 'span', { text: _t('Total') } ), totalEl ] ) ] ),
 			errEl,
 			h( 'div', { class: 'eclc-sec' }, [
-				h( 'h3', { class: 'eclc-sec-h', text: 'Kontaktdaten' } ),
+				h( 'h3', { class: 'eclc-sec-h', text: _t('Kontaktdaten') } ),
 				h( 'div', { class: 'eclc-stack' }, [ emailI, nameI, companyI, phoneI ] ),
-				h( 'label', { class: 'eclc-check' }, [ newsCb, h( 'span', { text: 'Ja, ich möchte über Neuigkeiten und Angebote informiert werden' } ) ] )
+				h( 'label', { class: 'eclc-check' }, [ newsCb, h( 'span', { text: _t('Ja, ich möchte über Neuigkeiten und Angebote informiert werden') } ) ] )
 			] ),
 			h( 'div', { class: 'eclc-sec' }, [
-				h( 'h3', { class: 'eclc-sec-h', text: 'Rechnungsadresse' } ),
+				h( 'h3', { class: 'eclc-sec-h', text: _t('Rechnungsadresse') } ),
 				h( 'div', { class: 'eclc-stack' }, [ bStreet, h( 'div', { class: 'eclc-3' }, [ bZip, bCity ] ), bCountry ] )
 			] ),
 			sameRow,
 			deliveryWrap,
 			h( 'div', { style: 'margin-top:18px;' }, [ btn ] ),
-			h( 'p', { class: 'eclc-pay-hint', text: 'Zahlung per Banküberweisung – du erhältst die Kontodaten nach der Bestellung.' } )
+			h( 'p', { class: 'eclc-pay-hint', text: _t('Zahlung per Banküberweisung – du erhältst die Kontodaten nach der Bestellung.') } )
 			] )
 		] );
 

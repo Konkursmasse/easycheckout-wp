@@ -165,6 +165,7 @@ class Shortcodes {
             wp_register_script('stripe-js', 'https://js.stripe.com/v3/', [], null, true);
             wp_register_script('easycheckout-pay-checkout', EASYCHECKOUT_PLUGIN_URL . 'assets/js/pay-checkout.js', ['stripe-js'], EASYCHECKOUT_VERSION, true);
             wp_localize_script('easycheckout-pay-checkout', 'ecPay', [
+            'i18n' => easycheckout_checkout_i18n(),
                 'ajaxUrl'    => admin_url('admin-ajax.php'),
                 'nonce'      => wp_create_nonce('easycheckout_front'),
                 'token'      => $token,
@@ -319,6 +320,7 @@ class Shortcodes {
         wp_register_script('easycheckout-account-checkout', EASYCHECKOUT_PLUGIN_URL . 'assets/js/account-checkout.js', ['stripe-js'], EASYCHECKOUT_VERSION, true);
         $primary = (isset($atts['primary']) && $atts['primary']) ? $atts['primary'] : '';
         wp_localize_script('easycheckout-account-checkout', 'ecAccount', [
+            'i18n' => easycheckout_checkout_i18n(),
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce'   => wp_create_nonce('easycheckout_front'),
             'slug'    => $slug,
@@ -462,6 +464,7 @@ class Shortcodes {
             ];
         }
         wp_localize_script($handle, 'ecLocal', [
+            'i18n' => easycheckout_checkout_i18n(),
             'ajaxUrl'  => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('easycheckout_front'),
             'ecIcon'   => EASYCHECKOUT_PLUGIN_URL . 'assets/images/easycheckout-icon.png',

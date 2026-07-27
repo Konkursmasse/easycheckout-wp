@@ -51,6 +51,7 @@ class WC_Native_Cart {
         wp_register_script('stripe-js', 'https://js.stripe.com/v3/', [], null, true);
         wp_register_script('easycheckout-wc-cart', EASYCHECKOUT_PLUGIN_URL . 'assets/js/wc-cart-checkout.js', ['stripe-js'], EASYCHECKOUT_VERSION, true);
         wp_localize_script('easycheckout-wc-cart', 'ecWcCart', [
+            'i18n' => easycheckout_checkout_i18n(),
             'ajaxUrl'    => admin_url('admin-ajax.php'),
             'nonce'      => wp_create_nonce('easycheckout_front'),
             'apiBase'    => rtrim(get_option('easycheckout_api_url', 'https://www.easycheckout.ch'), '/'),

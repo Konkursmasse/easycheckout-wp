@@ -1,4 +1,6 @@
 /* global ecAccount, Stripe */
+/* i18n: deutscher String = Key; fr/it via ecAccount.i18n, sonst Fallback Deutsch */
+function _t(s){try{return (window.ecAccount&&ecAccount.i18n&&ecAccount.i18n[s])||s;}catch(e){return s;}}
 /* EasyCheckout – nativer KONTO-Checkout auf der Haendler-Domain.
    Design = local-checkout.css (anpassbar). Zahlung = Stripe Elements (white-label,
    der Kunde sieht nur easyCheckout). Daten/Bezahlung laufen ueber die
@@ -95,11 +97,11 @@
 		Object.keys( fields || {} ).forEach( function ( k ) { body.append( k, fields[ k ] ); } );
 		return fetch( ecAccount.ajaxUrl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() } )
 			.then( function ( r ) { return r.json(); } )
-			.then( function ( j ) { if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || 'Fehler' ); } return j.data; } );
+			.then( function ( j ) { if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || _t('Fehler') ); } return j.data; } );
 	}
 
 	function countrySel( val ) {
-		var opts = [ [ 'CH', 'Schweiz' ], [ 'DE', 'Deutschland' ], [ 'AT', 'Österreich' ], [ 'LI', 'Liechtenstein' ], [ 'FR', 'Frankreich' ], [ 'IT', 'Italien' ] ];
+		var opts = [ [ 'CH', _t('Schweiz') ], [ 'DE', _t('Deutschland') ], [ 'AT', _t('Österreich') ], [ 'LI', _t('Liechtenstein') ], [ 'FR', _t('Frankreich') ], [ 'IT', _t('Italien') ] ];
 		var sel = h( 'select', { class: 'eclc-input' }, opts.map( function ( o ) { return h( 'option', { value: o[ 0 ] }, [ o[ 1 ] ] ); } ) );
 		sel.value = val || 'CH'; return sel;
 	}
@@ -110,9 +112,9 @@
 			icon ? h( 'img', { class: 'eclc-powered-ico', src: icon, alt: 'easyCheckout', width: '16', height: '16' } ) : null,
 			h( 'span', { class: 'eclc-powered-name', text: 'easyCheckout' } )
 		] );
-		return h( 'div', { class: 'eclc-powered' }, [ h( 'span', { text: 'Powered by' } ), link ] );
+		return h( 'div', { class: 'eclc-powered' }, [ h( 'span', { text: _t('Powered by') } ), link ] );
 	}
-	function loadingView( msg ) { root.innerHTML = ''; root.appendChild( h( 'div', { class: 'eclc-wrap' }, [ h( 'div', { class: 'eclc-cart', style: 'max-width:520px;margin:0 auto;text-align:center' }, [ h( 'p', { class: 'eclc-empty', text: msg || 'Lädt…' } ) ] ) ] ) ); }
+	function loadingView( msg ) { root.innerHTML = ''; root.appendChild( h( 'div', { class: 'eclc-wrap' }, [ h( 'div', { class: 'eclc-cart', style: 'max-width:520px;margin:0 auto;text-align:center' }, [ h( 'p', { class: 'eclc-empty', text: msg || _t('Lädt…') } ) ] ) ] ) ); }
 	function errorView( msg ) { root.innerHTML = ''; root.appendChild( h( 'div', { class: 'eclc-wrap' }, [ h( 'div', { class: 'eclc-cart', style: 'max-width:520px;margin:0 auto' }, [ h( 'div', { class: 'eclc-err', text: msg } ) ] ) ] ) ); }
 
 	function render() {
@@ -146,12 +148,12 @@
 				] ) );
 				if ( lineFee( p ) ) {
 					summaryBox.appendChild( h( 'div', { class: 'eclc-line eclc-line-fee' }, [
-						h( 'span', { class: 'eclc-lname', text: 'Liefergebühr – ' + p.name } ),
+						h( 'span', { class: 'eclc-lname', text: _t('Liefergebühr – ') + p.name } ),
 						h( 'span', { class: 'eclc-lval', text: money( lineFee( p ) ) } )
 					] ) );
 				}
 			} );
-			if ( ! any ) { summaryBox.appendChild( h( 'p', { class: 'eclc-empty', text: 'Noch keine Produkte ausgewählt' } ) ); }
+			if ( ! any ) { summaryBox.appendChild( h( 'p', { class: 'eclc-empty', text: _t('Noch keine Produkte ausgewählt') } ) ); }
 			totalEl.textContent = money( grandTotal() );
 		}
 
@@ -228,9 +230,9 @@
 
 			var ctrl;
 			if ( soldOut ) {
-				ctrl = h( 'div', { class: 'eclc-qty' }, [ h( 'span', { class: 'eclc-soldout', text: 'Ausverkauft' } ) ] );
+				ctrl = h( 'div', { class: 'eclc-qty' }, [ h( 'span', { class: 'eclc-soldout', text: _t('Ausverkauft') } ) ] );
 			} else if ( asToggle ) {
-				var battrs = { class: 'eclc-qbtn' + ( selected ? ' eclc-selected' : '' ), type: 'button', text: selected ? '✓' : ( cat && cat.singleProduct ? 'Wählen' : '+' ), onClick: function () { setQty( p, selected ? 0 : 1 ); } };
+				var battrs = { class: 'eclc-qbtn' + ( selected ? ' eclc-selected' : '' ), type: 'button', text: selected ? '✓' : ( cat && cat.singleProduct ? _t('Wählen') : '+' ), onClick: function () { setQty( p, selected ? 0 : 1 ); } };
 				if ( locked ) { battrs.disabled = 'disabled'; }
 				ctrl = h( 'div', { class: 'eclc-qty' }, [ h( 'button', battrs ) ] );
 			} else {
@@ -245,7 +247,7 @@
 			( p.optionGroups || [] ).forEach( function ( g ) { if ( ( g.options || [] ).length ) { config.push( optionGroupEl( p, g ) ); } } );
 			( p.customFields || [] ).forEach( function ( f ) { config.push( customFieldEl( p, f ) ); } );
 			var v = currentVariant( p );
-			if ( v && ! v.soldOut && v.remaining != null && v.remaining <= 5 ) { config.push( h( 'p', { class: 'eclc-stock', text: 'Nur noch ' + v.remaining + ' verfügbar' } ) ); }
+			if ( v && ! v.soldOut && v.remaining != null && v.remaining <= 5 ) { config.push( h( 'p', { class: 'eclc-stock', text: _t('Nur noch ') + v.remaining + ' verfügbar' } ) ); }
 
 			return h( 'div', { class: 'eclc-prod' + ( locked ? ' eclc-locked' : '' ) + ( soldOut ? ' eclc-prod-so' : '' ) }, [
 				h( 'div', { class: 'eclc-prod-in' }, [
@@ -254,7 +256,7 @@
 						h( 'h3', { class: 'eclc-pname', text: p.name } ),
 						p.description ? h( 'p', { class: 'eclc-pdesc', text: p.description } ) : null,
 						price,
-						locked ? h( 'p', { class: 'eclc-pdesc', text: 'Nur aus einer Kategorie wählbar' } ) : null
+						locked ? h( 'p', { class: 'eclc-pdesc', text: _t('Nur aus einer Kategorie wählbar') } ) : null
 					] ),
 					ctrl
 				] ),
@@ -265,7 +267,7 @@
 		function renderProducts() {
 			productsWrap.innerHTML = '';
 			var prods = C.products || [];
-			if ( ! prods.length ) { productsWrap.appendChild( h( 'p', { class: 'eclc-empty', text: 'Keine Produkte verfügbar.' } ) ); return; }
+			if ( ! prods.length ) { productsWrap.appendChild( h( 'p', { class: 'eclc-empty', text: _t('Keine Produkte verfügbar.') } ) ); return; }
 			var cats = C.categories || [];
 			if ( ! cats.length ) { prods.forEach( function ( p ) { productsWrap.appendChild( prodCard( p ) ); } ); return; }
 			cats.forEach( function ( cat ) {
@@ -274,7 +276,7 @@
 				productsWrap.appendChild( h( 'div', { class: 'eclc-cat-h' }, [
 					h( 'h3', { class: 'eclc-cat-name', text: cat.name } ),
 					cat.description ? h( 'p', { class: 'eclc-cat-desc', text: cat.description } ) : null,
-					cat.singleProduct ? h( 'p', { class: 'eclc-cat-hint', text: 'Nur ein Produkt wählbar' } ) : null
+					cat.singleProduct ? h( 'p', { class: 'eclc-cat-hint', text: _t('Nur ein Produkt wählbar') } ) : null
 				] ) );
 				items.forEach( function ( p ) { productsWrap.appendChild( prodCard( p ) ); } );
 			} );
@@ -282,14 +284,14 @@
 			var unc = prods.filter( function ( p ) { return ! p.categoryId || catIds.indexOf( p.categoryId ) === -1; } );
 			if ( unc.length ) {
 				if ( cats.some( function ( c ) { return prods.some( function ( p ) { return p.categoryId === c.id; } ); } ) ) {
-					productsWrap.appendChild( h( 'div', { class: 'eclc-cat-h' }, [ h( 'h3', { class: 'eclc-cat-name', text: 'Weitere' } ) ] ) );
+					productsWrap.appendChild( h( 'div', { class: 'eclc-cat-h' }, [ h( 'h3', { class: 'eclc-cat-name', text: _t('Weitere') } ) ] ) );
 				}
 				unc.forEach( function ( p ) { productsWrap.appendChild( prodCard( p ) ); } );
 			}
 		}
 
 		// --- Linke Spalte: Fulfillment-Umschalter + Produkte ---
-		var title = ( C.productsTitle && String( C.productsTitle ).trim() ) ? C.productsTitle : 'Produkte';
+		var title = ( C.productsTitle && String( C.productsTitle ).trim() ) ? C.productsTitle : _t('Produkte');
 		var left = h( 'div', { class: 'eclc-left' }, [ h( 'h2', { class: 'eclc-col-h', text: title } ) ] );
 
 		if ( C.deliveryEnabled && C.pickupEnabled ) {
@@ -300,35 +302,35 @@
 				} } );
 			}
 			var fmodeWrap = h( 'div', { class: 'eclc-fmodes' } );
-			function renderFmode() { fmodeWrap.innerHTML = ''; fmodeWrap.appendChild( modeBtn( 'pickup', 'Abholung' ) ); fmodeWrap.appendChild( modeBtn( 'delivery', 'Lieferung' ) ); }
+			function renderFmode() { fmodeWrap.innerHTML = ''; fmodeWrap.appendChild( modeBtn( 'pickup', _t('Abholung') ) ); fmodeWrap.appendChild( modeBtn( 'delivery', _t('Lieferung') ) ); }
 			renderFmode();
 			left.appendChild( fmodeWrap );
 		}
 		if ( C.categorySelection === 'single' && ( C.categories || [] ).length ) {
-			left.appendChild( h( 'p', { class: 'eclc-cat-hint', text: 'Bitte nur Produkte aus einer Kategorie wählen.' } ) );
+			left.appendChild( h( 'p', { class: 'eclc-cat-hint', text: _t('Bitte nur Produkte aus einer Kategorie wählen.') } ) );
 		}
 		left.appendChild( productsWrap );
 		renderProducts();
 
 		// --- Kundenformular ---
-		var emailI = h( 'input', { class: 'eclc-input', type: 'email', placeholder: 'E-Mail-Adresse *' } );
-		var nameI = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'Vor- und Nachname *' } );
-		var companyI = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'Firma (optional)' } );
-		var phoneI = h( 'input', { class: 'eclc-input', type: 'tel', placeholder: 'Telefonnummer' } );
-		var bStreet = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'Strasse und Hausnummer *' } );
-		var bZip = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'PLZ *' } );
-		var bCity = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'Ort *' } );
+		var emailI = h( 'input', { class: 'eclc-input', type: 'email', placeholder: _t('E-Mail-Adresse *') } );
+		var nameI = h( 'input', { class: 'eclc-input', type: 'text', placeholder: _t('Vor- und Nachname *') } );
+		var companyI = h( 'input', { class: 'eclc-input', type: 'text', placeholder: _t('Firma (optional)') } );
+		var phoneI = h( 'input', { class: 'eclc-input', type: 'tel', placeholder: _t('Telefonnummer') } );
+		var bStreet = h( 'input', { class: 'eclc-input', type: 'text', placeholder: _t('Strasse und Hausnummer *') } );
+		var bZip = h( 'input', { class: 'eclc-input', type: 'text', placeholder: _t('PLZ *') } );
+		var bCity = h( 'input', { class: 'eclc-input', type: 'text', placeholder: _t('Ort *') } );
 		var bCountry = countrySel( 'CH' );
 		var sameCb = h( 'input', { type: 'checkbox' } ); sameCb.checked = true;
-		var dStreet = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'Strasse und Hausnummer *' } );
-		var dZip = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'PLZ *' } );
-		var dCity = h( 'input', { class: 'eclc-input', type: 'text', placeholder: 'Ort *' } );
+		var dStreet = h( 'input', { class: 'eclc-input', type: 'text', placeholder: _t('Strasse und Hausnummer *') } );
+		var dZip = h( 'input', { class: 'eclc-input', type: 'text', placeholder: _t('PLZ *') } );
+		var dCity = h( 'input', { class: 'eclc-input', type: 'text', placeholder: _t('Ort *') } );
 		var dCountry = countrySel( 'CH' );
 		var deliveryWrap = h( 'div', { class: 'eclc-sec' }, [
-			h( 'h3', { class: 'eclc-sec-h', text: 'Lieferadresse' } ),
+			h( 'h3', { class: 'eclc-sec-h', text: _t('Lieferadresse') } ),
 			h( 'div', { class: 'eclc-stack' }, [ dStreet, h( 'div', { class: 'eclc-3' }, [ dZip, dCity ] ), dCountry ] )
 		] );
-		var sameRow = h( 'label', { class: 'eclc-check' }, [ sameCb, h( 'span', { text: 'Lieferadresse entspricht Rechnungsadresse' } ) ] );
+		var sameRow = h( 'label', { class: 'eclc-check' }, [ sameCb, h( 'span', { text: _t('Lieferadresse entspricht Rechnungsadresse') } ) ] );
 		function syncDeliveryUI() {
 			// Liefer-Sektion nur zeigen, wenn Liefermodus aktiv ist bzw. abweichende Adresse.
 			var showDeliverySection = ( mode === 'delivery' );
@@ -339,7 +341,7 @@
 
 		var errEl = h( 'div', { class: 'eclc-err' } ); errEl.style.display = 'none';
 		var payWrap = h( 'div', {} );
-		var btn = h( 'button', { class: 'eclc-btn', type: 'button', text: 'Weiter zur Zahlung' } );
+		var btn = h( 'button', { class: 'eclc-btn', type: 'button', text: _t('Weiter zur Zahlung') } );
 		function fail( m ) { errEl.textContent = m; errEl.style.display = 'block'; }
 
 		btn.addEventListener( 'click', function () {
@@ -347,7 +349,7 @@
 			// Positionen + Options-/Feld-Validierung.
 			var items = [];
 			var chosen = ( C.products || [] ).filter( function ( p ) { return state( p ).qty > 0; } );
-			if ( ! chosen.length ) { return fail( 'Bitte mindestens ein Produkt wählen.' ); }
+			if ( ! chosen.length ) { return fail( _t('Bitte mindestens ein Produkt wählen.') ); }
 			for ( var i = 0; i < chosen.length; i++ ) {
 				var p = chosen[ i ], s = state( p );
 				if ( productSoldOut( p ) ) { return fail( '„' + p.name + '" ist leider ausverkauft.' ); }
@@ -362,12 +364,12 @@
 				}
 				items.push( { productId: p.id, quantity: s.qty, optionIds: selectedOptions( p ).map( function ( o ) { return o.id; } ), fieldValues: fv } );
 			}
-			if ( ! emailI.value.trim() ) { return fail( 'Bitte E-Mail-Adresse eingeben.' ); }
-			if ( ! nameI.value.trim() ) { return fail( 'Bitte Namen eingeben.' ); }
-			if ( ! bStreet.value.trim() || ! bZip.value.trim() || ! bCity.value.trim() ) { return fail( 'Bitte vollständige Rechnungsadresse eingeben.' ); }
-			if ( mode === 'delivery' && ! sameCb.checked && ( ! dStreet.value.trim() || ! dZip.value.trim() || ! dCity.value.trim() ) ) { return fail( 'Bitte vollständige Lieferadresse eingeben.' ); }
+			if ( ! emailI.value.trim() ) { return fail( _t('Bitte E-Mail-Adresse eingeben.') ); }
+			if ( ! nameI.value.trim() ) { return fail( _t('Bitte Namen eingeben.') ); }
+			if ( ! bStreet.value.trim() || ! bZip.value.trim() || ! bCity.value.trim() ) { return fail( _t('Bitte vollständige Rechnungsadresse eingeben.') ); }
+			if ( mode === 'delivery' && ! sameCb.checked && ( ! dStreet.value.trim() || ! dZip.value.trim() || ! dCity.value.trim() ) ) { return fail( _t('Bitte vollständige Lieferadresse eingeben.') ); }
 
-			btn.disabled = true; btn.textContent = 'Zahlung wird vorbereitet…';
+			btn.disabled = true; btn.textContent = _t('Zahlung wird vorbereitet…');
 			var billing = { street: bStreet.value, postalCode: bZip.value, city: bCity.value, country: bCountry.value };
 			var delivery = ( mode === 'delivery' && ! sameCb.checked ) ? { street: dStreet.value, postalCode: dZip.value, city: dCity.value, country: dCountry.value } : billing;
 			var payload = {
@@ -382,21 +384,21 @@
 			};
 			post( 'easycheckout_pub_pay', { slug: ecAccount.slug, payload: JSON.stringify( payload ) } ).then( function ( d ) {
 				var body = d.body || {};
-				if ( ( d.status && d.status >= 400 ) || body.error ) { throw new Error( body.error || ( 'Fehler ' + d.status ) ); }
-				if ( ! body.clientSecret || ! body.publishableKey ) { throw new Error( 'Zahlung konnte nicht initialisiert werden.' ); }
+				if ( ( d.status && d.status >= 400 ) || body.error ) { throw new Error( body.error || ( _t('Fehler ') + d.status ) ); }
+				if ( ! body.clientSecret || ! body.publishableKey ) { throw new Error( _t('Zahlung konnte nicht initialisiert werden.') ); }
 				mountPayment( body, btn, errEl, payWrap );
-			} ).catch( function ( e ) { fail( e.message ); btn.disabled = false; btn.textContent = 'Weiter zur Zahlung'; } );
+			} ).catch( function ( e ) { fail( e.message ); btn.disabled = false; btn.textContent = _t('Weiter zur Zahlung'); } );
 		} );
 
 		var cart = h( 'div', { class: 'eclc-right' }, [
-			h( 'h2', { class: 'eclc-col-h', text: 'Bestellung' } ),
+			h( 'h2', { class: 'eclc-col-h', text: _t('Bestellung') } ),
 			h( 'div', { class: 'eclc-cart' }, [
 			summaryBox,
 			( C.vatEnabled && C.vatRate && C.vatInclusive ) ? h( 'p', { class: 'eclc-vatnote', text: 'inkl. ' + C.vatRate + '% MwSt' } ) : null,
-			h( 'div', { class: 'eclc-divider' }, [ h( 'div', { class: 'eclc-total' }, [ h( 'span', { text: 'Total' } ), totalEl ] ) ] ),
+			h( 'div', { class: 'eclc-divider' }, [ h( 'div', { class: 'eclc-total' }, [ h( 'span', { text: _t('Total') } ), totalEl ] ) ] ),
 			errEl,
-			h( 'div', { class: 'eclc-sec' }, [ h( 'h3', { class: 'eclc-sec-h', text: 'Kontaktdaten' } ), h( 'div', { class: 'eclc-stack' }, [ emailI, nameI, companyI, phoneI ] ) ] ),
-			h( 'div', { class: 'eclc-sec' }, [ h( 'h3', { class: 'eclc-sec-h', text: 'Rechnungsadresse' } ), h( 'div', { class: 'eclc-stack' }, [ bStreet, h( 'div', { class: 'eclc-3' }, [ bZip, bCity ] ), bCountry ] ) ] ),
+			h( 'div', { class: 'eclc-sec' }, [ h( 'h3', { class: 'eclc-sec-h', text: _t('Kontaktdaten') } ), h( 'div', { class: 'eclc-stack' }, [ emailI, nameI, companyI, phoneI ] ) ] ),
+			h( 'div', { class: 'eclc-sec' }, [ h( 'h3', { class: 'eclc-sec-h', text: _t('Rechnungsadresse') } ), h( 'div', { class: 'eclc-stack' }, [ bStreet, h( 'div', { class: 'eclc-3' }, [ bZip, bCity ] ), bCountry ] ) ] ),
 			sameRow,
 			deliveryWrap,
 			payWrap,
@@ -421,25 +423,25 @@
 		root.querySelectorAll( 'input,select,button' ).forEach( function ( f ) { if ( f !== btn ) { f.disabled = true; } } );
 		try {
 			stripe = Stripe( body.publishableKey, body.stripeAccountId ? { stripeAccount: body.stripeAccountId } : undefined );
-		} catch ( e ) { errEl.textContent = 'Zahlungssystem nicht verfügbar.'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = 'Weiter zur Zahlung'; return; }
+		} catch ( e ) { errEl.textContent = _t('Zahlungssystem nicht verfügbar.'); errEl.style.display = 'block'; btn.disabled = false; btn.textContent = _t('Weiter zur Zahlung'); return; }
 		elements = stripe.elements( { clientSecret: body.clientSecret } );
 		// Accordion-Layout: methoden als klare vertikale Liste (kein Tabs-Karussell mit
 		// Pfeil zum Umschalten). Reihenfolge folgt der Checkout-Konfiguration.
 		var pmOrder = ( C && C.paymentMethods && C.paymentMethods.length ) ? C.paymentMethods.slice() : [ 'card', 'twint' ];
 		var pe = elements.create( 'payment', { layout: { type: 'accordion', defaultCollapsed: false, radios: true, spacedAccordionItems: true }, paymentMethodOrder: pmOrder } );
 		payWrap.innerHTML = '';
-		payWrap.appendChild( h( 'div', { class: 'eclc-sec' }, [ h( 'h3', { class: 'eclc-sec-h', text: 'Zahlung' } ), h( 'div', { id: 'eca-pe' } ) ] ) );
+		payWrap.appendChild( h( 'div', { class: 'eclc-sec' }, [ h( 'h3', { class: 'eclc-sec-h', text: _t('Zahlung') } ), h( 'div', { id: 'eca-pe' } ) ] ) );
 		pe.mount( '#eca-pe' );
 		btn.disabled = false;
-		btn.textContent = 'Jetzt bezahlen ' + money( body.total != null ? body.total : grandTotal() );
+		btn.textContent = _t('Jetzt bezahlen ') + money( body.total != null ? body.total : grandTotal() );
 		var newBtn = btn.cloneNode( true );
 		btn.parentNode.replaceChild( newBtn, btn );
 		newBtn.addEventListener( 'click', function () {
 			errEl.style.display = 'none';
-			newBtn.disabled = true; newBtn.textContent = 'Zahlung läuft…';
+			newBtn.disabled = true; newBtn.textContent = _t('Zahlung läuft…');
 			stripe.confirmPayment( { elements: elements, confirmParams: { return_url: window.location.href }, redirect: 'if_required' } )
 				.then( function ( result ) {
-					if ( result.error ) { errEl.textContent = result.error.message || 'Zahlung fehlgeschlagen.'; errEl.style.display = 'block'; newBtn.disabled = false; newBtn.textContent = 'Jetzt bezahlen'; return; }
+					if ( result.error ) { errEl.textContent = result.error.message || _t('Zahlung fehlgeschlagen.'); errEl.style.display = 'block'; newBtn.disabled = false; newBtn.textContent = _t('Jetzt bezahlen'); return; }
 					successView( body );
 				} );
 		} );
@@ -449,17 +451,17 @@
 		root.innerHTML = '';
 		root.appendChild( h( 'div', { class: 'eclc-wrap' }, [ h( 'div', { class: 'eclc-cart eclc-ok', style: 'max-width:520px;margin:0 auto;' }, [
 			h( 'div', { class: 'eclc-ok-ico', text: '✓' } ),
-			h( 'h1', { class: 'eclc-title', text: 'Zahlung erfolgreich' } ),
-			h( 'p', { class: 'eclc-sub', text: 'Vielen Dank für deine Bestellung! Du erhältst eine Bestätigung per E-Mail.' } )
+			h( 'h1', { class: 'eclc-title', text: _t('Zahlung erfolgreich') } ),
+			h( 'p', { class: 'eclc-sub', text: _t('Vielen Dank für deine Bestellung! Du erhältst eine Bestätigung per E-Mail.') } )
 		] ), powered() ] ) );
 		if ( window.scrollTo ) { window.scrollTo( 0, 0 ); }
 	}
 
 	// Start: Checkout-Daten laden
-	loadingView( 'Checkout wird geladen…' );
+	loadingView( _t('Checkout wird geladen…') );
 	post( 'easycheckout_pub_checkout', { slug: ecAccount.slug } ).then( function ( d ) {
 		var body = d.body || {};
-		if ( ( d.status && d.status >= 400 ) || ! body.checkout ) { throw new Error( ( body && body.error ) || 'Checkout nicht gefunden.' ); }
+		if ( ( d.status && d.status >= 400 ) || ! body.checkout ) { throw new Error( ( body && body.error ) || _t('Checkout nicht gefunden.') ); }
 		C = body.checkout;
 		// Standard-Fulfillment: Lieferung nur, wenn Abholung nicht angeboten wird.
 		mode = ( C.deliveryEnabled && C.pickupEnabled === false ) ? 'delivery' : 'pickup';
