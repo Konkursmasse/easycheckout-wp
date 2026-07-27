@@ -140,10 +140,64 @@ class WC_Settings_Tab {
             }
             return;
         }
+        // Rechnung-Sektion: Bankdaten aus dem verbundenen Konto (Onboarding)
+        // einmalig vorbefüllen, bevor die Felder gerendert werden.
+        if ($current_section === 'invoice') {
+            $this->prefill_bank_from_account();
+        }
         woocommerce_admin_fields($this->fields($current_section));
         if ($current_section === 'emails') {
             $this->output_platform_templates();
         }
+        if ($current_section === 'invoice') {
+            $this->output_bank_hint();
+        }
+    }
+
+    /** Bankdaten des verbundenen Kontos (gecacht pro Request). */
+    private function account_bank_info() {
+        static $cache = null;
+        if ($cache !== null) { return $cache; }
+        $api = new Native_API();
+        $res = $api->request('GET', '/api/auth/bank-info', null, ['keep_session_on_401' => true]);
+        $cache = (!is_wp_error($res) && is_array($res['body'] ?? null)) ? $res['body'] : [];
+        return $cache;
+    }
+
+    /**
+     * Bankverbindung aus dem Konto übernehmen, WENN die lokale Option noch leer
+     * ist (einmalig). So erscheint die im Onboarding hinterlegte IBAN/Inhaber/Bank
+     * automatisch in der Rechnung-Sektion.
+     */
+    private function prefill_bank_from_account() {
+        $bank = (array) get_option('easycheckout_bank', []);
+        $isEmpty = empty($bank['iban']) && empty($bank['holder']) && empty($bank['bankName']);
+        if (!$isEmpty) { return; }
+        $info = $this->account_bank_info();
+        if (empty($info)) { return; }
+        $new = array_merge($bank, [
+            'iban'     => isset($info['iban']) ? sanitize_text_field($info['iban']) : '',
+            'holder'   => isset($info['holder']) ? sanitize_text_field($info['holder']) : '',
+            'bankName' => isset($info['bankName']) ? sanitize_text_field($info['bankName']) : '',
+        ]);
+        if ($new['iban'] || $new['holder'] || $new['bankName']) {
+            update_option('easycheckout_bank', $new, false);
+        }
+    }
+
+    /** Hinweis mit den letzten IBAN-Stellen aus dem Stripe-Onboarding (falls IBAN noch fehlt). */
+    private function output_bank_hint() {
+        $info = $this->account_bank_info();
+        $bank = (array) get_option('easycheckout_bank', []);
+        if (empty($info) || empty($info['ibanLast4']) || !empty($bank['iban'])) { return; }
+        echo '<p class="description" style="margin-top:4px;">'
+            . sprintf(
+                /* translators: 1: Bankname, 2: letzte 4 Stellen der IBAN */
+                esc_html__('Im easyCheckout-Onboarding hinterlegte Bank: %1$s (IBAN endet auf %2$s). Der Zahlungsabwickler gibt aus Sicherheitsgründen nur die letzten Stellen frei — bitte trage oben die vollständige IBAN ein, damit sie auf QR-Rechnungen erscheint.', 'easycheckout'),
+                '<strong>' . esc_html($info['bankName']) . '</strong>',
+                '<strong>••••' . esc_html($info['ibanLast4']) . '</strong>'
+            )
+            . '</p>';
     }
 
     /** Sektions-Navigation als WooCommerce-typische „subsubsub"-Linkleiste. */
