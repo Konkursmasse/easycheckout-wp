@@ -279,10 +279,20 @@ class WC_Settings_Tab {
             $this->save_platform_templates();
         }
 
-        // Primärfarbe in die Gateway-Einstellung spiegeln, damit native Kasse
-        // (--ec-p via Design::color) und Design-Sektion nie auseinanderlaufen.
         if ($current_section === 'design') {
             $design = (array) get_option('easycheckout_design', []);
+
+            // WICHTIG: Den eigenen Feldtyp „easycheckout_media" (Logo) speichert
+            // woocommerce_update_options NICHT automatisch -> hier explizit aus
+            // $_POST übernehmen. Sonst bleibt das Logo trotz Auswahl leer.
+            // phpcs:ignore WordPress.Security.NonceVerification -- WC prüft den Nonce vor woocommerce_update_options_*.
+            if (isset($_POST['easycheckout_design']['logoUrl'])) {
+                $design['logoUrl'] = esc_url_raw(trim((string) wp_unslash($_POST['easycheckout_design']['logoUrl'])));
+                update_option('easycheckout_design', $design);
+            }
+
+            // Primärfarbe in die Gateway-Einstellung spiegeln, damit native Kasse
+            // (--ec-p via Design::color) und Design-Sektion nie auseinanderlaufen.
             if (!empty($design['primary'])) {
                 $s = (array) get_option('woocommerce_easycheckout_settings', []);
                 $s['brand_color'] = $design['primary'];
