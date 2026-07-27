@@ -795,24 +795,46 @@
 			st.tab === 'templates' ? el( EmailTemplates, null ) : el( EmailLogs, null )
 		);
 	}
+	// Alle Vorlagen-Typen — identisch zum WooCommerce-Tab. Gelten fuer ALLE
+	// Bestellungen (WooCommerce wie Standalone). Rechnung/Mahnung nur bei Tarif
+	// mit Rechnungen.
+	var EC_MAIL_TYPES = [
+		{ type: 'confirmation', label: 'Bestellbestätigung an Käufer', vars: '{{customer_name}}, {{order_number}}, {{items}}, {{total}}, {{subtotal}}, {{vat_amount}}, {{company_name}}, {{company_address}}, {{company_email}}, {{date}}' },
+		{ type: 'merchant_order', label: '„Neue Bestellung" an dich', vars: '{{customer_name}}, {{customer_email}}, {{order_number}}, {{items}}, {{total}}, {{company_name}}, {{date}}' },
+		{ type: 'decline', label: 'Zahlung fehlgeschlagen (an Käufer)', vars: '{{customer_name}}, {{order_number}}, {{total}}, {{company_name}}' },
+		{ type: 'refund', label: 'Rückerstattung bestätigt (an Käufer)', vars: '{{customer_name}}, {{order_number}}, {{total}}, {{company_name}}' },
+		{ type: 'invoice', label: 'Rechnung an Käufer', invoiceOnly: true, vars: '{{customer_name}}, {{invoice_number}}, {{invoice_date}}, {{due_date}}, {{total}}, {{invoice_url}}, {{company_name}}, {{company_email}}' },
+		{ type: 'reminder', label: 'Mahnung / Zahlungserinnerung', invoiceOnly: true, vars: '{{customer_name}}, {{invoice_number}}, {{due_date}}, {{total}}, {{invoice_url}}, {{company_name}}' }
+	];
 	function EmailTemplates() {
-		var s = useState( { items: null, error: '', editing: null } );
+		var s = useState( { items: null, error: '', editing: null, canInvoice: null } );
 		var st = s[ 0 ], set = s[ 1 ];
-		function load() { api( 'GET', '/api/emails' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.templates ) || [] } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } ); }
+		function load() {
+			api( 'GET', '/api/emails' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.templates ) || [] } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } );
+			api( 'GET', '/api/auth/me' ).then( function ( b ) { var m = ( b && b.merchant ) || b || {}; set( function ( p ) { return Object.assign( {}, p, { canInvoice: !! ( m.planLimits && m.planLimits.invoices ) } ); } ); } ).catch( function () { set( function ( p ) { return Object.assign( {}, p, { canInvoice: true } ); } ); } );
+		}
 		useEffect( function () { load(); }, [] );
+		function byType( t ) { return ( st.items || [] ).filter( function ( x ) { return x.type === t; } )[ 0 ] || null; }
+		var visible = EC_MAIL_TYPES.filter( function ( d ) { return ! d.invoiceOnly || st.canInvoice; } );
 		return el( 'div', null, ErrorBox( st.error ),
-			st.editing && el( EmailTemplateForm, { tpl: st.editing, onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
-			st.items === null ? Spinner() : el( 'table', { className: 'ec-table' }, el( 'thead', null, el( 'tr', null, el( 'th', null, 'Typ' ), el( 'th', null, 'Betreff' ), el( 'th', null, 'Aktiv' ), el( 'th', null, '' ) ) ),
-				el( 'tbody', null, st.items.map( function ( t ) { return el( 'tr', { key: t.id }, el( 'td', null, el( 'code', null, t.type ) ), el( 'td', null, t.subject ), el( 'td', null, t.isActive === false ? 'Nein' : 'Ja' ), el( 'td', { className: 'ec-row-actions' }, el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { editing: Object.assign( {}, t ) } ) ); } }, 'Bearbeiten' ) ) ); } ) ) ) );
+			el( 'p', { className: 'ec-muted' }, 'Diese Vorlagen gelten für alle Bestellungen — WooCommerce wie Standalone. Du kannst HTML oder reinen Text schreiben, beides funktioniert. Leere Vorlage = Standard.' ),
+			st.editing && el( EmailTemplateForm, { def: st.editing.def, tpl: st.editing.tpl, onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
+			( st.items === null || st.canInvoice === null ) ? Spinner() : el( 'table', { className: 'ec-table' }, el( 'thead', null, el( 'tr', null, el( 'th', null, 'Vorlage' ), el( 'th', null, 'Betreff' ), el( 'th', null, 'Angepasst' ), el( 'th', null, '' ) ) ),
+				el( 'tbody', null, visible.map( function ( d ) {
+					var t = byType( d.type );
+					return el( 'tr', { key: d.type }, el( 'td', null, d.label ), el( 'td', null, t ? t.subject : el( 'span', { className: 'ec-muted' }, 'Standard' ) ), el( 'td', null, t ? 'Ja' : el( 'span', { className: 'ec-muted' }, '—' ) ), el( 'td', { className: 'ec-row-actions' }, el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { editing: { def: d, tpl: t || { type: d.type } } } ) ); } }, 'Bearbeiten' ) ) );
+				} ) ) ),
+			( st.canInvoice === false ) ? el( 'p', { className: 'ec-muted' }, 'Rechnung und Mahnung erscheinen, sobald dein Tarif Rechnungen enthält.' ) : null );
 	}
 	function EmailTemplateForm( props ) {
+		var def = props.def || {};
 		var s = useState( Object.assign( { busy: false, error: '' }, props.tpl ) );
 		var st = s[ 0 ], set = s[ 1 ]; function up( o ) { set( Object.assign( {}, st, { error: '' }, o ) ); }
-		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true } ) ); api( 'POST', '/api/emails', { type: st.type, name: st.name, subject: st.subject, body: st.body, isActive: st.isActive !== false } ).then( function () { props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
-		return el( 'div', { className: 'ec-modal' }, el( 'form', { className: 'ec-modal-card', onSubmit: save }, el( 'h3', null, 'Vorlage: ' + st.type ), ErrorBox( st.error ),
+		function save( e ) { e.preventDefault(); if ( ! ( st.subject && st.body ) ) { up( { error: 'Bitte Betreff und Inhalt ausfüllen.' } ); return; } set( Object.assign( {}, st, { busy: true } ) ); api( 'POST', '/api/emails', { type: st.type, subject: st.subject, body: st.body, isActive: true } ).then( function () { props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
+		return el( 'div', { className: 'ec-modal' }, el( 'form', { className: 'ec-modal-card', onSubmit: save }, el( 'h3', null, def.label || ( 'Vorlage: ' + st.type ) ), ErrorBox( st.error ),
 			Field( 'Betreff', el( 'input', { value: st.subject || '', onChange: function ( e ) { up( { subject: e.target.value } ); } } ) ),
-			Field( 'Inhalt (HTML)', el( 'textarea', { rows: 10, value: st.body || '', onChange: function ( e ) { up( { body: e.target.value } ); } } ) ),
-			el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.isActive !== false, onChange: function ( e ) { up( { isActive: e.target.checked } ); } } ), ' Aktiv' ),
+			Field( 'Inhalt (HTML oder reiner Text)', el( 'textarea', { rows: 10, value: st.body || '', onChange: function ( e ) { up( { body: e.target.value } ); } } ) ),
+			def.vars ? el( 'p', { className: 'ec-muted', style: { fontSize: '12px' } }, 'Platzhalter: ' + def.vars ) : null,
 			el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, 'Speichern' ), el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, 'Abbrechen' ) ) ) );
 	}
 	function EmailLogs() {
