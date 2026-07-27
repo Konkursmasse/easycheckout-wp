@@ -133,6 +133,7 @@ class Native_Dashboard {
         );
 
         wp_localize_script('easycheckout-native', 'ecNative', [
+            'i18n'     => easycheckout_dashboard_i18n(),
             'ajaxUrl'  => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('easycheckout_native'),
             'appUrl'   => $this->api->base_url(),

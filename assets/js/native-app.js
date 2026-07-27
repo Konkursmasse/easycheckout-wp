@@ -1,6 +1,7 @@
 /* global wp, ecNative */
 ( function () {
 	'use strict';
+	function _t(s){try{return (window.ecNative&&ecNative.i18n&&ecNative.i18n[s])||s;}catch(e){return s;}}
 
 	var el = wp.element.createElement;
 	var useState = wp.element.useState;
@@ -26,9 +27,9 @@
 		return post( 'easycheckout_native_proxy', {
 			method: method, path: path, body: payload ? JSON.stringify( payload ) : '',
 		} ).then( function ( j ) {
-			if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || 'Fehler' ); }
+			if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || _t('Fehler') ); }
 			var status = j.data.status, b = j.data.body;
-			if ( status >= 400 ) { throw new Error( ( b && ( b.error || b.message ) ) || ( 'Fehler ' + status ) ); }
+			if ( status >= 400 ) { throw new Error( ( b && ( b.error || b.message ) ) || ( _t('Fehler ') + status ) ); }
 			return b;
 		} );
 	}
@@ -36,7 +37,7 @@
 	// Lokale Checkout-Entwuerfe (ohne Konto). action: 'get' | 'save' | 'delete'
 	function localApi( action, fields ) {
 		return post( 'easycheckout_local_' + action, fields || {} ).then( function ( j ) {
-			if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || 'Fehler' ); }
+			if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || _t('Fehler') ); }
 			return j.data;
 		} );
 	}
@@ -49,7 +50,7 @@
 		fd.append( 'file', file );
 		return fetch( ecNative.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd } )
 			.then( function ( r ) { return r.json(); } )
-			.then( function ( j ) { if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || 'Upload fehlgeschlagen' ); } return j.data; } );
+			.then( function ( j ) { if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || _t('Upload fehlgeschlagen') ); } return j.data; } );
 	}
 
 	// Vorschau der Einbettung auf der EIGENEN Domain (lokal ODER Konto-Checkout).
@@ -62,7 +63,7 @@
 	function publishLocalToAccount( local ) {
 		return api( 'POST', '/api/checkouts', { name: local.name, slug: local.slug } ).then( function ( b ) {
 			var id = b && b.checkout && b.checkout.id;
-			if ( ! id ) { throw new Error( 'Erstellen fehlgeschlagen (Slug evtl. bereits vergeben)' ); }
+			if ( ! id ) { throw new Error( _t('Erstellen fehlgeschlagen (Slug evtl. bereits vergeben)') ); }
 			return ( local.products || [] ).reduce( function ( ch, p ) {
 				return ch.then( function () {
 					return api( 'POST', '/api/checkouts/' + id + '/products', { name: p.name, description: p.description || '', price: p.price || 0 } ).then( function ( pr ) {
@@ -106,9 +107,9 @@
 		return fetch( ecNative.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd } )
 			.then( function ( r ) { return r.json(); } )
 			.then( function ( j ) {
-				if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || 'Upload fehlgeschlagen' ); }
+				if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || _t('Upload fehlgeschlagen') ); }
 				var b = j.data.body;
-				if ( j.data.status >= 400 ) { throw new Error( ( b && ( b.error || b.message ) ) || 'Fehler' ); }
+				if ( j.data.status >= 400 ) { throw new Error( ( b && ( b.error || b.message ) ) || _t('Fehler') ); }
 				return b;
 			} );
 	}
@@ -140,7 +141,7 @@
 			if ( st.mode === 'login' ) {
 				post( 'easycheckout_native_login', { email: st.email, password: st.password } ).then( function ( j ) {
 					if ( j.success ) { props.onAuthed( j.data.merchant || {} ); }
-					else { set( Object.assign( {}, st, { busy: false, error: ( j.data && j.data.message ) || 'Anmeldung fehlgeschlagen' } ) ); }
+					else { set( Object.assign( {}, st, { busy: false, error: ( j.data && j.data.message ) || _t('Anmeldung fehlgeschlagen') } ) ); }
 				} );
 			} else {
 				post( 'easycheckout_native_register', { data: JSON.stringify( { email: st.email, password: st.password, companyName: st.companyName, plan: 'free' } ) } ).then( function ( j ) {
@@ -152,21 +153,21 @@
 							else { props.onAuthed( j.data.merchant || {} ); }
 						} ).catch( function () { props.onAuthed( j.data.merchant || {} ); } );
 					}
-					else { set( Object.assign( {}, st, { busy: false, error: ( j.data && j.data.message ) || 'Registrierung fehlgeschlagen' } ) ); }
+					else { set( Object.assign( {}, st, { busy: false, error: ( j.data && j.data.message ) || _t('Registrierung fehlgeschlagen') } ) ); }
 				} );
 			}
 		}
 		return el( 'div', { className: 'ec-auth' }, el( 'div', { className: 'ec-auth-card' },
-			el( 'h1', { className: 'ec-auth-title' }, st.mode === 'login' ? 'Willkommen zurück' : 'Konto erstellen' ),
-			el( 'p', { className: 'ec-auth-sub' }, st.mode === 'login' ? 'Melde dich bei deinem EasyCheckout-Konto an' : 'Registriere dich für EasyCheckout' ),
+			el( 'h1', { className: 'ec-auth-title' }, st.mode === 'login' ? 'Willkommen zurück' : _t('Konto erstellen') ),
+			el( 'p', { className: 'ec-auth-sub' }, st.mode === 'login' ? 'Melde dich bei deinem EasyCheckout-Konto an' : _t('Registriere dich für EasyCheckout') ),
 			ErrorBox( st.error ),
 			el( 'form', { onSubmit: submit },
-				st.mode === 'register' && Field( 'Firma', el( 'input', { type: 'text', value: st.companyName, onChange: function ( e ) { up( { companyName: e.target.value } ); } } ) ),
-				Field( 'E-Mail-Adresse', el( 'input', { type: 'email', required: true, value: st.email, onChange: function ( e ) { up( { email: e.target.value } ); } } ) ),
-				Field( 'Passwort', el( 'input', { type: 'password', required: true, value: st.password, onChange: function ( e ) { up( { password: e.target.value } ); } } ) ),
-				el( 'button', { type: 'submit', className: 'ec-btn ec-btn-primary ec-btn-block', disabled: st.busy }, st.busy ? 'Bitte warten…' : ( st.mode === 'login' ? 'Anmelden' : 'Registrieren' ) )
+				st.mode === 'register' && Field( _t('Firma'), el( 'input', { type: 'text', value: st.companyName, onChange: function ( e ) { up( { companyName: e.target.value } ); } } ) ),
+				Field( _t('E-Mail-Adresse'), el( 'input', { type: 'email', required: true, value: st.email, onChange: function ( e ) { up( { email: e.target.value } ); } } ) ),
+				Field( _t('Passwort'), el( 'input', { type: 'password', required: true, value: st.password, onChange: function ( e ) { up( { password: e.target.value } ); } } ) ),
+				el( 'button', { type: 'submit', className: 'ec-btn ec-btn-primary ec-btn-block', disabled: st.busy }, st.busy ? 'Bitte warten…' : ( st.mode === 'login' ? 'Anmelden' : _t('Registrieren') ) )
 			),
-			el( 'p', { className: 'ec-auth-switch' }, st.mode === 'login' ? 'Noch kein Konto? ' : 'Schon ein Konto? ',
+			el( 'p', { className: 'ec-auth-switch' }, st.mode === 'login' ? 'Noch kein Konto? ' : _t('Schon ein Konto? '),
 				el( 'a', { href: '#', onClick: function ( e ) { e.preventDefault(); set( Object.assign( {}, st, { mode: st.mode === 'login' ? 'register' : 'login', error: '' } ) ); } }, st.mode === 'login' ? 'Kostenlos registrieren' : 'Anmelden' ) )
 		) );
 	}
@@ -176,20 +177,20 @@
 	// Produktarten (bei der Checkout-Erstellung gewaehlt) -> steuern, welche Felder
 	// der Produkt-Editor zeigt.
 	var PRODUCT_TYPES = [
-		[ 'physical', 'Physische Produkte (Versand)' ],
-		[ 'food', 'Gastro / Speisen' ],
-		[ 'tickets', 'Tickets / Events' ],
-		[ 'digital', 'Digital / Dienstleistung' ],
+		[ 'physical', _t('Physische Produkte (Versand)') ],
+		[ 'food', _t('Gastro / Speisen') ],
+		[ 'tickets', _t('Tickets / Events') ],
+		[ 'digital', _t('Digital / Dienstleistung') ],
 	];
 	function ptFields( type ) {
 		switch ( type ) {
-			case 'food':    return { options: true,  optionsLabel: 'Optionen (z. B. Extras, Beilagen)', delivery: true,  fields: true, limits: false };
+			case 'food':    return { options: true,  optionsLabel: _t('Optionen (z. B. Extras, Beilagen)'), delivery: true,  fields: true, limits: false };
 			case 'tickets': return { options: false, optionsLabel: '', delivery: false, fields: true, limits: true };
 			case 'digital': return { options: false, optionsLabel: '', delivery: false, fields: false, limits: false };
-			default:        return { options: true,  optionsLabel: 'Varianten (z. B. Grösse, Farbe)', delivery: true,  fields: true, limits: true }; // physical
+			default:        return { options: true,  optionsLabel: _t('Varianten (z. B. Grösse, Farbe)'), delivery: true,  fields: true, limits: true }; // physical
 		}
 	}
-	function ptLabel( type ) { var f = PRODUCT_TYPES.filter( function ( p ) { return p[ 0 ] === type; } )[ 0 ]; return f ? f[ 1 ] : 'Physische Produkte (Versand)'; }
+	function ptLabel( type ) { var f = PRODUCT_TYPES.filter( function ( p ) { return p[ 0 ] === type; } )[ 0 ]; return f ? f[ 1 ] : _t('Physische Produkte (Versand)'); }
 
 	function CheckoutsList( props ) {
 		var s = useState( { items: null, error: '', creating: false, name: '', slug: '', productType: 'physical', busy: false, limit: null, atLimit: false, plan: '' } );
@@ -208,47 +209,47 @@
 			} ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
 		}
 		function del( c ) {
-			if ( ! window.confirm( 'Checkout „' + ( c.name || c.slug ) + '" wirklich löschen?' ) ) { return; }
+			if ( ! window.confirm( _t('Checkout „') + ( c.name || c.slug ) + _t('" wirklich löschen?') ) ) { return; }
 			api( 'DELETE', '/api/checkouts/' + c.id ).then( load ).catch( function ( err ) { window.alert( err.message ); } );
 		}
 		return el( 'div', null,
-			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Checkouts' ),
-				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.atLimit, title: st.atLimit ? 'Checkout-Limit deines Plans erreicht' : '', onClick: function () { if ( ! st.atLimit ) { set( Object.assign( {}, st, { creating: true } ) ); } } }, '+ Neuer Checkout' ) ),
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Checkouts') ),
+				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.atLimit, title: st.atLimit ? 'Checkout-Limit deines Plans erreicht' : '', onClick: function () { if ( ! st.atLimit ) { set( Object.assign( {}, st, { creating: true } ) ); } } }, _t('+ Neuer Checkout') ) ),
 			st.limit != null && el( 'p', { className: 'ec-muted ec-sm', style: { marginTop: '-6px', marginBottom: '10px' } },
-				( st.items ? st.items.length : 0 ) + ' / ' + st.limit + ' Checkouts' + ( st.plan ? ' · Plan: ' + st.plan : '' ),
-				st.atLimit ? el( 'span', null, ' — Limit erreicht. Für weitere Checkouts bitte ', el( 'a', { href: '#', onClick: function ( e ) { e.preventDefault(); props.navigate( 'billing' ); } }, 'Tarif upgraden' ), '.' ) : null ),
+				( st.items ? st.items.length : 0 ) + ' / ' + st.limit + _t(' Checkouts') + ( st.plan ? ' · Plan: ' + st.plan : '' ),
+				st.atLimit ? el( 'span', null, _t(' — Limit erreicht. Für weitere Checkouts bitte '), el( 'a', { href: '#', onClick: function ( e ) { e.preventDefault(); props.navigate( 'billing' ); } }, _t('Tarif upgraden') ), '.' ) : null ),
 			ErrorBox( st.error ),
 			st.creating && el( 'div', { className: 'ec-card', style: { marginBottom: '14px' } },
 				el( 'form', { onSubmit: create },
 					el( 'div', { className: 'ec-two' },
-						Field( 'Name', el( 'input', { placeholder: 'z. B. Mein Shop', required: true, value: st.name, onChange: function ( e ) { set( Object.assign( {}, st, { name: e.target.value } ) ); } } ) ),
-						Field( 'Slug', el( 'input', { placeholder: 'z. B. mein-shop', required: true, value: st.slug, onChange: function ( e ) { set( Object.assign( {}, st, { slug: e.target.value } ) ); } } ) )
+						Field( _t('Name'), el( 'input', { placeholder: _t('z. B. Mein Shop'), required: true, value: st.name, onChange: function ( e ) { set( Object.assign( {}, st, { name: e.target.value } ) ); } } ) ),
+						Field( _t('Slug'), el( 'input', { placeholder: _t('z. B. mein-shop'), required: true, value: st.slug, onChange: function ( e ) { set( Object.assign( {}, st, { slug: e.target.value } ) ); } } ) )
 					),
-					Field( 'Was verkaufst du?', el( 'select', { value: st.productType, onChange: function ( e ) { set( Object.assign( {}, st, { productType: e.target.value } ) ); } },
+					Field( _t('Was verkaufst du?'), el( 'select', { value: st.productType, onChange: function ( e ) { set( Object.assign( {}, st, { productType: e.target.value } ) ); } },
 						PRODUCT_TYPES.map( function ( p ) { return el( 'option', { key: p[ 0 ], value: p[ 0 ] }, p[ 1 ] ); } )
-					), 'Bestimmt, welche Felder der Produkt-Editor zeigt (z. B. Grössen nur bei physischen Produkten).' ),
+					), _t('Bestimmt, welche Felder der Produkt-Editor zeigt (z. B. Grössen nur bei physischen Produkten).') ),
 					el( 'div', { className: 'ec-form-actions' },
-						el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : 'Erstellen' ),
-						el( 'button', { type: 'button', className: 'ec-btn', onClick: function () { set( Object.assign( {}, st, { creating: false } ) ); } }, 'Abbrechen' ) )
+						el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : _t('Erstellen') ),
+						el( 'button', { type: 'button', className: 'ec-btn', onClick: function () { set( Object.assign( {}, st, { creating: false } ) ); } }, _t('Abbrechen') ) )
 				) ),
-			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Checkouts.' ) :
+			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, _t('Noch keine Checkouts.') ) :
 				el( 'table', { className: 'ec-table' },
-					el( 'thead', null, el( 'tr', null, el( 'th', null, 'Name' ), el( 'th', null, 'Slug' ), el( 'th', null, 'Produkte' ), el( 'th', null, 'Bestellungen' ), el( 'th', null, 'Status' ), el( 'th', null, '' ) ) ),
+					el( 'thead', null, el( 'tr', null, el( 'th', null, _t('Name') ), el( 'th', null, _t('Slug') ), el( 'th', null, _t('Produkte') ), el( 'th', null, _t('Bestellungen') ), el( 'th', null, _t('Status') ), el( 'th', null, '' ) ) ),
 					el( 'tbody', null, st.items.map( function ( c ) {
 						return el( 'tr', { key: c.id },
 							el( 'td', null, el( 'a', { href: '#', onClick: function ( e ) { e.preventDefault(); props.navigate( 'checkout', { id: c.id } ); } }, el( 'strong', null, c.name || '—' ) ) ),
 							el( 'td', null, el( 'code', null, c.slug || '' ) ),
 							el( 'td', null, ( c._count && c._count.products != null ) ? c._count.products : '—' ),
 							el( 'td', null, ( c._count && c._count.orders != null ) ? c._count.orders : '—' ),
-							el( 'td', null, c.isActive === false ? el( 'span', { className: 'ec-badge ec-badge-off' }, 'Inaktiv' ) : el( 'span', { className: 'ec-badge ec-badge-on' }, 'Aktiv' ) ),
+							el( 'td', null, c.isActive === false ? el( 'span', { className: 'ec-badge ec-badge-off' }, _t('Inaktiv') ) : el( 'span', { className: 'ec-badge ec-badge-on' }, 'Aktiv' ) ),
 							el( 'td', { className: 'ec-row-actions' },
-								el( 'a', { className: 'ec-btn ec-btn-sm', href: previewUrl( c.slug ), target: '_blank', rel: 'noopener' }, 'Ansehen' ),
+								el( 'a', { className: 'ec-btn ec-btn-sm', href: previewUrl( c.slug ), target: '_blank', rel: 'noopener' }, _t('Ansehen') ),
 								' ',
-								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { props.navigate( 'products', { id: c.id, name: c.name } ); } }, 'Produkte' ),
+								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { props.navigate( 'products', { id: c.id, name: c.name } ); } }, _t('Produkte') ),
 								' ',
-								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { props.navigate( 'checkout', { id: c.id } ); } }, 'Bearbeiten' ),
+								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { props.navigate( 'checkout', { id: c.id } ); } }, _t('Bearbeiten') ),
 								' ',
-								el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { del( c ); } }, 'Löschen' ) )
+								el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { del( c ); } }, _t('Löschen') ) )
 						);
 					} ) )
 				)
@@ -257,7 +258,7 @@
 
 	// --- Checkout editor ----------------------------------------------------
 
-	var PAYMENT_METHODS = [ [ 'card', 'Karte' ], [ 'twint', 'TWINT' ], [ 'klarna', 'Klarna' ], [ 'sepa_debit', 'SEPA' ], [ 'bancontact', 'Bancontact' ], [ 'eps', 'EPS' ], [ 'giropay', 'giropay' ], [ 'ideal', 'iDEAL' ], [ 'p24', 'Przelewy24' ] ];
+	var PAYMENT_METHODS = [ [ 'card', _t('Karte') ], [ 'twint', 'TWINT' ], [ 'klarna', 'Klarna' ], [ 'sepa_debit', 'SEPA' ], [ 'bancontact', 'Bancontact' ], [ 'eps', 'EPS' ], [ 'giropay', 'giropay' ], [ 'ideal', 'iDEAL' ], [ 'p24', 'Przelewy24' ] ];
 
 	function CheckoutEditor( props ) {
 		var s = useState( { c: null, error: '', saving: false, saved: false } );
@@ -288,55 +289,55 @@
 				.catch( function ( err ) { set( Object.assign( {}, st, { saving: false, error: err.message } ) ); } );
 		}
 
-		if ( st.error && ! st.c ) { return el( 'div', null, backHead( props, 'Checkout' ), ErrorBox( st.error ) ); }
-		if ( ! st.c ) { return el( 'div', null, backHead( props, 'Checkout' ), Spinner() ); }
+		if ( st.error && ! st.c ) { return el( 'div', null, backHead( props, _t('Checkout') ), ErrorBox( st.error ) ); }
+		if ( ! st.c ) { return el( 'div', null, backHead( props, _t('Checkout') ), Spinner() ); }
 		var c = st.c;
 		return el( 'div', null,
-			backHead( props, 'Checkout bearbeiten', el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { props.navigate( 'products', { id: props.id, name: c.name } ); } }, 'Produkte verwalten' ) ),
-			ErrorBox( st.error ), st.saved && el( 'div', { className: 'ec-alert' }, 'Gespeichert.' ),
+			backHead( props, _t('Checkout bearbeiten'), el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { props.navigate( 'products', { id: props.id, name: c.name } ); } }, _t('Produkte verwalten') ) ),
+			ErrorBox( st.error ), st.saved && el( 'div', { className: 'ec-alert' }, _t('Gespeichert.') ),
 			el( 'form', { onSubmit: save, className: 'ec-form-grid' },
 				el( 'div', { className: 'ec-card' },
-					el( 'h3', null, 'Allgemein' ),
-					Field( 'Name', el( 'input', { value: c.name || '', onChange: function ( e ) { upd( { name: e.target.value } ); } } ) ),
-					Field( 'Slug', el( 'input', { value: c.slug || '', onChange: function ( e ) { upd( { slug: e.target.value } ); } } ) ),
-					Field( 'Beschreibung', el( 'textarea', { rows: 2, value: c.description || '', onChange: function ( e ) { upd( { description: e.target.value } ); } } ) ),
-					Field( 'Währung', el( 'select', { value: c.currency || 'CHF', onChange: function ( e ) { upd( { currency: e.target.value } ); } }, [ 'CHF', 'EUR', 'USD' ].map( function ( x ) { return el( 'option', { key: x, value: x }, x ); } ) ) ),
-					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: c.isActive !== false, onChange: function ( e ) { upd( { isActive: e.target.checked } ); } } ), ' Aktiv' )
+					el( 'h3', null, _t('Allgemein') ),
+					Field( _t('Name'), el( 'input', { value: c.name || '', onChange: function ( e ) { upd( { name: e.target.value } ); } } ) ),
+					Field( _t('Slug'), el( 'input', { value: c.slug || '', onChange: function ( e ) { upd( { slug: e.target.value } ); } } ) ),
+					Field( _t('Beschreibung'), el( 'textarea', { rows: 2, value: c.description || '', onChange: function ( e ) { upd( { description: e.target.value } ); } } ) ),
+					Field( _t('Währung'), el( 'select', { value: c.currency || 'CHF', onChange: function ( e ) { upd( { currency: e.target.value } ); } }, [ 'CHF', 'EUR', 'USD' ].map( function ( x ) { return el( 'option', { key: x, value: x }, x ); } ) ) ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: c.isActive !== false, onChange: function ( e ) { upd( { isActive: e.target.checked } ); } } ), _t(' Aktiv') )
 				),
 				el( 'div', { className: 'ec-card' },
-					el( 'h3', null, 'MwSt' ),
-					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! c.vatEnabled, onChange: function ( e ) { upd( { vatEnabled: e.target.checked } ); } } ), ' MwSt-pflichtig' ),
-					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: c.vatInclusive !== false, onChange: function ( e ) { upd( { vatInclusive: e.target.checked } ); } } ), ' Preise inkl. MwSt' ),
-					Field( 'Standard-MwSt-Satz (%)', el( 'input', { type: 'number', step: '0.1', value: c.vatRate != null ? c.vatRate : '', onChange: function ( e ) { upd( { vatRate: e.target.value } ); } } ), 'Gilt für Produkte ohne eigenen Satz. Abweichende Sätze setzt du direkt beim Produkt (z. B. 8.1 Standard, 2.6 Lebensmittel).' )
+					el( 'h3', null, _t('MwSt') ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! c.vatEnabled, onChange: function ( e ) { upd( { vatEnabled: e.target.checked } ); } } ), _t(' MwSt-pflichtig') ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: c.vatInclusive !== false, onChange: function ( e ) { upd( { vatInclusive: e.target.checked } ); } } ), _t(' Preise inkl. MwSt') ),
+					Field( _t('Standard-MwSt-Satz (%)'), el( 'input', { type: 'number', step: '0.1', value: c.vatRate != null ? c.vatRate : '', onChange: function ( e ) { upd( { vatRate: e.target.value } ); } } ), _t('Gilt für Produkte ohne eigenen Satz. Abweichende Sätze setzt du direkt beim Produkt (z. B. 8.1 Standard, 2.6 Lebensmittel).') )
 				),
 				el( 'div', { className: 'ec-card' },
-					el( 'h3', null, 'Lieferung / Abholung' ),
-					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: c.pickupEnabled !== false, onChange: function ( e ) { upd( { pickupEnabled: e.target.checked } ); } } ), ' Abholung anbieten' ),
-					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! c.deliveryEnabled, onChange: function ( e ) { upd( { deliveryEnabled: e.target.checked } ); } } ), ' Lieferung anbieten' ),
-					el( 'p', { className: 'ec-hint' }, 'Bei aktiver Lieferung fragt der Checkout eine Lieferadresse ab (mit Option „gleich wie Rechnungsadresse"). Liefer-/Abholpreise setzt du je Produkt.' )
+					el( 'h3', null, _t('Lieferung / Abholung') ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: c.pickupEnabled !== false, onChange: function ( e ) { upd( { pickupEnabled: e.target.checked } ); } } ), _t(' Abholung anbieten') ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! c.deliveryEnabled, onChange: function ( e ) { upd( { deliveryEnabled: e.target.checked } ); } } ), _t(' Lieferung anbieten') ),
+					el( 'p', { className: 'ec-hint' }, _t('Bei aktiver Lieferung fragt der Checkout eine Lieferadresse ab (mit Option „gleich wie Rechnungsadresse"). Liefer-/Abholpreise setzt du je Produkt.') )
 				),
 				el( 'div', { className: 'ec-card' },
-					el( 'h3', null, 'Zahlungsarten' ),
+					el( 'h3', null, _t('Zahlungsarten') ),
 					el( 'div', { className: 'ec-checks' }, PAYMENT_METHODS.map( function ( m ) {
 						return el( 'label', { key: m[ 0 ], className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: c.paymentMethods.indexOf( m[ 0 ] ) >= 0, onChange: function () { togglePm( m[ 0 ] ); } } ), ' ' + m[ 1 ] );
 					} ) ),
-					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! c.qrPaymentEnabled, onChange: function ( e ) { upd( { qrPaymentEnabled: e.target.checked } ); } } ), ' QR-Rechnung' )
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! c.qrPaymentEnabled, onChange: function ( e ) { upd( { qrPaymentEnabled: e.target.checked } ); } } ), _t(' QR-Rechnung') )
 				),
 				el( 'div', { className: 'ec-card' },
-					el( 'h3', null, 'Design' ),
-					colorField( 'Akzentfarbe', c.design.primaryColor || '#4F46E5', function ( v ) { updDesign( { primaryColor: v } ); } ),
-					colorField( 'Button-Farbe', c.design.buttonColor || c.design.primaryColor || '#4F46E5', function ( v ) { updDesign( { buttonColor: v } ); } ),
-					colorField( 'Button-Text', c.design.buttonTextColor || '#FFFFFF', function ( v ) { updDesign( { buttonTextColor: v } ); } ),
-					colorField( 'Textfarbe', c.design.textColor || '#111827', function ( v ) { updDesign( { textColor: v } ); } ),
-					colorField( 'Hintergrund', c.design.backgroundColor || '#F9FAFB', function ( v ) { updDesign( { backgroundColor: v } ); } ),
+					el( 'h3', null, _t('Design') ),
+					colorField( _t('Akzentfarbe'), c.design.primaryColor || '#4F46E5', function ( v ) { updDesign( { primaryColor: v } ); } ),
+					colorField( _t('Button-Farbe'), c.design.buttonColor || c.design.primaryColor || '#4F46E5', function ( v ) { updDesign( { buttonColor: v } ); } ),
+					colorField( _t('Button-Text'), c.design.buttonTextColor || '#FFFFFF', function ( v ) { updDesign( { buttonTextColor: v } ); } ),
+					colorField( _t('Textfarbe'), c.design.textColor || '#111827', function ( v ) { updDesign( { textColor: v } ); } ),
+					colorField( _t('Hintergrund'), c.design.backgroundColor || '#F9FAFB', function ( v ) { updDesign( { backgroundColor: v } ); } ),
 					Field( 'Eckenradius (px)', el( 'input', { type: 'number', min: 0, max: 40, value: c.design.borderRadius != null ? c.design.borderRadius : 12, onChange: function ( e ) { updDesign( { borderRadius: parseInt( e.target.value, 10 ) || 0 } ); } } ) )
 				),
 				el( 'div', { className: 'ec-card' },
-					el( 'h3', null, 'Weiterleitungen' ),
-					Field( 'Erfolgs-URL', el( 'input', { type: 'url', value: c.successUrl || '', onChange: function ( e ) { upd( { successUrl: e.target.value } ); } } ) ),
-					Field( 'Abbruch-URL', el( 'input', { type: 'url', value: c.cancelUrl || '', onChange: function ( e ) { upd( { cancelUrl: e.target.value } ); } } ) )
+					el( 'h3', null, _t('Weiterleitungen') ),
+					Field( _t('Erfolgs-URL'), el( 'input', { type: 'url', value: c.successUrl || '', onChange: function ( e ) { upd( { successUrl: e.target.value } ); } } ) ),
+					Field( _t('Abbruch-URL'), el( 'input', { type: 'url', value: c.cancelUrl || '', onChange: function ( e ) { upd( { cancelUrl: e.target.value } ); } } ) )
 				),
-				el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.saving }, st.saving ? 'Speichert…' : 'Speichern' ) )
+				el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.saving }, st.saving ? 'Speichert…' : _t('Speichern') ) )
 			)
 		);
 	}
@@ -352,7 +353,7 @@
 	function backHead( props, title, extra ) {
 		return el( 'div', { className: 'ec-page-head' },
 			el( 'div', { className: 'ec-head-left' },
-				el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { props.navigate( 'checkouts' ); } }, '← Zurück' ),
+				el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { props.navigate( 'checkouts' ); } }, _t('← Zurück') ),
 				el( 'h2', null, title ) ),
 			extra || null );
 	}
@@ -374,26 +375,26 @@
 			} ).catch( function () {} );
 		}, [ props.id ] );
 		useEffect( function () { load(); }, [ props.id ] );
-		function del( p ) { if ( ! window.confirm( 'Produkt löschen?' ) ) { return; } api( 'DELETE', '/api/products/' + p.id ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
+		function del( p ) { if ( ! window.confirm( _t('Produkt löschen?') ) ) { return; } api( 'DELETE', '/api/products/' + p.id ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
 		function emptyProduct() { return { name: '', description: '', price: '', imageUrl: '', isActive: true, maxPerCustomer: '', maxTotal: '' }; }
 
 		return el( 'div', null,
-			backHead( props, 'Produkte' + ( props.name ? ' · ' + props.name : '' ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { editing: emptyProduct() } ) ); } }, '+ Neues Produkt' ) ),
+			backHead( props, _t('Produkte') + ( props.name ? ' · ' + props.name : '' ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { editing: emptyProduct() } ) ); } }, _t('+ Neues Produkt') ) ),
 			el( 'p', { className: 'ec-muted ec-sm', style: { marginTop: '-6px', marginBottom: '10px' } }, 'Produktart: ', el( 'strong', null, ptLabel( st.productType ) ) ),
 			ErrorBox( st.error ),
 			st.editing && el( ProductForm, { checkoutId: props.id, productType: st.productType, vatEnabled: st.vatEnabled, defaultVatRate: st.vatRate, product: st.editing, onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
-			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Produkte.' ) :
+			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, _t('Noch keine Produkte.') ) :
 				el( 'table', { className: 'ec-table' },
-					el( 'thead', null, el( 'tr', null, el( 'th', null, '' ), el( 'th', null, 'Name' ), el( 'th', null, 'Preis' ), el( 'th', null, 'Status' ), el( 'th', null, '' ) ) ),
+					el( 'thead', null, el( 'tr', null, el( 'th', null, '' ), el( 'th', null, _t('Name') ), el( 'th', null, _t('Preis') ), el( 'th', null, _t('Status') ), el( 'th', null, '' ) ) ),
 					el( 'tbody', null, st.items.map( function ( p ) {
 						return el( 'tr', { key: p.id },
 							el( 'td', null, p.imageUrl ? el( 'img', { src: p.imageUrl, className: 'ec-thumb' } ) : el( 'span', { className: 'ec-thumb ec-thumb-empty' } ) ),
 							el( 'td', null, el( 'strong', null, p.name ), p.description && el( 'div', { className: 'ec-muted ec-sm' }, p.description ) ),
 							el( 'td', null, fmtMoney( p.price ) ),
-							el( 'td', null, p.isActive === false ? el( 'span', { className: 'ec-badge ec-badge-off' }, 'Inaktiv' ) : el( 'span', { className: 'ec-badge ec-badge-on' }, 'Aktiv' ) ),
+							el( 'td', null, p.isActive === false ? el( 'span', { className: 'ec-badge ec-badge-off' }, _t('Inaktiv') ) : el( 'span', { className: 'ec-badge ec-badge-on' }, 'Aktiv' ) ),
 							el( 'td', { className: 'ec-row-actions' },
-								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { editing: Object.assign( {}, p ) } ) ); } }, 'Bearbeiten' ), ' ',
-								el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { del( p ); } }, 'Löschen' ) )
+								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { editing: Object.assign( {}, p ) } ) ); } }, _t('Bearbeiten') ), ' ',
+								el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { del( p ); } }, _t('Löschen') ) )
 						);
 					} ) )
 				)
@@ -416,7 +417,7 @@
 		} );
 		var st = s[ 0 ], set = s[ 1 ];
 		function up( o ) { set( Object.assign( {}, st, { error: '' }, o ) ); }
-		function pickImage( e ) { var f = e.target.files[ 0 ]; if ( ! f ) { return; } if ( f.size > 2 * 1024 * 1024 ) { up( { error: 'Bild max. 2 MB' } ); return; } fileToDataUrl( f ).then( function ( d ) { up( { imageUrl: d } ); } ); }
+		function pickImage( e ) { var f = e.target.files[ 0 ]; if ( ! f ) { return; } if ( f.size > 2 * 1024 * 1024 ) { up( { error: _t('Bild max. 2 MB') } ); return; } fileToDataUrl( f ).then( function ( d ) { up( { imageUrl: d } ); } ); }
 		// Optionsgruppen
 		function addGroup() { up( { optionGroups: st.optionGroups.concat( [ { name: '', options: [ { label: '', priceModifier: 0 } ] } ] ) } ); }
 		function delGroup( gi ) { var g = st.optionGroups.slice(); g.splice( gi, 1 ); up( { optionGroups: g } ); }
@@ -434,7 +435,7 @@
 
 		function save( e ) {
 			e.preventDefault();
-			if ( ! String( st.name ).trim() ) { up( { error: 'Bitte einen Namen angeben.' } ); return; }
+			if ( ! String( st.name ).trim() ) { up( { error: _t('Bitte einen Namen angeben.') } ); return; }
 			set( Object.assign( {}, st, { busy: true, error: '' } ) );
 			var payload = { name: st.name, description: st.description, price: parseFloat( st.price ) || 0, imageUrl: st.imageUrl || '', isActive: st.isActive !== false };
 			if ( props.vatEnabled ) { payload.vatRate = st.vatRate === '' ? null : ( parseFloat( st.vatRate ) || 0 ); }
@@ -465,23 +466,23 @@
 		}
 
 		return el( 'div', { className: 'ec-modal' }, el( 'form', { className: 'ec-modal-card ec-modal-lg', onSubmit: save },
-			el( 'h3', null, ( st.id ? 'Produkt bearbeiten' : 'Neues Produkt' ) + ' · ' + ptLabel( props.productType ) ),
+			el( 'h3', null, ( st.id ? 'Produkt bearbeiten' : _t('Neues Produkt') ) + ' · ' + ptLabel( props.productType ) ),
 			ErrorBox( st.error ),
 			el( 'div', { className: 'ec-two' },
-				Field( 'Name', el( 'input', { required: true, value: st.name || '', onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
-				Field( 'Preis', el( 'input', { type: 'number', step: '0.01', required: true, value: st.price, onChange: function ( e ) { up( { price: e.target.value } ); } } ) ) ),
-			Field( 'Beschreibung', el( 'textarea', { rows: 2, value: st.description || '', onChange: function ( e ) { up( { description: e.target.value } ); } } ) ),
-			Field( 'Bild', el( 'div', null, st.imageUrl && el( 'img', { src: st.imageUrl, className: 'ec-thumb-lg' } ), el( 'input', { type: 'file', accept: 'image/*', onChange: pickImage } ) ) ),
+				Field( _t('Name'), el( 'input', { required: true, value: st.name || '', onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
+				Field( _t('Preis'), el( 'input', { type: 'number', step: '0.01', required: true, value: st.price, onChange: function ( e ) { up( { price: e.target.value } ); } } ) ) ),
+			Field( _t('Beschreibung'), el( 'textarea', { rows: 2, value: st.description || '', onChange: function ( e ) { up( { description: e.target.value } ); } } ) ),
+			Field( _t('Bild'), el( 'div', null, st.imageUrl && el( 'img', { src: st.imageUrl, className: 'ec-thumb-lg' } ), el( 'input', { type: 'file', accept: 'image/*', onChange: pickImage } ) ) ),
 			// MwSt-Satz je Produkt (nur wenn der Checkout MwSt-pflichtig ist)
-			props.vatEnabled ? Field( 'MwSt-Satz (%)', el( 'input', { type: 'number', step: '0.1', min: 0, placeholder: ( props.defaultVatRate != null && props.defaultVatRate !== '' ? String( props.defaultVatRate ) + ' (Standard)' : 'Standard' ), value: st.vatRate, onChange: function ( e ) { up( { vatRate: e.target.value } ); } } ), 'Leer = Standard-Satz des Checkouts. Für Produkte mit abweichendem Satz hier setzen (z. B. 2.6).' ) : null,
+			props.vatEnabled ? Field( _t('MwSt-Satz (%)'), el( 'input', { type: 'number', step: '0.1', min: 0, placeholder: ( props.defaultVatRate != null && props.defaultVatRate !== '' ? String( props.defaultVatRate ) + ' (Standard)' : _t('Standard') ), value: st.vatRate, onChange: function ( e ) { up( { vatRate: e.target.value } ); } } ), _t('Leer = Standard-Satz des Checkouts. Für Produkte mit abweichendem Satz hier setzen (z. B. 2.6).') ) : null,
 			// Liefer-/Abholpreise (physisch/gastro)
 			f0.delivery ? el( 'div', null,
-				el( 'h4', { className: 'ec-sub-h' }, 'Liefer-/Abholpreise (optional)' ),
-				el( 'p', { className: 'ec-hint' }, 'Leer = Standardpreis. Liefergebühr wird einmal pro Position berechnet.' ),
+				el( 'h4', { className: 'ec-sub-h' }, _t('Liefer-/Abholpreise (optional)') ),
+				el( 'p', { className: 'ec-hint' }, _t('Leer = Standardpreis. Liefergebühr wird einmal pro Position berechnet.') ),
 				el( 'div', { className: 'ec-three' },
-					Field( 'Abholpreis', el( 'input', { type: 'number', step: '0.05', placeholder: 'Standard', value: st.pickupPrice, onChange: function ( e ) { up( { pickupPrice: e.target.value } ); } } ) ),
-					Field( 'Lieferpreis', el( 'input', { type: 'number', step: '0.05', placeholder: 'Standard', value: st.deliveryPrice, onChange: function ( e ) { up( { deliveryPrice: e.target.value } ); } } ) ),
-					Field( 'Liefergebühr', el( 'input', { type: 'number', step: '0.05', placeholder: '0.00', value: st.deliveryFee, onChange: function ( e ) { up( { deliveryFee: e.target.value } ); } } ) ) )
+					Field( _t('Abholpreis'), el( 'input', { type: 'number', step: '0.05', placeholder: _t('Standard'), value: st.pickupPrice, onChange: function ( e ) { up( { pickupPrice: e.target.value } ); } } ) ),
+					Field( _t('Lieferpreis'), el( 'input', { type: 'number', step: '0.05', placeholder: _t('Standard'), value: st.deliveryPrice, onChange: function ( e ) { up( { deliveryPrice: e.target.value } ); } } ) ),
+					Field( _t('Liefergebühr'), el( 'input', { type: 'number', step: '0.05', placeholder: '0.00', value: st.deliveryFee, onChange: function ( e ) { up( { deliveryFee: e.target.value } ); } } ) ) )
 			) : null,
 			// Optionen / Varianten (physisch/gastro)
 			f0.options ? el( 'div', null,
@@ -489,47 +490,47 @@
 				st.optionGroups.map( function ( g, gi ) {
 					return el( 'div', { key: gi, className: 'ec-subcard' },
 						el( 'div', { className: 'ec-inline-form', style: { alignItems: 'center' } },
-							el( 'input', { type: 'text', placeholder: 'Gruppenname (z. B. Grösse)', value: g.name, onChange: function ( e ) { setGroup( gi, 'name', e.target.value ); } } ),
-							el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delGroup( gi ); } }, 'Gruppe entfernen' ) ),
+							el( 'input', { type: 'text', placeholder: _t('Gruppenname (z. B. Grösse)'), value: g.name, onChange: function ( e ) { setGroup( gi, 'name', e.target.value ); } } ),
+							el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delGroup( gi ); } }, _t('Gruppe entfernen') ) ),
 						( g.options || [] ).map( function ( o, oi ) {
 							return el( 'div', { key: oi, className: 'ec-inline-form', style: { alignItems: 'center', marginTop: 6 } },
-								el( 'input', { type: 'text', placeholder: 'Option (z. B. L)', value: o.label, onChange: function ( e ) { setOpt( gi, oi, 'label', e.target.value ); } } ),
-								el( 'input', { type: 'number', step: '0.05', placeholder: 'Aufschlag', style: { maxWidth: '120px' }, value: o.priceModifier, onChange: function ( e ) { setOpt( gi, oi, 'priceModifier', e.target.value ); } } ),
+								el( 'input', { type: 'text', placeholder: _t('Option (z. B. L)'), value: o.label, onChange: function ( e ) { setOpt( gi, oi, 'label', e.target.value ); } } ),
+								el( 'input', { type: 'number', step: '0.05', placeholder: _t('Aufschlag'), style: { maxWidth: '120px' }, value: o.priceModifier, onChange: function ( e ) { setOpt( gi, oi, 'priceModifier', e.target.value ); } } ),
 								el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delOpt( gi, oi ); } }, '×' ) );
 						} ),
-						el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: function () { addOpt( gi ); } }, '+ Option' ) );
+						el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: function () { addOpt( gi ); } }, _t('+ Option') ) );
 				} ),
-				el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: addGroup }, '+ Optionsgruppe' )
+				el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: addGroup }, _t('+ Optionsgruppe') )
 			) : null,
 			// Infofelder (gastro/tickets/physisch)
 			f0.fields ? el( 'div', null,
-				el( 'h4', { className: 'ec-sub-h' }, 'Infofelder (z. B. Allergien, Teilnehmername)' ),
+				el( 'h4', { className: 'ec-sub-h' }, _t('Infofelder (z. B. Allergien, Teilnehmername)') ),
 				st.customFields.map( function ( f, fi ) {
 					return el( 'div', { key: fi, className: 'ec-subcard' },
 						el( 'div', { className: 'ec-inline-form', style: { alignItems: 'center' } },
-							el( 'input', { type: 'text', placeholder: 'Feldname', value: f.label, onChange: function ( e ) { setField( fi, 'label', e.target.value ); } } ),
-							el( 'select', { value: f.fieldType, onChange: function ( e ) { setField( fi, 'fieldType', e.target.value ); } }, el( 'option', { value: 'text' }, 'Textfeld' ), el( 'option', { value: 'checkbox' }, 'Checkboxen' ) ),
-							el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! f.required, onChange: function ( e ) { setField( fi, 'required', e.target.checked ); } } ), el( 'span', null, 'Pflicht' ) ),
+							el( 'input', { type: 'text', placeholder: _t('Feldname'), value: f.label, onChange: function ( e ) { setField( fi, 'label', e.target.value ); } } ),
+							el( 'select', { value: f.fieldType, onChange: function ( e ) { setField( fi, 'fieldType', e.target.value ); } }, el( 'option', { value: 'text' }, _t('Textfeld') ), el( 'option', { value: 'checkbox' }, _t('Checkboxen') ) ),
+							el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! f.required, onChange: function ( e ) { setField( fi, 'required', e.target.checked ); } } ), el( 'span', null, _t('Pflicht') ) ),
 							el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delField( fi ); } }, '×' ) ),
 						f.fieldType === 'checkbox' ? el( 'div', { style: { marginTop: 8 } },
 							( f.options || [] ).map( function ( opt, ci ) {
 								return el( 'div', { key: ci, className: 'ec-inline-form', style: { alignItems: 'center', marginTop: 6 } },
-									el( 'input', { type: 'text', placeholder: 'Auswahl', value: opt, onChange: function ( e ) { setChoice( fi, ci, e.target.value ); } } ),
+									el( 'input', { type: 'text', placeholder: _t('Auswahl'), value: opt, onChange: function ( e ) { setChoice( fi, ci, e.target.value ); } } ),
 									el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delChoice( fi, ci ); } }, '×' ) );
 							} ),
-							el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: function () { addChoice( fi ); } }, '+ Auswahl' )
+							el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: function () { addChoice( fi ); } }, _t('+ Auswahl') )
 						) : null );
 				} ),
-				el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: addField }, '+ Infofeld' )
+				el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: addField }, _t('+ Infofeld') )
 			) : null,
 			// Mengenlimits (physisch/tickets)
 			f0.limits ? el( 'div', { className: 'ec-two', style: { marginTop: '14px' } },
-				Field( 'Max. pro Kunde', el( 'input', { type: 'number', min: 0, value: st.maxPerCustomer != null ? st.maxPerCustomer : '', onChange: function ( e ) { up( { maxPerCustomer: e.target.value } ); } } ), 'leer = unbegrenzt' ),
-				Field( 'Gesamtkontingent', el( 'input', { type: 'number', min: 0, value: st.maxTotal != null ? st.maxTotal : '', onChange: function ( e ) { up( { maxTotal: e.target.value } ); } } ), 'leer = unbegrenzt' ) ) : null,
-			el( 'label', { className: 'ec-check', style: { marginTop: '12px' } }, el( 'input', { type: 'checkbox', checked: st.isActive !== false, onChange: function ( e ) { up( { isActive: e.target.checked } ); } } ), ' Aktiv' ),
+				Field( _t('Max. pro Kunde'), el( 'input', { type: 'number', min: 0, value: st.maxPerCustomer != null ? st.maxPerCustomer : '', onChange: function ( e ) { up( { maxPerCustomer: e.target.value } ); } } ), _t('leer = unbegrenzt') ),
+				Field( _t('Gesamtkontingent'), el( 'input', { type: 'number', min: 0, value: st.maxTotal != null ? st.maxTotal : '', onChange: function ( e ) { up( { maxTotal: e.target.value } ); } } ), _t('leer = unbegrenzt') ) ) : null,
+			el( 'label', { className: 'ec-check', style: { marginTop: '12px' } }, el( 'input', { type: 'checkbox', checked: st.isActive !== false, onChange: function ( e ) { up( { isActive: e.target.checked } ); } } ), _t(' Aktiv') ),
 			el( 'div', { className: 'ec-form-actions' },
-				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : 'Speichern' ),
-				el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, 'Abbrechen' ) )
+				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : _t('Speichern') ),
+				el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, _t('Abbrechen') ) )
 		) );
 	}
 
@@ -541,14 +542,14 @@
 		function load() { api( 'GET', '/api/orders?limit=50' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { data: b, error: '' } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { data: { orders: [] }, error: err.message } ); } ); } ); }
 		useEffect( function () { load(); }, [] );
 		function sync() { set( Object.assign( {}, st, { busy: true } ) ); api( 'POST', '/api/orders/sync' ).then( function () { set( Object.assign( {}, st, { busy: false } ) ); load(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
-		function refund( o ) { if ( ! window.confirm( 'Bestellung erstatten?' ) ) { return; } api( 'POST', '/api/orders/' + o.id + '/refund', {} ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
+		function refund( o ) { if ( ! window.confirm( _t('Bestellung erstatten?') ) ) { return; } api( 'POST', '/api/orders/' + o.id + '/refund', {} ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
 		var orders = st.data ? ( st.data.orders || [] ) : null;
 		return el( 'div', null,
-			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Bestellungen' ), el( 'button', { className: 'ec-btn', disabled: st.busy, onClick: sync }, st.busy ? 'Synchronisiert…' : 'Status synchronisieren' ) ),
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Bestellungen') ), el( 'button', { className: 'ec-btn', disabled: st.busy, onClick: sync }, st.busy ? 'Synchronisiert…' : _t('Status synchronisieren') ) ),
 			ErrorBox( st.error ),
-			orders === null ? Spinner() : orders.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Bestellungen.' ) :
+			orders === null ? Spinner() : orders.length === 0 ? el( 'p', { className: 'ec-muted' }, _t('Noch keine Bestellungen.') ) :
 				el( 'table', { className: 'ec-table' },
-					el( 'thead', null, el( 'tr', null, el( 'th', null, 'Datum' ), el( 'th', null, 'Kunde' ), el( 'th', null, 'Checkout' ), el( 'th', null, 'Betrag' ), el( 'th', null, 'Status' ), el( 'th', null, '' ) ) ),
+					el( 'thead', null, el( 'tr', null, el( 'th', null, _t('Datum') ), el( 'th', null, _t('Kunde') ), el( 'th', null, _t('Checkout') ), el( 'th', null, _t('Betrag') ), el( 'th', null, _t('Status') ), el( 'th', null, '' ) ) ),
 					el( 'tbody', null, orders.map( function ( o ) {
 						return el( 'tr', { key: o.id },
 							el( 'td', null, fmtDate( o.createdAt ) ),
@@ -556,7 +557,7 @@
 							el( 'td', null, o.checkoutName || '—' ),
 							el( 'td', null, fmtMoney( o.total, o.currency ) ),
 							el( 'td', null, statusBadge( o.paymentStatus ) ),
-							el( 'td', { className: 'ec-row-actions' }, o.paymentStatus === 'paid' && el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { refund( o ); } }, 'Erstatten' ) )
+							el( 'td', { className: 'ec-row-actions' }, o.paymentStatus === 'paid' && el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { refund( o ); } }, _t('Erstatten') ) )
 						);
 					} ) )
 				)
@@ -564,7 +565,7 @@
 	}
 
 	function statusBadge( s ) {
-		var map = { paid: [ 'ec-badge-on', 'Bezahlt' ], pending: [ 'ec-badge-off', 'Offen' ], pending_qr: [ 'ec-badge-off', 'QR offen' ], failed: [ 'ec-badge-err', 'Fehlgeschlagen' ], refunded: [ 'ec-badge-err', 'Erstattet' ], partially_refunded: [ 'ec-badge-off', 'Teilw. erstattet' ] };
+		var map = { paid: [ 'ec-badge-on', _t('Bezahlt') ], pending: [ 'ec-badge-off', _t('Offen') ], pending_qr: [ 'ec-badge-off', _t('QR offen') ], failed: [ 'ec-badge-err', _t('Fehlgeschlagen') ], refunded: [ 'ec-badge-err', _t('Erstattet') ], partially_refunded: [ 'ec-badge-off', _t('Teilw. erstattet') ] };
 		var m = map[ s ] || [ 'ec-badge-off', s || '—' ];
 		return el( 'span', { className: 'ec-badge ' + m[ 0 ] }, m[ 1 ] );
 	}
@@ -576,14 +577,14 @@
 		var st = s[ 0 ], set = s[ 1 ];
 		function load() { api( 'GET', '/api/customers' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.customers ) || [], error: '' } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } ); }
 		useEffect( function () { load(); }, [] );
-		function del( c ) { if ( ! c.isManual ) { window.alert( 'Nur manuell angelegte Kunden können gelöscht werden.' ); return; } if ( ! window.confirm( 'Kunde löschen?' ) ) { return; } api( 'DELETE', '/api/customers/' + c.id ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
+		function del( c ) { if ( ! c.isManual ) { window.alert( _t('Nur manuell angelegte Kunden können gelöscht werden.') ); return; } if ( ! window.confirm( _t('Kunde löschen?') ) ) { return; } api( 'DELETE', '/api/customers/' + c.id ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
 		return el( 'div', null,
-			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Kunden' ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { editing: { email: '', name: '', phone: '', country: 'CH' } } ) ); } }, '+ Neuer Kunde' ) ),
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Kunden') ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { editing: { email: '', name: '', phone: '', country: 'CH' } } ) ); } }, _t('+ Neuer Kunde') ) ),
 			ErrorBox( st.error ),
 			st.editing && el( CustomerForm, { customer: st.editing, onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
-			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Kunden.' ) :
+			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, _t('Noch keine Kunden.') ) :
 				el( 'table', { className: 'ec-table' },
-					el( 'thead', null, el( 'tr', null, el( 'th', null, 'Name' ), el( 'th', null, 'E-Mail' ), el( 'th', null, 'Bestellungen' ), el( 'th', null, 'Umsatz' ), el( 'th', null, '' ) ) ),
+					el( 'thead', null, el( 'tr', null, el( 'th', null, _t('Name') ), el( 'th', null, _t('E-Mail') ), el( 'th', null, _t('Bestellungen') ), el( 'th', null, _t('Umsatz') ), el( 'th', null, '' ) ) ),
 					el( 'tbody', null, st.items.map( function ( c ) {
 						return el( 'tr', { key: c.id || c.email },
 							el( 'td', null, el( 'strong', null, c.name || '—' ), c.isManual && el( 'span', { className: 'ec-badge ec-badge-off ec-ml' }, 'manuell' ) ),
@@ -591,8 +592,8 @@
 							el( 'td', null, c.orderCount != null ? c.orderCount : '—' ),
 							el( 'td', null, fmtMoney( c.totalSpent, c.currency ) ),
 							el( 'td', { className: 'ec-row-actions' },
-								c.isManual && el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { editing: Object.assign( {}, c ) } ) ); } }, 'Bearbeiten' ), ' ',
-								c.isManual && el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { del( c ); } }, 'Löschen' ) )
+								c.isManual && el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { editing: Object.assign( {}, c ) } ) ); } }, _t('Bearbeiten') ), ' ',
+								c.isManual && el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { del( c ); } }, _t('Löschen') ) )
 						);
 					} ) )
 				)
@@ -610,29 +611,29 @@
 			pr.then( function () { props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
 		}
 		return el( 'div', { className: 'ec-modal' }, el( 'form', { className: 'ec-modal-card', onSubmit: save },
-			el( 'h3', null, st.id ? 'Kunde bearbeiten' : 'Neuer Kunde' ), ErrorBox( st.error ),
-			Field( 'E-Mail', el( 'input', { type: 'email', required: true, value: st.email || '', onChange: function ( e ) { up( { email: e.target.value } ); } } ) ),
-			Field( 'Name', el( 'input', { value: st.name || '', onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
-			Field( 'Firma', el( 'input', { value: st.company || '', onChange: function ( e ) { up( { company: e.target.value } ); } } ) ),
-			Field( 'Telefon', el( 'input', { value: st.phone || '', onChange: function ( e ) { up( { phone: e.target.value } ); } } ) ),
+			el( 'h3', null, st.id ? 'Kunde bearbeiten' : _t('Neuer Kunde') ), ErrorBox( st.error ),
+			Field( _t('E-Mail'), el( 'input', { type: 'email', required: true, value: st.email || '', onChange: function ( e ) { up( { email: e.target.value } ); } } ) ),
+			Field( _t('Name'), el( 'input', { value: st.name || '', onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
+			Field( _t('Firma'), el( 'input', { value: st.company || '', onChange: function ( e ) { up( { company: e.target.value } ); } } ) ),
+			Field( _t('Telefon'), el( 'input', { value: st.phone || '', onChange: function ( e ) { up( { phone: e.target.value } ); } } ) ),
 			el( 'div', { className: 'ec-two' },
 				Field( 'PLZ', el( 'input', { value: st.postalCode || '', onChange: function ( e ) { up( { postalCode: e.target.value } ); } } ) ),
-				Field( 'Ort', el( 'input', { value: st.city || '', onChange: function ( e ) { up( { city: e.target.value } ); } } ) ) ),
-			Field( 'Strasse', el( 'input', { value: st.street || '', onChange: function ( e ) { up( { street: e.target.value } ); } } ) ),
-			Field( 'Notizen', el( 'textarea', { rows: 2, value: st.notes || '', onChange: function ( e ) { up( { notes: e.target.value } ); } } ) ),
+				Field( _t('Ort'), el( 'input', { value: st.city || '', onChange: function ( e ) { up( { city: e.target.value } ); } } ) ) ),
+			Field( _t('Strasse'), el( 'input', { value: st.street || '', onChange: function ( e ) { up( { street: e.target.value } ); } } ) ),
+			Field( _t('Notizen'), el( 'textarea', { rows: 2, value: st.notes || '', onChange: function ( e ) { up( { notes: e.target.value } ); } } ) ),
 			el( 'div', { className: 'ec-form-actions' },
-				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : 'Speichern' ),
-				el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, 'Abbrechen' ) )
+				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : _t('Speichern') ),
+				el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, _t('Abbrechen') ) )
 		) );
 	}
 
 	function Placeholder( props ) {
-		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, props.title ) ), el( 'div', { className: 'ec-alert' }, 'Dieser Bereich wird gerade nativ gebaut und folgt in Kürze.' ) );
+		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, props.title ) ), el( 'div', { className: 'ec-alert' }, _t('Dieser Bereich wird gerade nativ gebaut und folgt in Kürze.') ) );
 	}
 
 	// --- Onboarding / KYC ---------------------------------------------------
 
-	var MCC = [ [ '5734', 'Software / IT' ], [ '7372', 'Programmierung' ], [ '5999', 'Einzelhandel (div.)' ], [ '5045', 'Computer/Zubehör' ], [ '7299', 'Dienstleistungen' ], [ '8999', 'Freiberuflich' ], [ '5812', 'Gastronomie' ], [ '5611', 'Bekleidung' ], [ '7991', 'Freizeit/Events' ] ];
+	var MCC = [ [ '5734', _t('Software / IT') ], [ '7372', _t('Programmierung') ], [ '5999', _t('Einzelhandel (div.)') ], [ '5045', _t('Computer/Zubehör') ], [ '7299', _t('Dienstleistungen') ], [ '8999', _t('Freiberuflich') ], [ '5812', _t('Gastronomie') ], [ '5611', _t('Bekleidung') ], [ '7991', _t('Freizeit/Events') ] ];
 
 	// Verifizierung = eingebettete easyCheckout-Onboarding-Seite (single source of
 	// truth). So laufen ALLE Schritte automatisch mit – Firma, Personen, wirtschaftlich
@@ -663,7 +664,7 @@
 		var startUrl = appUrl + '/onboarding?return_url=' + encodeURIComponent( backHere );
 		var frameUrl = appUrl + '/onboarding?embed=1';
 		var charges = st.status && ( st.status.chargesEnabled || ( st.acct && st.acct.chargesEnabled ) );
-		var statusLabel = ( st.acct && st.acct.status && ( st.acct.status.summary || st.acct.status.label ) ) || 'Verifizierung erforderlich';
+		var statusLabel = ( st.acct && st.acct.status && ( st.acct.status.summary || st.acct.status.label ) ) || _t('Verifizierung erforderlich');
 		function start() {
 			// SSO-Token serverseitig anhaengen, damit man auf easyCheckout nicht erneut
 			// einloggen muss; Fallback = tokenlose URL (dann ggf. Login noetig).
@@ -674,27 +675,27 @@
 
 		return el( 'div', null,
 			el( 'div', { className: 'ec-page-head' },
-				el( 'h2', null, 'Verifizierung' ),
-				el( 'a', { className: 'ec-btn ec-btn-sm', href: startUrl, target: '_blank', rel: 'noopener' }, 'In neuem Tab öffnen ↗' ) ),
+				el( 'h2', null, _t('Verifizierung') ),
+				el( 'a', { className: 'ec-btn ec-btn-sm', href: startUrl, target: '_blank', rel: 'noopener' }, _t('In neuem Tab öffnen ↗') ) ),
 			ErrorBox( st.error ),
 			el( 'div', { className: 'ec-card', style: { marginBottom: '16px' } },
-				el( 'h3', null, 'Status' ),
-				! st.status ? Spinner() : el( 'p', null, charges ? el( 'span', { className: 'ec-badge ec-badge-on' }, 'Zahlungen aktiv' ) : el( 'span', { className: 'ec-badge ec-badge-off' }, statusLabel ) ),
+				el( 'h3', null, _t('Status') ),
+				! st.status ? Spinner() : el( 'p', null, charges ? el( 'span', { className: 'ec-badge ec-badge-on' }, _t('Zahlungen aktiv') ) : el( 'span', { className: 'ec-badge ec-badge-off' }, statusLabel ) ),
 				st.acct && st.acct.tasks && st.acct.tasks.length > 0 && el( 'ul', { className: 'ec-tasklist' }, st.acct.tasks.map( function ( t, i ) { return el( 'li', { key: i }, el( 'strong', null, t.title ), t.description && el( 'span', { className: 'ec-muted' }, ' — ' + t.description ) ); } ) )
 			),
 			charges ? el( 'div', { className: 'ec-card' },
-				el( 'p', null, el( 'span', { className: 'ec-badge ec-badge-on' }, '✓ Verifizierung abgeschlossen' ) ),
-				el( 'p', { className: 'ec-hint', style: { marginTop: 8 } }, 'Dein Konto ist verifiziert – du kannst Zahlungen empfangen.' )
+				el( 'p', null, el( 'span', { className: 'ec-badge ec-badge-on' }, _t('✓ Verifizierung abgeschlossen') ) ),
+				el( 'p', { className: 'ec-hint', style: { marginTop: 8 } }, _t('Dein Konto ist verifiziert – du kannst Zahlungen empfangen.') )
 			) : el( 'div', { className: 'ec-card' },
-				el( 'h3', null, 'Verifizierung abschliessen' ),
-				el( 'p', { className: 'ec-hint', style: { marginBottom: 12 } }, 'Firma, Personen, wirtschaftlich Berechtigte (inkl. Ausweis-/Selfie-Prüfung und Unterschrift) sowie Bankverbindung – sicher über easyCheckout. Nach Abschluss wirst du automatisch hierher zurückgeleitet.' ),
+				el( 'h3', null, _t('Verifizierung abschliessen') ),
+				el( 'p', { className: 'ec-hint', style: { marginBottom: 12 } }, _t('Firma, Personen, wirtschaftlich Berechtigte (inkl. Ausweis-/Selfie-Prüfung und Unterschrift) sowie Bankverbindung – sicher über easyCheckout. Nach Abschluss wirst du automatisch hierher zurückgeleitet.') ),
 				el( 'div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' } },
-					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: start }, 'Verifizierung auf easyCheckout starten →' ),
-					el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { embed: ! st.embed } ) ); } }, st.embed ? 'Einbettung ausblenden' : 'Stattdessen hier einbetten' )
+					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: start }, _t('Verifizierung auf easyCheckout starten →') ),
+					el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { embed: ! st.embed } ) ); } }, st.embed ? 'Einbettung ausblenden' : _t('Stattdessen hier einbetten') )
 				),
 				st.embed ? el( 'div', { style: { marginTop: 14 } }, [
-					el( 'p', { key: 'h', className: 'ec-hint', style: { marginBottom: 8 } }, 'Falls ein Login erscheint: einmalig mit deinen easyCheckout-Zugangsdaten anmelden. Klappt die Kamera hier nicht, nutze „In neuem Tab öffnen".' ),
-					el( 'iframe', { key: 'f', src: frameUrl, className: 'ec-onboard-frame', allow: 'camera; microphone; clipboard-write; fullscreen', title: 'Verifizierung' } )
+					el( 'p', { key: 'h', className: 'ec-hint', style: { marginBottom: 8 } }, _t('Falls ein Login erscheint: einmalig mit deinen easyCheckout-Zugangsdaten anmelden. Klappt die Kamera hier nicht, nutze „In neuem Tab öffnen".') ),
+					el( 'iframe', { key: 'f', src: frameUrl, className: 'ec-onboard-frame', allow: 'camera; microphone; clipboard-write; fullscreen', title: _t('Verifizierung') } )
 				] ) : null
 			)
 		);
@@ -705,18 +706,18 @@
 		var st = s[ 0 ], set = s[ 1 ]; function up( o ) { set( Object.assign( {}, st, { msg: '', error: '' }, o ) ); }
 		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true } ) );
 			api( 'POST', '/api/stripe/connect/business', { businessType: st.businessType, companyName: st.companyName, taxId: st.taxId, industry: st.industry, website: st.website, productDescription: st.productDescription, phone: st.phone, address: { line1: st.line1, postalCode: st.postalCode, city: st.city, country: st.country } } )
-				.then( function () { set( Object.assign( {}, st, { busy: false, msg: 'Gespeichert.' } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
+				.then( function () { set( Object.assign( {}, st, { busy: false, msg: _t('Gespeichert.') } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
 		}
 		return cardForm( '1. Geschäftsangaben', el( 'div', null,
-			Field( 'Art', el( 'select', { value: st.businessType, onChange: function ( e ) { up( { businessType: e.target.value } ); } }, el( 'option', { value: 'company' }, 'Firma' ), el( 'option', { value: 'individual' }, 'Einzelunternehmen' ) ) ),
-			Field( 'Firmenname', el( 'input', { value: st.companyName, onChange: function ( e ) { up( { companyName: e.target.value } ); } } ) ),
-			Field( 'UID / Steuernr.', el( 'input', { value: st.taxId, onChange: function ( e ) { up( { taxId: e.target.value } ); } } ) ),
-			Field( 'Branche', el( 'select', { value: st.industry, onChange: function ( e ) { up( { industry: e.target.value } ); } }, MCC.map( function ( m ) { return el( 'option', { key: m[ 0 ], value: m[ 0 ] }, m[ 1 ] ); } ) ) ),
-			Field( 'Website', el( 'input', { value: st.website, onChange: function ( e ) { up( { website: e.target.value } ); } }, 'oder Beschreibung unten' ) ),
-			Field( 'Produktbeschreibung', el( 'input', { value: st.productDescription, onChange: function ( e ) { up( { productDescription: e.target.value } ); } } ) ),
-			Field( 'Telefon', el( 'input', { value: st.phone, onChange: function ( e ) { up( { phone: e.target.value } ); } } ) ),
-			Field( 'Strasse', el( 'input', { value: st.line1, onChange: function ( e ) { up( { line1: e.target.value } ); } } ) ),
-			el( 'div', { className: 'ec-two' }, Field( 'PLZ', el( 'input', { value: st.postalCode, onChange: function ( e ) { up( { postalCode: e.target.value } ); } } ) ), Field( 'Ort', el( 'input', { value: st.city, onChange: function ( e ) { up( { city: e.target.value } ); } } ) ) )
+			Field( _t('Art'), el( 'select', { value: st.businessType, onChange: function ( e ) { up( { businessType: e.target.value } ); } }, el( 'option', { value: 'company' }, _t('Firma') ), el( 'option', { value: 'individual' }, _t('Einzelunternehmen') ) ) ),
+			Field( _t('Firmenname'), el( 'input', { value: st.companyName, onChange: function ( e ) { up( { companyName: e.target.value } ); } } ) ),
+			Field( _t('UID / Steuernr.'), el( 'input', { value: st.taxId, onChange: function ( e ) { up( { taxId: e.target.value } ); } } ) ),
+			Field( _t('Branche'), el( 'select', { value: st.industry, onChange: function ( e ) { up( { industry: e.target.value } ); } }, MCC.map( function ( m ) { return el( 'option', { key: m[ 0 ], value: m[ 0 ] }, m[ 1 ] ); } ) ) ),
+			Field( _t('Website'), el( 'input', { value: st.website, onChange: function ( e ) { up( { website: e.target.value } ); } }, _t('oder Beschreibung unten') ) ),
+			Field( _t('Produktbeschreibung'), el( 'input', { value: st.productDescription, onChange: function ( e ) { up( { productDescription: e.target.value } ); } } ) ),
+			Field( _t('Telefon'), el( 'input', { value: st.phone, onChange: function ( e ) { up( { phone: e.target.value } ); } } ) ),
+			Field( _t('Strasse'), el( 'input', { value: st.line1, onChange: function ( e ) { up( { line1: e.target.value } ); } } ) ),
+			el( 'div', { className: 'ec-two' }, Field( 'PLZ', el( 'input', { value: st.postalCode, onChange: function ( e ) { up( { postalCode: e.target.value } ); } } ) ), Field( _t('Ort'), el( 'input', { value: st.city, onChange: function ( e ) { up( { city: e.target.value } ); } } ) ) )
 		), st, save );
 	}
 
@@ -725,19 +726,19 @@
 		var st = s[ 0 ], set = s[ 1 ]; function up( o ) { set( Object.assign( {}, st, { msg: '', error: '' }, o ) ); }
 		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true } ) );
 			api( 'POST', '/api/stripe/connect/person', { firstName: st.firstName, lastName: st.lastName, email: st.email, phone: st.phone, dob: { day: parseInt( st.day, 10 ), month: parseInt( st.month, 10 ), year: parseInt( st.year, 10 ) }, address: { line1: st.line1, postalCode: st.postalCode, city: st.city }, isOwner: st.isOwner, percentOwnership: st.percentOwnership ? parseInt( st.percentOwnership, 10 ) : undefined } )
-				.then( function () { set( Object.assign( {}, st, { busy: false, msg: 'Gespeichert.' } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
+				.then( function () { set( Object.assign( {}, st, { busy: false, msg: _t('Gespeichert.') } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
 		}
 		return cardForm( '2. Vertretungsberechtigte Person', el( 'div', null,
-			el( 'div', { className: 'ec-two' }, Field( 'Vorname', el( 'input', { value: st.firstName, onChange: function ( e ) { up( { firstName: e.target.value } ); } } ) ), Field( 'Nachname', el( 'input', { value: st.lastName, onChange: function ( e ) { up( { lastName: e.target.value } ); } } ) ) ),
-			Field( 'E-Mail', el( 'input', { type: 'email', value: st.email, onChange: function ( e ) { up( { email: e.target.value } ); } } ) ),
-			el( 'span', { className: 'ec-field' }, el( 'span', null, 'Geburtsdatum' ), el( 'div', { className: 'ec-dob' },
+			el( 'div', { className: 'ec-two' }, Field( _t('Vorname'), el( 'input', { value: st.firstName, onChange: function ( e ) { up( { firstName: e.target.value } ); } } ) ), Field( _t('Nachname'), el( 'input', { value: st.lastName, onChange: function ( e ) { up( { lastName: e.target.value } ); } } ) ) ),
+			Field( _t('E-Mail'), el( 'input', { type: 'email', value: st.email, onChange: function ( e ) { up( { email: e.target.value } ); } } ) ),
+			el( 'span', { className: 'ec-field' }, el( 'span', null, _t('Geburtsdatum') ), el( 'div', { className: 'ec-dob' },
 				el( 'input', { type: 'number', placeholder: 'TT', value: st.day, onChange: function ( e ) { up( { day: e.target.value } ); } } ),
 				el( 'input', { type: 'number', placeholder: 'MM', value: st.month, onChange: function ( e ) { up( { month: e.target.value } ); } } ),
 				el( 'input', { type: 'number', placeholder: 'JJJJ', value: st.year, onChange: function ( e ) { up( { year: e.target.value } ); } } ) ) ),
-			Field( 'Strasse', el( 'input', { value: st.line1, onChange: function ( e ) { up( { line1: e.target.value } ); } } ) ),
-			el( 'div', { className: 'ec-two' }, Field( 'PLZ', el( 'input', { value: st.postalCode, onChange: function ( e ) { up( { postalCode: e.target.value } ); } } ) ), Field( 'Ort', el( 'input', { value: st.city, onChange: function ( e ) { up( { city: e.target.value } ); } } ) ) ),
-			el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.isOwner, onChange: function ( e ) { up( { isOwner: e.target.checked } ); } } ), ' Eigentümer/in' ),
-			st.isOwner && Field( 'Anteil (%)', el( 'input', { type: 'number', value: st.percentOwnership, onChange: function ( e ) { up( { percentOwnership: e.target.value } ); } } ) )
+			Field( _t('Strasse'), el( 'input', { value: st.line1, onChange: function ( e ) { up( { line1: e.target.value } ); } } ) ),
+			el( 'div', { className: 'ec-two' }, Field( 'PLZ', el( 'input', { value: st.postalCode, onChange: function ( e ) { up( { postalCode: e.target.value } ); } } ) ), Field( _t('Ort'), el( 'input', { value: st.city, onChange: function ( e ) { up( { city: e.target.value } ); } } ) ) ),
+			el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.isOwner, onChange: function ( e ) { up( { isOwner: e.target.checked } ); } } ), _t(' Eigentümer/in') ),
+			st.isOwner && Field( _t('Anteil (%)'), el( 'input', { type: 'number', value: st.percentOwnership, onChange: function ( e ) { up( { percentOwnership: e.target.value } ); } } ) )
 		), st, save );
 	}
 
@@ -746,41 +747,41 @@
 		var st = s[ 0 ], set = s[ 1 ];
 		function load() { api( 'GET', '/api/stripe/connect/persons' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { persons: ( b && b.persons ) || [] } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { persons: [], error: err.message } ); } ); } ); }
 		useEffect( function () { load(); }, [] );
-		function del( id ) { if ( ! window.confirm( 'Person entfernen?' ) ) { return; } api( 'DELETE', '/api/stripe/connect/persons?personId=' + id ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
-		function confirmOwners() { api( 'POST', '/api/stripe/connect/confirm-owners', { owners: true, directors: true, executives: true } ).then( function () { window.alert( 'Bestätigt.' ); } ).catch( function ( err ) { window.alert( err.message ); } ); }
+		function del( id ) { if ( ! window.confirm( _t('Person entfernen?') ) ) { return; } api( 'DELETE', '/api/stripe/connect/persons?personId=' + id ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
+		function confirmOwners() { api( 'POST', '/api/stripe/connect/confirm-owners', { owners: true, directors: true, executives: true } ).then( function () { window.alert( _t('Bestätigt.') ); } ).catch( function ( err ) { window.alert( err.message ); } ); }
 		return el( 'div', { className: 'ec-card' }, el( 'h3', null, '3. Weitere Eigentümer/Direktoren' ), ErrorBox( st.error ),
-			st.persons === null ? Spinner() : st.persons.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Keine weiteren Personen.' ) :
+			st.persons === null ? Spinner() : st.persons.length === 0 ? el( 'p', { className: 'ec-muted' }, _t('Keine weiteren Personen.') ) :
 				el( 'ul', { className: 'ec-tasklist' }, st.persons.map( function ( p ) { return el( 'li', { key: p.id }, ( p.firstName || '' ) + ' ' + ( p.lastName || '' ), ' ', el( 'a', { href: '#', onClick: function ( e ) { e.preventDefault(); del( p.id ); } }, 'entfernen' ) ); } ) ),
-			el( 'div', { className: 'ec-form-actions' }, el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', onClick: confirmOwners }, 'Alle Eigentümer angegeben' ) ) );
+			el( 'div', { className: 'ec-form-actions' }, el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', onClick: confirmOwners }, _t('Alle Eigentümer angegeben') ) ) );
 	}
 
 	function BankForm( props ) {
 		var s = useState( { iban: '', accountHolderName: '', busy: false, msg: '', error: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
-		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true, msg: '', error: '' } ) ); api( 'POST', '/api/stripe/connect/bank', { iban: st.iban, accountHolderName: st.accountHolderName } ).then( function () { set( Object.assign( {}, st, { busy: false, msg: 'Gespeichert.' } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
+		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true, msg: '', error: '' } ) ); api( 'POST', '/api/stripe/connect/bank', { iban: st.iban, accountHolderName: st.accountHolderName } ).then( function () { set( Object.assign( {}, st, { busy: false, msg: _t('Gespeichert.') } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
 		return cardForm( '4. Bankverbindung', el( 'div', null,
 			Field( 'IBAN', el( 'input', { value: st.iban, onChange: function ( e ) { set( Object.assign( {}, st, { iban: e.target.value } ) ); } } ) ),
-			Field( 'Kontoinhaber', el( 'input', { value: st.accountHolderName, onChange: function ( e ) { set( Object.assign( {}, st, { accountHolderName: e.target.value } ) ); } } ) )
+			Field( _t('Kontoinhaber'), el( 'input', { value: st.accountHolderName, onChange: function ( e ) { set( Object.assign( {}, st, { accountHolderName: e.target.value } ) ); } } ) )
 		), st, save );
 	}
 
 	function DocsCard() {
 		var s = useState( { busy: false, msg: '', error: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
-		function upId( e ) { var f = e.target.files[ 0 ]; if ( ! f ) { return; } set( { busy: true, msg: '', error: '' } ); uploadFile( 'POST', '/api/stripe/connect/document', 'front', f ).then( function () { set( { busy: false, msg: 'Ausweis hochgeladen.' } ); } ).catch( function ( err ) { set( { busy: false, error: err.message } ); } ); }
-		function upCo( e ) { var f = e.target.files[ 0 ]; if ( ! f ) { return; } set( { busy: true, msg: '', error: '' } ); uploadFile( 'POST', '/api/stripe/connect/company-document', 'document', f ).then( function () { set( { busy: false, msg: 'Firmendokument hochgeladen.' } ); } ).catch( function ( err ) { set( { busy: false, error: err.message } ); } ); }
+		function upId( e ) { var f = e.target.files[ 0 ]; if ( ! f ) { return; } set( { busy: true, msg: '', error: '' } ); uploadFile( 'POST', '/api/stripe/connect/document', 'front', f ).then( function () { set( { busy: false, msg: _t('Ausweis hochgeladen.') } ); } ).catch( function ( err ) { set( { busy: false, error: err.message } ); } ); }
+		function upCo( e ) { var f = e.target.files[ 0 ]; if ( ! f ) { return; } set( { busy: true, msg: '', error: '' } ); uploadFile( 'POST', '/api/stripe/connect/company-document', 'document', f ).then( function () { set( { busy: false, msg: _t('Firmendokument hochgeladen.') } ); } ).catch( function ( err ) { set( { busy: false, error: err.message } ); } ); }
 		return el( 'div', { className: 'ec-card' }, el( 'h3', null, '5. Dokumente' ), st.msg && el( 'div', { className: 'ec-alert' }, st.msg ), ErrorBox( st.error ),
-			Field( 'Ausweis / Pass', el( 'input', { type: 'file', accept: 'image/*,.pdf', onChange: upId, disabled: st.busy } ) ),
-			Field( 'Handelsregisterauszug', el( 'input', { type: 'file', accept: 'image/*,.pdf', onChange: upCo, disabled: st.busy } ) ) );
+			Field( _t('Ausweis / Pass'), el( 'input', { type: 'file', accept: 'image/*,.pdf', onChange: upId, disabled: st.busy } ) ),
+			Field( _t('Handelsregisterauszug'), el( 'input', { type: 'file', accept: 'image/*,.pdf', onChange: upCo, disabled: st.busy } ) ) );
 	}
 
 	function TermsCard( props ) {
 		var s = useState( { busy: false, msg: '', error: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
-		function accept() { set( { busy: true, msg: '', error: '' } ); api( 'POST', '/api/stripe/connect/terms', {} ).then( function ( b ) { if ( b && b.redirectUrl ) { window.open( b.redirectUrl, '_blank', 'noopener' ); } set( { busy: false, msg: 'AGB akzeptiert.' } ); props.onSaved(); } ).catch( function ( err ) { set( { busy: false, error: err.message } ); } ); }
+		function accept() { set( { busy: true, msg: '', error: '' } ); api( 'POST', '/api/stripe/connect/terms', {} ).then( function ( b ) { if ( b && b.redirectUrl ) { window.open( b.redirectUrl, '_blank', 'noopener' ); } set( { busy: false, msg: _t('AGB akzeptiert.') } ); props.onSaved(); } ).catch( function ( err ) { set( { busy: false, error: err.message } ); } ); }
 		return el( 'div', { className: 'ec-card' }, el( 'h3', null, '6. AGB akzeptieren' ), st.msg && el( 'div', { className: 'ec-alert' }, st.msg ), ErrorBox( st.error ),
-			el( 'p', { className: 'ec-muted ec-sm' }, 'Mit dem Akzeptieren bestätigst du die Nutzungsbedingungen für die Zahlungsabwicklung.' ),
-			el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy, onClick: accept }, st.busy ? '…' : 'AGB akzeptieren' ) );
+			el( 'p', { className: 'ec-muted ec-sm' }, _t('Mit dem Akzeptieren bestätigst du die Nutzungsbedingungen für die Zahlungsabwicklung.') ),
+			el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy, onClick: accept }, st.busy ? '…' : _t('AGB akzeptieren') ) );
 	}
 
 	// --- Emails -------------------------------------------------------------
@@ -789,9 +790,9 @@
 		var s = useState( { tab: 'templates' } );
 		var st = s[ 0 ], set = s[ 1 ];
 		return el( 'div', null,
-			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'E-Mails' ),
-				el( 'div', null, el( 'button', { className: 'ec-btn ec-btn-sm' + ( st.tab === 'templates' ? ' ec-btn-primary' : '' ), onClick: function () { set( { tab: 'templates' } ); } }, 'Vorlagen' ), ' ',
-					el( 'button', { className: 'ec-btn ec-btn-sm' + ( st.tab === 'logs' ? ' ec-btn-primary' : '' ), onClick: function () { set( { tab: 'logs' } ); } }, 'Protokoll' ) ) ),
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('E-Mails') ),
+				el( 'div', null, el( 'button', { className: 'ec-btn ec-btn-sm' + ( st.tab === 'templates' ? ' ec-btn-primary' : '' ), onClick: function () { set( { tab: 'templates' } ); } }, _t('Vorlagen') ), ' ',
+					el( 'button', { className: 'ec-btn ec-btn-sm' + ( st.tab === 'logs' ? ' ec-btn-primary' : '' ), onClick: function () { set( { tab: 'logs' } ); } }, _t('Protokoll') ) ) ),
 			st.tab === 'templates' ? el( EmailTemplates, null ) : el( EmailLogs, null )
 		);
 	}
@@ -799,12 +800,12 @@
 	// Bestellungen (WooCommerce wie Standalone). Rechnung/Mahnung nur bei Tarif
 	// mit Rechnungen.
 	var EC_MAIL_TYPES = [
-		{ type: 'confirmation', label: 'Bestellbestätigung an Käufer', vars: '{{customer_name}}, {{order_number}}, {{items}}, {{total}}, {{subtotal}}, {{vat_amount}}, {{company_name}}, {{company_address}}, {{company_email}}, {{date}}' },
-		{ type: 'merchant_order', label: '„Neue Bestellung" an dich', vars: '{{customer_name}}, {{customer_email}}, {{order_number}}, {{items}}, {{total}}, {{company_name}}, {{date}}' },
-		{ type: 'decline', label: 'Zahlung fehlgeschlagen (an Käufer)', vars: '{{customer_name}}, {{order_number}}, {{total}}, {{company_name}}' },
-		{ type: 'refund', label: 'Rückerstattung bestätigt (an Käufer)', vars: '{{customer_name}}, {{order_number}}, {{total}}, {{company_name}}' },
-		{ type: 'invoice', label: 'Rechnung an Käufer', invoiceOnly: true, vars: '{{customer_name}}, {{invoice_number}}, {{invoice_date}}, {{due_date}}, {{total}}, {{invoice_url}}, {{company_name}}, {{company_email}}' },
-		{ type: 'reminder', label: 'Mahnung / Zahlungserinnerung', invoiceOnly: true, vars: '{{customer_name}}, {{invoice_number}}, {{due_date}}, {{total}}, {{invoice_url}}, {{company_name}}' }
+		{ type: 'confirmation', label: _t('Bestellbestätigung an Käufer'), vars: '{{customer_name}}, {{order_number}}, {{items}}, {{total}}, {{subtotal}}, {{vat_amount}}, {{company_name}}, {{company_address}}, {{company_email}}, {{date}}' },
+		{ type: 'merchant_order', label: _t('„Neue Bestellung" an dich'), vars: '{{customer_name}}, {{customer_email}}, {{order_number}}, {{items}}, {{total}}, {{company_name}}, {{date}}' },
+		{ type: 'decline', label: _t('Zahlung fehlgeschlagen (an Käufer)'), vars: '{{customer_name}}, {{order_number}}, {{total}}, {{company_name}}' },
+		{ type: 'refund', label: _t('Rückerstattung bestätigt (an Käufer)'), vars: '{{customer_name}}, {{order_number}}, {{total}}, {{company_name}}' },
+		{ type: 'invoice', label: _t('Rechnung an Käufer'), invoiceOnly: true, vars: '{{customer_name}}, {{invoice_number}}, {{invoice_date}}, {{due_date}}, {{total}}, {{invoice_url}}, {{company_name}}, {{company_email}}' },
+		{ type: 'reminder', label: _t('Mahnung / Zahlungserinnerung'), invoiceOnly: true, vars: '{{customer_name}}, {{invoice_number}}, {{due_date}}, {{total}}, {{invoice_url}}, {{company_name}}' }
 	];
 	function EmailTemplates() {
 		var s = useState( { items: null, error: '', editing: null, canInvoice: null } );
@@ -817,31 +818,31 @@
 		function byType( t ) { return ( st.items || [] ).filter( function ( x ) { return x.type === t; } )[ 0 ] || null; }
 		var visible = EC_MAIL_TYPES.filter( function ( d ) { return ! d.invoiceOnly || st.canInvoice; } );
 		return el( 'div', null, ErrorBox( st.error ),
-			el( 'p', { className: 'ec-muted' }, 'Diese Vorlagen gelten für alle Bestellungen — WooCommerce wie Standalone. Du kannst HTML oder reinen Text schreiben, beides funktioniert. Leere Vorlage = Standard.' ),
+			el( 'p', { className: 'ec-muted' }, _t('Diese Vorlagen gelten für alle Bestellungen — WooCommerce wie Standalone. Du kannst HTML oder reinen Text schreiben, beides funktioniert. Leere Vorlage = Standard.') ),
 			st.editing && el( EmailTemplateForm, { def: st.editing.def, tpl: st.editing.tpl, onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
-			( st.items === null || st.canInvoice === null ) ? Spinner() : el( 'table', { className: 'ec-table' }, el( 'thead', null, el( 'tr', null, el( 'th', null, 'Vorlage' ), el( 'th', null, 'Betreff' ), el( 'th', null, 'Angepasst' ), el( 'th', null, '' ) ) ),
+			( st.items === null || st.canInvoice === null ) ? Spinner() : el( 'table', { className: 'ec-table' }, el( 'thead', null, el( 'tr', null, el( 'th', null, _t('Vorlage') ), el( 'th', null, _t('Betreff') ), el( 'th', null, _t('Angepasst') ), el( 'th', null, '' ) ) ),
 				el( 'tbody', null, visible.map( function ( d ) {
 					var t = byType( d.type );
-					return el( 'tr', { key: d.type }, el( 'td', null, d.label ), el( 'td', null, t ? t.subject : el( 'span', { className: 'ec-muted' }, 'Standard' ) ), el( 'td', null, t ? 'Ja' : el( 'span', { className: 'ec-muted' }, '—' ) ), el( 'td', { className: 'ec-row-actions' }, el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { editing: { def: d, tpl: t || { type: d.type } } } ) ); } }, 'Bearbeiten' ) ) );
+					return el( 'tr', { key: d.type }, el( 'td', null, d.label ), el( 'td', null, t ? t.subject : el( 'span', { className: 'ec-muted' }, _t('Standard') ) ), el( 'td', null, t ? 'Ja' : el( 'span', { className: 'ec-muted' }, '—' ) ), el( 'td', { className: 'ec-row-actions' }, el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { editing: { def: d, tpl: t || { type: d.type } } } ) ); } }, _t('Bearbeiten') ) ) );
 				} ) ) ),
-			( st.canInvoice === false ) ? el( 'p', { className: 'ec-muted' }, 'Rechnung und Mahnung erscheinen, sobald dein Tarif Rechnungen enthält.' ) : null );
+			( st.canInvoice === false ) ? el( 'p', { className: 'ec-muted' }, _t('Rechnung und Mahnung erscheinen, sobald dein Tarif Rechnungen enthält.') ) : null );
 	}
 	function EmailTemplateForm( props ) {
 		var def = props.def || {};
 		var s = useState( Object.assign( { busy: false, error: '' }, props.tpl ) );
 		var st = s[ 0 ], set = s[ 1 ]; function up( o ) { set( Object.assign( {}, st, { error: '' }, o ) ); }
-		function save( e ) { e.preventDefault(); if ( ! ( st.subject && st.body ) ) { up( { error: 'Bitte Betreff und Inhalt ausfüllen.' } ); return; } set( Object.assign( {}, st, { busy: true } ) ); api( 'POST', '/api/emails', { type: st.type, subject: st.subject, body: st.body, isActive: true } ).then( function () { props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
+		function save( e ) { e.preventDefault(); if ( ! ( st.subject && st.body ) ) { up( { error: _t('Bitte Betreff und Inhalt ausfüllen.') } ); return; } set( Object.assign( {}, st, { busy: true } ) ); api( 'POST', '/api/emails', { type: st.type, subject: st.subject, body: st.body, isActive: true } ).then( function () { props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
 		return el( 'div', { className: 'ec-modal' }, el( 'form', { className: 'ec-modal-card', onSubmit: save }, el( 'h3', null, def.label || ( 'Vorlage: ' + st.type ) ), ErrorBox( st.error ),
-			Field( 'Betreff', el( 'input', { value: st.subject || '', onChange: function ( e ) { up( { subject: e.target.value } ); } } ) ),
-			Field( 'Inhalt (HTML oder reiner Text)', el( 'textarea', { rows: 10, value: st.body || '', onChange: function ( e ) { up( { body: e.target.value } ); } } ) ),
+			Field( _t('Betreff'), el( 'input', { value: st.subject || '', onChange: function ( e ) { up( { subject: e.target.value } ); } } ) ),
+			Field( _t('Inhalt (HTML oder reiner Text)'), el( 'textarea', { rows: 10, value: st.body || '', onChange: function ( e ) { up( { body: e.target.value } ); } } ) ),
 			def.vars ? el( 'p', { className: 'ec-muted', style: { fontSize: '12px' } }, 'Platzhalter: ' + def.vars ) : null,
-			el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, 'Speichern' ), el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, 'Abbrechen' ) ) ) );
+			el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, _t('Speichern') ), el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, _t('Abbrechen') ) ) ) );
 	}
 	function EmailLogs() {
 		var s = useState( { data: null } ); var st = s[ 0 ], set = s[ 1 ];
 		useEffect( function () { api( 'GET', '/api/email-logs?limit=50' ).then( set ).catch( function () { set( { emails: [] } ); } ); }, [] );
 		var rows = st && st.emails;
-		return rows == null ? Spinner() : el( 'table', { className: 'ec-table' }, el( 'thead', null, el( 'tr', null, el( 'th', null, 'Datum' ), el( 'th', null, 'An' ), el( 'th', null, 'Betreff' ), el( 'th', null, 'Status' ) ) ),
+		return rows == null ? Spinner() : el( 'table', { className: 'ec-table' }, el( 'thead', null, el( 'tr', null, el( 'th', null, _t('Datum') ), el( 'th', null, _t('An') ), el( 'th', null, _t('Betreff') ), el( 'th', null, _t('Status') ) ) ),
 			el( 'tbody', null, rows.map( function ( m ) { return el( 'tr', { key: m.id }, el( 'td', null, fmtDate( m.createdAt ) ), el( 'td', null, m.toEmail ), el( 'td', null, m.subject ), el( 'td', null, m.status ) ); } ) ) );
 	}
 
@@ -856,16 +857,16 @@
 		}
 		useEffect( function () { load(); }, [] );
 		function addSub( e ) { e.preventDefault(); if ( ! st.newSub ) { return; } api( 'POST', '/api/subscribers', { email: st.newSub } ).then( function () { set( Object.assign( {}, st, { newSub: '' } ) ); load(); } ).catch( function ( err ) { window.alert( err.message ); } ); }
-		function sendCamp( c ) { if ( ! window.confirm( 'Kampagne „' + c.name + '" jetzt senden?' ) ) { return; } api( 'POST', '/api/marketing/' + c.id + '/send', {} ).then( function ( b ) { window.alert( 'Gesendet: ' + ( b && b.sent != null ? b.sent : '?' ) ); load(); } ).catch( function ( err ) { window.alert( err.message ); } ); }
+		function sendCamp( c ) { if ( ! window.confirm( _t('Kampagne „') + c.name + _t('" jetzt senden?') ) ) { return; } api( 'POST', '/api/marketing/' + c.id + '/send', {} ).then( function ( b ) { window.alert( 'Gesendet: ' + ( b && b.sent != null ? b.sent : '?' ) ); load(); } ).catch( function ( err ) { window.alert( err.message ); } ); }
 		return el( 'div', null,
-			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Marketing' ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { editing: {} } ) ); } }, '+ Kampagne' ) ),
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Marketing') ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { editing: {} } ) ); } }, _t('+ Kampagne') ) ),
 			st.editing && el( CampaignForm, { onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
 			el( 'div', { className: 'ec-form-grid' },
 				el( 'div', { className: 'ec-card' }, el( 'h3', null, 'Abonnenten (' + ( st.subs ? st.subs.length : '…' ) + ')' ),
-					el( 'form', { className: 'ec-inline-form', onSubmit: addSub }, el( 'input', { type: 'email', placeholder: 'E-Mail', value: st.newSub, onChange: function ( e ) { set( Object.assign( {}, st, { newSub: e.target.value } ) ); } } ), el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary' }, '+' ) ),
+					el( 'form', { className: 'ec-inline-form', onSubmit: addSub }, el( 'input', { type: 'email', placeholder: _t('E-Mail'), value: st.newSub, onChange: function ( e ) { set( Object.assign( {}, st, { newSub: e.target.value } ) ); } } ), el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary' }, '+' ) ),
 					st.subs === null ? Spinner() : el( 'ul', { className: 'ec-tasklist' }, st.subs.slice( 0, 30 ).map( function ( su ) { return el( 'li', { key: su.id }, su.email, su.name && el( 'span', { className: 'ec-muted' }, ' · ' + su.name ) ); } ) ) ),
-				el( 'div', { className: 'ec-card' }, el( 'h3', null, 'Kampagnen' ),
-					st.camps === null ? Spinner() : st.camps.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Keine Kampagnen.' ) :
+				el( 'div', { className: 'ec-card' }, el( 'h3', null, _t('Kampagnen') ),
+					st.camps === null ? Spinner() : st.camps.length === 0 ? el( 'p', { className: 'ec-muted' }, _t('Keine Kampagnen.') ) :
 						el( 'ul', { className: 'ec-tasklist' }, st.camps.map( function ( c ) { return el( 'li', { key: c.id }, el( 'strong', null, c.name ), ' (' + c.status + ') ', c.status !== 'sent' && el( 'a', { href: '#', onClick: function ( e ) { e.preventDefault(); sendCamp( c ); } }, 'senden' ) ); } ) ) )
 			)
 		);
@@ -874,11 +875,11 @@
 		var s = useState( { name: '', subject: '', body: '', busy: false, error: '' } );
 		var st = s[ 0 ], set = s[ 1 ]; function up( o ) { set( Object.assign( {}, st, { error: '' }, o ) ); }
 		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true } ) ); api( 'POST', '/api/marketing', { name: st.name, subject: st.subject, body: st.body } ).then( function () { props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
-		return el( 'div', { className: 'ec-modal' }, el( 'form', { className: 'ec-modal-card', onSubmit: save }, el( 'h3', null, 'Neue Kampagne' ), ErrorBox( st.error ),
-			Field( 'Name', el( 'input', { required: true, value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
-			Field( 'Betreff', el( 'input', { required: true, value: st.subject, onChange: function ( e ) { up( { subject: e.target.value } ); } } ) ),
-			Field( 'Inhalt (HTML)', el( 'textarea', { rows: 8, value: st.body, onChange: function ( e ) { up( { body: e.target.value } ); } } ) ),
-			el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, 'Speichern' ), el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, 'Abbrechen' ) ) ) );
+		return el( 'div', { className: 'ec-modal' }, el( 'form', { className: 'ec-modal-card', onSubmit: save }, el( 'h3', null, _t('Neue Kampagne') ), ErrorBox( st.error ),
+			Field( _t('Name'), el( 'input', { required: true, value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
+			Field( _t('Betreff'), el( 'input', { required: true, value: st.subject, onChange: function ( e ) { up( { subject: e.target.value } ); } } ) ),
+			Field( _t('Inhalt (HTML)'), el( 'textarea', { rows: 8, value: st.body, onChange: function ( e ) { up( { body: e.target.value } ); } } ) ),
+			el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, _t('Speichern') ), el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, _t('Abbrechen') ) ) ) );
 	}
 
 	// --- Webhooks / Support / Billing ---------------------------------------
@@ -889,12 +890,12 @@
 		function load() { api( 'GET', '/api/merchant/webhooks' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { items: ( b && ( b.endpoints || b.webhooks ) ) || [] } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } ); }
 		useEffect( function () { load(); }, [] );
 		function add( e ) { e.preventDefault(); api( 'POST', '/api/merchant/webhooks', { url: st.url, events: st.events.split( ',' ).map( function ( x ) { return x.trim(); } ).filter( Boolean ), isActive: true } ).then( function () { set( Object.assign( {}, st, { url: '' } ) ); load(); } ).catch( function ( err ) { window.alert( err.message ); } ); }
-		function del( w ) { if ( ! window.confirm( 'Webhook löschen?' ) ) { return; } api( 'DELETE', '/api/merchant/webhooks?id=' + w.id ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
-		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Webhooks' ) ), ErrorBox( st.error ),
-			el( 'form', { className: 'ec-inline-form', onSubmit: add }, el( 'input', { type: 'url', placeholder: 'https://…', required: true, value: st.url, onChange: function ( e ) { set( Object.assign( {}, st, { url: e.target.value } ) ); }, style: { flex: '1' } } ), el( 'input', { placeholder: 'events (kommagetrennt)', value: st.events, onChange: function ( e ) { set( Object.assign( {}, st, { events: e.target.value } ) ); } } ), el( 'button', { className: 'ec-btn ec-btn-primary' }, 'Hinzufügen' ) ),
-			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Keine Webhooks.' ) :
-				el( 'table', { className: 'ec-table' }, el( 'thead', null, el( 'tr', null, el( 'th', null, 'URL' ), el( 'th', null, 'Events' ), el( 'th', null, '' ) ) ),
-					el( 'tbody', null, st.items.map( function ( w ) { return el( 'tr', { key: w.id }, el( 'td', null, el( 'code', null, w.url ) ), el( 'td', null, ( w.events || [] ).join( ', ' ) ), el( 'td', { className: 'ec-row-actions' }, el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { del( w ); } }, 'Löschen' ) ) ); } ) ) ) );
+		function del( w ) { if ( ! window.confirm( _t('Webhook löschen?') ) ) { return; } api( 'DELETE', '/api/merchant/webhooks?id=' + w.id ).then( load ).catch( function ( err ) { window.alert( err.message ); } ); }
+		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Webhooks') ) ), ErrorBox( st.error ),
+			el( 'form', { className: 'ec-inline-form', onSubmit: add }, el( 'input', { type: 'url', placeholder: 'https://…', required: true, value: st.url, onChange: function ( e ) { set( Object.assign( {}, st, { url: e.target.value } ) ); }, style: { flex: '1' } } ), el( 'input', { placeholder: _t('events (kommagetrennt)'), value: st.events, onChange: function ( e ) { set( Object.assign( {}, st, { events: e.target.value } ) ); } } ), el( 'button', { className: 'ec-btn ec-btn-primary' }, _t('Hinzufügen') ) ),
+			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, _t('Keine Webhooks.') ) :
+				el( 'table', { className: 'ec-table' }, el( 'thead', null, el( 'tr', null, el( 'th', null, 'URL' ), el( 'th', null, _t('Events') ), el( 'th', null, '' ) ) ),
+					el( 'tbody', null, st.items.map( function ( w ) { return el( 'tr', { key: w.id }, el( 'td', null, el( 'code', null, w.url ) ), el( 'td', null, ( w.events || [] ).join( ', ' ) ), el( 'td', { className: 'ec-row-actions' }, el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { del( w ); } }, _t('Löschen') ) ) ); } ) ) ) );
 	}
 
 	function SupportView() {
@@ -903,13 +904,13 @@
 		function load() { api( 'GET', '/api/support/tickets' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.tickets ) || [] } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } ); }
 		useEffect( function () { load(); }, [] );
 		function create( e ) { e.preventDefault(); api( 'POST', '/api/support/tickets', { subject: st.subject, message: st.message, category: st.category, priority: st.priority } ).then( function () { set( Object.assign( {}, st, { creating: false, subject: '', message: '' } ) ); load(); } ).catch( function ( err ) { window.alert( err.message ); } ); }
-		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Support' ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { creating: true } ) ); } }, '+ Anfrage' ) ), ErrorBox( st.error ),
+		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Support') ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { creating: true } ) ); } }, _t('+ Anfrage') ) ), ErrorBox( st.error ),
 			st.creating && el( 'form', { className: 'ec-card', onSubmit: create, style: { marginBottom: '14px' } },
-				Field( 'Betreff', el( 'input', { required: true, value: st.subject, onChange: function ( e ) { set( Object.assign( {}, st, { subject: e.target.value } ) ); } } ) ),
-				Field( 'Nachricht', el( 'textarea', { rows: 4, required: true, value: st.message, onChange: function ( e ) { set( Object.assign( {}, st, { message: e.target.value } ) ); } } ) ),
-				el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary' }, 'Senden' ), el( 'button', { type: 'button', className: 'ec-btn', onClick: function () { set( Object.assign( {}, st, { creating: false } ) ); } }, 'Abbrechen' ) ) ),
-			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Keine Anfragen.' ) :
-				el( 'table', { className: 'ec-table' }, el( 'thead', null, el( 'tr', null, el( 'th', null, 'Nummer' ), el( 'th', null, 'Betreff' ), el( 'th', null, 'Status' ), el( 'th', null, 'Datum' ) ) ),
+				Field( _t('Betreff'), el( 'input', { required: true, value: st.subject, onChange: function ( e ) { set( Object.assign( {}, st, { subject: e.target.value } ) ); } } ) ),
+				Field( _t('Nachricht'), el( 'textarea', { rows: 4, required: true, value: st.message, onChange: function ( e ) { set( Object.assign( {}, st, { message: e.target.value } ) ); } } ) ),
+				el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary' }, _t('Senden') ), el( 'button', { type: 'button', className: 'ec-btn', onClick: function () { set( Object.assign( {}, st, { creating: false } ) ); } }, _t('Abbrechen') ) ) ),
+			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, _t('Keine Anfragen.') ) :
+				el( 'table', { className: 'ec-table' }, el( 'thead', null, el( 'tr', null, el( 'th', null, _t('Nummer') ), el( 'th', null, _t('Betreff') ), el( 'th', null, _t('Status') ), el( 'th', null, _t('Datum') ) ) ),
 					el( 'tbody', null, st.items.map( function ( t ) { return el( 'tr', { key: t.id }, el( 'td', null, el( 'code', null, t.ticketNumber ) ), el( 'td', null, t.subject ), el( 'td', null, t.status ), el( 'td', null, fmtDate( t.createdAt ) ) ); } ) ) ) );
 	}
 
@@ -929,14 +930,14 @@
 			// Paid plans require card payment -> hosted billing in a new tab.
 			window.open( ecNative.appUrl + '/dashboard/billing', '_blank', 'noopener' );
 		}
-		if ( ! st.me ) { return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Tarif' ) ), st.error ? ErrorBox( st.error ) : Spinner() ); }
-		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Tarif & Add-ons' ) ), ErrorBox( st.error ),
+		if ( ! st.me ) { return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Tarif') ) ), st.error ? ErrorBox( st.error ) : Spinner() ); }
+		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Tarif & Add-ons') ) ), ErrorBox( st.error ),
 			el( 'p', null, 'Aktueller Tarif: ', el( 'strong', null, st.me.plan ) ),
 			el( 'div', { className: 'ec-stat-grid' }, PLANS.map( function ( pl ) {
 				var current = st.me.plan === pl[ 0 ];
 				return el( 'div', { key: pl[ 0 ], className: 'ec-stat' }, el( 'div', { className: 'ec-stat-val', style: { fontSize: '18px' } }, pl[ 1 ] ),
 					el( 'div', { className: 'ec-stat-lbl', style: { marginTop: '4px' } }, 'Kommission: ', el( 'strong', null, pl[ 2 ] ) ),
-					el( 'button', { className: 'ec-btn ec-btn-sm' + ( current ? '' : ' ec-btn-primary' ), disabled: current || st.busy === pl[ 0 ], onClick: function () { choose( pl[ 0 ] ); }, style: { marginTop: '8px' } }, current ? 'Aktiv' : ( pl[ 0 ] === 'free' ? 'Wechseln' : 'Upgrade ↗' ) ) );
+					el( 'button', { className: 'ec-btn ec-btn-sm' + ( current ? '' : ' ec-btn-primary' ), disabled: current || st.busy === pl[ 0 ], onClick: function () { choose( pl[ 0 ] ); }, style: { marginTop: '8px' } }, current ? 'Aktiv' : ( pl[ 0 ] === 'free' ? 'Wechseln' : _t('Upgrade ↗') ) ) );
 			} ) ),
 			el( 'p', { className: 'ec-muted ec-sm', style: { marginTop: '12px' } }, 'Kommission pro erfolgreicher Zahlung – alle Zahlungsgebühren inklusive, keine versteckten Kosten. Kostenpflichtige Tarife: Kartenzahlung über die sichere EasyCheckout-Seite (neuer Tab).' )
 		);
@@ -953,11 +954,11 @@
 		if ( st.canInvoice === null ) { return Spinner(); }
 		if ( st.canInvoice === false ) {
 			return el( 'div', null,
-				el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Rechnungen' ) ),
+				el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Rechnungen') ) ),
 				el( 'div', { className: 'ec-alert' },
-					el( 'p', null, el( 'strong', null, 'Rechnungen sind in deinem Tarif nicht enthalten.' ) ),
+					el( 'p', null, el( 'strong', null, _t('Rechnungen sind in deinem Tarif nicht enthalten.') ) ),
 					el( 'p', { className: 'ec-muted' }, 'Verfügbar ab Tarif „Rechnungen", „Basic" oder „Pro". Aktueller Tarif: ' + ( st.plan || 'Free' ) + '.' ),
-					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { if ( props.navigate ) { props.navigate( 'billing' ); } } }, 'Tarif ansehen' )
+					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { if ( props.navigate ) { props.navigate( 'billing' ); } } }, _t('Tarif ansehen') )
 				)
 			);
 		}
@@ -965,7 +966,7 @@
 			var p;
 			if ( what === 'send' ) { p = api( 'POST', '/api/invoices/' + inv.id + '/send', {} ); }
 			else if ( what === 'reminder' ) { p = api( 'POST', '/api/invoices/' + inv.id + '/reminder', {} ); }
-			else if ( what === 'delete' ) { if ( ! window.confirm( 'Rechnung löschen?' ) ) { return; } p = api( 'DELETE', '/api/invoices/' + inv.id ); }
+			else if ( what === 'delete' ) { if ( ! window.confirm( _t('Rechnung löschen?') ) ) { return; } p = api( 'DELETE', '/api/invoices/' + inv.id ); }
 			p.then( function ( b ) { if ( what === 'send' && b && b.invoiceUrl ) { window.alert( 'Rechnung gesendet. Link: ' + b.invoiceUrl ); } load(); } ).catch( function ( err ) { window.alert( err.message ); } );
 		}
 		// Rechnung ansehen / als PDF öffnen: erst (falls nötig) einen öffentlichen
@@ -974,7 +975,7 @@
 		function openInvoice( inv, mode ) {
 			var appUrl = ( ecNative.appUrl || 'https://www.easycheckout.ch' ).replace( /\/$/, '' );
 			function go( token ) {
-				if ( ! token ) { window.alert( 'Vorschau-Link konnte nicht erstellt werden.' ); return; }
+				if ( ! token ) { window.alert( _t('Vorschau-Link konnte nicht erstellt werden.') ); return; }
 				var url = ( mode === 'pdf' )
 					? ( appUrl + '/api/public/invoice/' + token + '/pdf' )
 					: ( appUrl + '/rechnung/' + token );
@@ -986,12 +987,12 @@
 				.catch( function ( err ) { window.alert( err.message ); } );
 		}
 		return el( 'div', null,
-			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Rechnungen' ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { editing: {} } ) ); } }, '+ Neue Rechnung' ) ),
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Rechnungen') ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { editing: {} } ) ); } }, _t('+ Neue Rechnung') ) ),
 			ErrorBox( st.error ),
 			st.editing && el( InvoiceForm, { invoice: st.editing.id ? st.editing : null, onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
-			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Rechnungen.' ) :
+			st.items === null ? Spinner() : st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, _t('Noch keine Rechnungen.') ) :
 				el( 'table', { className: 'ec-table' },
-					el( 'thead', null, el( 'tr', null, el( 'th', null, 'Nummer' ), el( 'th', null, 'Kunde' ), el( 'th', null, 'Betrag' ), el( 'th', null, 'Fällig' ), el( 'th', null, 'Status' ), el( 'th', null, '' ) ) ),
+					el( 'thead', null, el( 'tr', null, el( 'th', null, _t('Nummer') ), el( 'th', null, _t('Kunde') ), el( 'th', null, _t('Betrag') ), el( 'th', null, _t('Fällig') ), el( 'th', null, _t('Status') ), el( 'th', null, '' ) ) ),
 					el( 'tbody', null, st.items.map( function ( inv ) {
 						return el( 'tr', { key: inv.id },
 							el( 'td', null, el( 'code', null, inv.invoiceNumber || '—' ) ),
@@ -1000,12 +1001,12 @@
 							el( 'td', null, fmtDate( inv.dueDate ) ),
 							el( 'td', null, invStatus( inv.status ) ),
 							el( 'td', { className: 'ec-row-actions' },
-								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { openInvoice( inv, 'view' ); } }, 'Ansehen' ), ' ',
+								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { openInvoice( inv, 'view' ); } }, _t('Ansehen') ), ' ',
 								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { openInvoice( inv, 'pdf' ); } }, 'PDF' ), ' ',
-								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { editing: Object.assign( {}, inv ) } ) ); } }, 'Bearbeiten' ), ' ',
-								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { act( inv, 'send' ); } }, 'Senden' ), ' ',
-								( inv.status === 'sent' || inv.status === 'overdue' ) && el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { act( inv, 'reminder' ); } }, 'Mahnen' ), ' ',
-								el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { act( inv, 'delete' ); } }, 'Löschen' ) )
+								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { set( Object.assign( {}, st, { editing: Object.assign( {}, inv ) } ) ); } }, _t('Bearbeiten') ), ' ',
+								el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { act( inv, 'send' ); } }, _t('Senden') ), ' ',
+								( inv.status === 'sent' || inv.status === 'overdue' ) && el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { act( inv, 'reminder' ); } }, _t('Mahnen') ), ' ',
+								el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { act( inv, 'delete' ); } }, _t('Löschen') ) )
 						);
 					} ) )
 				)
@@ -1013,7 +1014,7 @@
 	}
 
 	function invStatus( s ) {
-		var m = { draft: [ 'ec-badge-off', 'Entwurf' ], sent: [ 'ec-badge-off', 'Gesendet' ], paid: [ 'ec-badge-on', 'Bezahlt' ], overdue: [ 'ec-badge-err', 'Überfällig' ], cancelled: [ 'ec-badge-err', 'Storniert' ] }[ s ] || [ 'ec-badge-off', s || '—' ];
+		var m = { draft: [ 'ec-badge-off', _t('Entwurf') ], sent: [ 'ec-badge-off', _t('Gesendet') ], paid: [ 'ec-badge-on', _t('Bezahlt') ], overdue: [ 'ec-badge-err', _t('Überfällig') ], cancelled: [ 'ec-badge-err', _t('Storniert') ] }[ s ] || [ 'ec-badge-off', s || '—' ];
 		return el( 'span', { className: 'ec-badge ' + m[ 0 ] }, m[ 1 ] );
 	}
 
@@ -1039,26 +1040,26 @@
 			pr.then( function () { props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } );
 		}
 		return el( 'div', { className: 'ec-modal' }, el( 'form', { className: 'ec-modal-card', onSubmit: save },
-			el( 'h3', null, ( inv && inv.id ) ? 'Rechnung bearbeiten' : 'Neue Rechnung' ), ErrorBox( st.error ),
-			Field( 'Kunden-E-Mail', el( 'input', { type: 'email', required: true, value: st.customerEmail, onChange: function ( e ) { up( { customerEmail: e.target.value } ); } } ) ),
-			Field( 'Kundenname', el( 'input', { required: true, value: st.customerName, onChange: function ( e ) { up( { customerName: e.target.value } ); } } ) ),
-			Field( 'Strasse', el( 'input', { value: st.customerStreet, onChange: function ( e ) { up( { customerStreet: e.target.value } ); } } ) ),
-			el( 'div', { className: 'ec-two' }, Field( 'PLZ', el( 'input', { value: st.customerPostalCode, onChange: function ( e ) { up( { customerPostalCode: e.target.value } ); } } ) ), Field( 'Ort', el( 'input', { value: st.customerCity, onChange: function ( e ) { up( { customerCity: e.target.value } ); } } ) ) ),
-			el( 'div', { className: 'ec-items' }, el( 'div', { className: 'ec-items-head' }, el( 'span', null, 'Positionen' ), el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', onClick: addItem }, '+ Position' ) ),
+			el( 'h3', null, ( inv && inv.id ) ? 'Rechnung bearbeiten' : _t('Neue Rechnung') ), ErrorBox( st.error ),
+			Field( _t('Kunden-E-Mail'), el( 'input', { type: 'email', required: true, value: st.customerEmail, onChange: function ( e ) { up( { customerEmail: e.target.value } ); } } ) ),
+			Field( _t('Kundenname'), el( 'input', { required: true, value: st.customerName, onChange: function ( e ) { up( { customerName: e.target.value } ); } } ) ),
+			Field( _t('Strasse'), el( 'input', { value: st.customerStreet, onChange: function ( e ) { up( { customerStreet: e.target.value } ); } } ) ),
+			el( 'div', { className: 'ec-two' }, Field( 'PLZ', el( 'input', { value: st.customerPostalCode, onChange: function ( e ) { up( { customerPostalCode: e.target.value } ); } } ) ), Field( _t('Ort'), el( 'input', { value: st.customerCity, onChange: function ( e ) { up( { customerCity: e.target.value } ); } } ) ) ),
+			el( 'div', { className: 'ec-items' }, el( 'div', { className: 'ec-items-head' }, el( 'span', null, _t('Positionen') ), el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm', onClick: addItem }, _t('+ Position') ) ),
 				st.items.map( function ( it, i ) {
 					return el( 'div', { key: i, className: 'ec-item-row' },
-						el( 'input', { className: 'ec-item-desc', placeholder: 'Beschreibung', value: it.description, onChange: function ( e ) { setItem( i, 'description', e.target.value ); } } ),
+						el( 'input', { className: 'ec-item-desc', placeholder: _t('Beschreibung'), value: it.description, onChange: function ( e ) { setItem( i, 'description', e.target.value ); } } ),
 						el( 'input', { className: 'ec-item-qty', type: 'number', min: 1, value: it.quantity, onChange: function ( e ) { setItem( i, 'quantity', e.target.value ); } } ),
-						el( 'input', { className: 'ec-item-price', type: 'number', step: '0.01', placeholder: 'Preis', value: it.price, onChange: function ( e ) { setItem( i, 'price', e.target.value ); } } ),
+						el( 'input', { className: 'ec-item-price', type: 'number', step: '0.01', placeholder: _t('Preis'), value: it.price, onChange: function ( e ) { setItem( i, 'price', e.target.value ); } } ),
 						el( 'button', { type: 'button', className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { rmItem( i ); } }, '×' ) );
 				} ) ),
 			el( 'div', { className: 'ec-two' },
-				Field( 'MwSt-Satz (%)', el( 'input', { type: 'number', step: '0.1', value: st.vatRate, onChange: function ( e ) { up( { vatRate: e.target.value } ); } } ) ),
-				Field( 'Fällig am', el( 'input', { type: 'date', value: ( st.dueDate || '' ).slice( 0, 10 ), onChange: function ( e ) { up( { dueDate: e.target.value } ); } } ) ) ),
-			Field( 'Notizen', el( 'textarea', { rows: 2, value: st.notes, onChange: function ( e ) { up( { notes: e.target.value } ); } } ) ),
+				Field( _t('MwSt-Satz (%)'), el( 'input', { type: 'number', step: '0.1', value: st.vatRate, onChange: function ( e ) { up( { vatRate: e.target.value } ); } } ) ),
+				Field( _t('Fällig am'), el( 'input', { type: 'date', value: ( st.dueDate || '' ).slice( 0, 10 ), onChange: function ( e ) { up( { dueDate: e.target.value } ); } } ) ) ),
+			Field( _t('Notizen'), el( 'textarea', { rows: 2, value: st.notes, onChange: function ( e ) { up( { notes: e.target.value } ); } } ) ),
 			el( 'div', { className: 'ec-form-actions' },
-				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : 'Speichern' ),
-				el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, 'Abbrechen' ) )
+				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : _t('Speichern') ),
+				el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, _t('Abbrechen') ) )
 		) );
 	}
 
@@ -1078,7 +1079,7 @@
 		function activate() {
 			set( function ( p ) { return Object.assign( {}, p, { busy: true, msg: '', error: '' } ); } );
 			post( 'easycheckout_activate_gateway', {} ).then( function ( j ) {
-				if ( ! j || ! j.success ) { throw new Error( ( j && j.data && j.data.message ) || 'Fehler' ); }
+				if ( ! j || ! j.success ) { throw new Error( ( j && j.data && j.data.message ) || _t('Fehler') ); }
 				var wh = j.data.webhook;
 				var note = wh === 'registered'
 					? 'Gateway aktiviert und Webhook registriert.'
@@ -1098,17 +1099,17 @@
 				el( 'strong', { style: { color: ok ? '#059669' : '#94a3b8' } }, ok ? 'ok' : 'offen' ) );
 		}
 		return el( 'div', { className: 'ec-card' },
-			el( 'h3', null, 'WooCommerce-Gateway' ),
+			el( 'h3', null, _t('WooCommerce-Gateway') ),
 			v.msg && el( 'div', { className: 'ec-alert' }, v.msg ),
 			ErrorBox( v.error ),
 			el( 'p', { style: { color: '#64748b', margin: '0 0 12px' } },
-				'Aktiviert den EasyCheckout-Bezahlweg (Karte/TWINT) und Express-Checkout in WooCommerce – erzeugt automatisch den Zahlungs-Key und registriert den Webhook.' ),
-			! st.wooActive && el( 'div', { className: 'ec-alert' }, 'WooCommerce ist nicht aktiv – bitte zuerst WooCommerce aktivieren.' ),
-			row( !! st.apiKeySet, 'Zahlungs-Key hinterlegt' ),
-			row( !! st.webhookSet, 'Webhook registriert (Order-Sync)' ),
+				_t('Aktiviert den EasyCheckout-Bezahlweg (Karte/TWINT) und Express-Checkout in WooCommerce – erzeugt automatisch den Zahlungs-Key und registriert den Webhook.') ),
+			! st.wooActive && el( 'div', { className: 'ec-alert' }, _t('WooCommerce ist nicht aktiv – bitte zuerst WooCommerce aktivieren.') ),
+			row( !! st.apiKeySet, _t('Zahlungs-Key hinterlegt') ),
+			row( !! st.webhookSet, _t('Webhook registriert (Order-Sync)') ),
 			el( 'div', { className: 'ec-form-actions', style: { marginTop: '12px' } },
 				el( 'button', { className: 'ec-btn ec-btn-primary', disabled: v.busy || ! st.authed, onClick: activate },
-					v.busy ? '…' : ( ready ? 'Neu verbinden' : 'WooCommerce-Gateway aktivieren' ) ) )
+					v.busy ? '…' : ( ready ? 'Neu verbinden' : _t('WooCommerce-Gateway aktivieren') ) ) )
 		);
 	}
 
@@ -1117,13 +1118,13 @@
 		var stats = s[ 0 ], set = s[ 1 ];
 		useEffect( function () { api( 'GET', '/api/dashboard/stats' ).then( set ).catch( function () { set( {} ); } ); }, [] );
 		var cards = [
-			[ 'Umsatz (30 Tage)', stats ? fmtMoney( stats.revenue ) : '…' ],
-			[ 'Bestellungen', stats ? ( stats.ordersCount != null ? stats.ordersCount : 0 ) : '…' ],
-			[ 'Checkouts', stats ? ( stats.checkoutsCount != null ? stats.checkoutsCount : 0 ) : '…' ],
-			[ 'Conversion', stats ? ( ( stats.conversionRate != null ? stats.conversionRate : 0 ) + ' %' ) : '…' ],
+			[ _t('Umsatz (30 Tage)'), stats ? fmtMoney( stats.revenue ) : '…' ],
+			[ _t('Bestellungen'), stats ? ( stats.ordersCount != null ? stats.ordersCount : 0 ) : '…' ],
+			[ _t('Checkouts'), stats ? ( stats.checkoutsCount != null ? stats.checkoutsCount : 0 ) : '…' ],
+			[ _t('Conversion'), stats ? ( ( stats.conversionRate != null ? stats.conversionRate : 0 ) + ' %' ) : '…' ],
 		];
 		return el( 'div', null,
-			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Übersicht' ) ),
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Übersicht') ) ),
 			el( 'div', { className: 'ec-stat-grid' }, cards.map( function ( c, i ) {
 				return el( 'div', { key: i, className: 'ec-stat' }, el( 'div', { className: 'ec-stat-val' }, c[ 1 ] ), el( 'div', { className: 'ec-stat-lbl' }, c[ 0 ] ) );
 			} ) ),
@@ -1138,9 +1139,9 @@
 		var st = s[ 0 ], set = s[ 1 ];
 		function loadMe() { api( 'GET', '/api/auth/me' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { me: ( b && b.merchant ) || b } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { error: err.message } ); } ); } ); }
 		useEffect( function () { loadMe(); }, [] );
-		if ( ! st.me ) { return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Einstellungen' ) ), st.error ? ErrorBox( st.error ) : Spinner() ); }
+		if ( ! st.me ) { return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Einstellungen') ) ), st.error ? ErrorBox( st.error ) : Spinner() ); }
 		return el( 'div', null,
-			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, 'Einstellungen' ) ),
+			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Einstellungen') ) ),
 			el( 'div', { className: 'ec-form-grid' },
 				el( ProfileCard, { me: st.me, onSaved: loadMe } ),
 				el( LogoCard, { me: st.me, onSaved: loadMe } ),
@@ -1154,21 +1155,21 @@
 	function cardForm( title, body, st, onSubmit ) {
 		return el( 'form', { className: 'ec-card', onSubmit: onSubmit }, el( 'h3', null, title ),
 			st.msg && el( 'div', { className: 'ec-alert' }, st.msg ), ErrorBox( st.error ), body,
-			el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : 'Speichern' ) ) );
+			el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, st.busy ? '…' : _t('Speichern') ) ) );
 	}
 
 	function ProfileCard( props ) {
 		var s = useState( { d: { companyName: props.me.companyName || '', email: props.me.email || '', street: props.me.street || '', postalCode: props.me.postalCode || '', city: props.me.city || '', phone: props.me.phone || '', vatNumber: props.me.vatNumber || '' }, busy: false, msg: '', error: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
 		function up( k, v ) { var d = Object.assign( {}, st.d ); d[ k ] = v; set( Object.assign( {}, st, { d: d, msg: '', error: '' } ) ); }
-		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true, msg: '', error: '' } ) ); api( 'PUT', '/api/auth/profile', st.d ).then( function () { set( Object.assign( {}, st, { busy: false, msg: 'Gespeichert.' } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
-		return cardForm( 'Firmenprofil', el( 'div', null,
-			Field( 'Firma', el( 'input', { value: st.d.companyName, onChange: function ( e ) { up( 'companyName', e.target.value ); } } ) ),
-			Field( 'E-Mail', el( 'input', { type: 'email', value: st.d.email, onChange: function ( e ) { up( 'email', e.target.value ); } } ) ),
-			Field( 'Strasse', el( 'input', { value: st.d.street, onChange: function ( e ) { up( 'street', e.target.value ); } } ) ),
-			el( 'div', { className: 'ec-two' }, Field( 'PLZ', el( 'input', { value: st.d.postalCode, onChange: function ( e ) { up( 'postalCode', e.target.value ); } } ) ), Field( 'Ort', el( 'input', { value: st.d.city, onChange: function ( e ) { up( 'city', e.target.value ); } } ) ) ),
-			Field( 'Telefon', el( 'input', { value: st.d.phone, onChange: function ( e ) { up( 'phone', e.target.value ); } } ) ),
-			Field( 'MwSt-Nr.', el( 'input', { value: st.d.vatNumber, onChange: function ( e ) { up( 'vatNumber', e.target.value ); } } ) )
+		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true, msg: '', error: '' } ) ); api( 'PUT', '/api/auth/profile', st.d ).then( function () { set( Object.assign( {}, st, { busy: false, msg: _t('Gespeichert.') } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
+		return cardForm( _t('Firmenprofil'), el( 'div', null,
+			Field( _t('Firma'), el( 'input', { value: st.d.companyName, onChange: function ( e ) { up( 'companyName', e.target.value ); } } ) ),
+			Field( _t('E-Mail'), el( 'input', { type: 'email', value: st.d.email, onChange: function ( e ) { up( 'email', e.target.value ); } } ) ),
+			Field( _t('Strasse'), el( 'input', { value: st.d.street, onChange: function ( e ) { up( 'street', e.target.value ); } } ) ),
+			el( 'div', { className: 'ec-two' }, Field( 'PLZ', el( 'input', { value: st.d.postalCode, onChange: function ( e ) { up( 'postalCode', e.target.value ); } } ) ), Field( _t('Ort'), el( 'input', { value: st.d.city, onChange: function ( e ) { up( 'city', e.target.value ); } } ) ) ),
+			Field( _t('Telefon'), el( 'input', { value: st.d.phone, onChange: function ( e ) { up( 'phone', e.target.value ); } } ) ),
+			Field( _t('MwSt-Nr.'), el( 'input', { value: st.d.vatNumber, onChange: function ( e ) { up( 'vatNumber', e.target.value ); } } ) )
 		), st, save );
 	}
 
@@ -1177,94 +1178,94 @@
 		var st = s[ 0 ], set = s[ 1 ];
 		function pick( e ) { var f = e.target.files[ 0 ]; if ( ! f ) { return; } set( Object.assign( {}, st, { busy: true, error: '' } ) ); uploadFile( 'POST', '/api/merchant/logo', 'logo', f ).then( function ( b ) { set( Object.assign( {}, st, { busy: false, url: b.logoUrl || '' } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
 		function remove() { api( 'DELETE', '/api/merchant/logo' ).then( function () { set( Object.assign( {}, st, { url: '' } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { error: err.message } ) ); } ); }
-		return el( 'div', { className: 'ec-card' }, el( 'h3', null, 'Logo' ), ErrorBox( st.error ),
-			st.url ? el( 'img', { src: st.url, className: 'ec-thumb-lg' } ) : el( 'p', { className: 'ec-muted' }, 'Kein Logo.' ),
+		return el( 'div', { className: 'ec-card' }, el( 'h3', null, _t('Logo') ), ErrorBox( st.error ),
+			st.url ? el( 'img', { src: st.url, className: 'ec-thumb-lg' } ) : el( 'p', { className: 'ec-muted' }, _t('Kein Logo.') ),
 			el( 'input', { type: 'file', accept: 'image/*', onChange: pick, disabled: st.busy } ),
-			st.url && el( 'div', { style: { marginTop: '8px' } }, el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: remove }, 'Entfernen' ) ) );
+			st.url && el( 'div', { style: { marginTop: '8px' } }, el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: remove }, _t('Entfernen') ) ) );
 	}
 
 	function QrCard( props ) {
 		var s = useState( { iban: props.me.iban || '', enabled: !! props.me.qrPaymentEnabled, busy: false, msg: '', error: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
-		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true, msg: '', error: '' } ) ); api( 'PUT', '/api/auth/qr-settings', { iban: st.iban, qrPaymentEnabled: st.enabled } ).then( function () { set( Object.assign( {}, st, { busy: false, msg: 'Gespeichert.' } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
-		return cardForm( 'QR-Rechnung', el( 'div', null,
-			Field( 'IBAN (CH)', el( 'input', { value: st.iban, onChange: function ( e ) { set( Object.assign( {}, st, { iban: e.target.value } ) ); } } ) ),
-			el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.enabled, onChange: function ( e ) { set( Object.assign( {}, st, { enabled: e.target.checked } ) ); } } ), ' QR-Zahlung aktiv' )
+		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true, msg: '', error: '' } ) ); api( 'PUT', '/api/auth/qr-settings', { iban: st.iban, qrPaymentEnabled: st.enabled } ).then( function () { set( Object.assign( {}, st, { busy: false, msg: _t('Gespeichert.') } ) ); props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
+		return cardForm( _t('QR-Rechnung'), el( 'div', null,
+			Field( _t('IBAN (CH)'), el( 'input', { value: st.iban, onChange: function ( e ) { set( Object.assign( {}, st, { iban: e.target.value } ) ); } } ) ),
+			el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.enabled, onChange: function ( e ) { set( Object.assign( {}, st, { enabled: e.target.checked } ) ); } } ), _t(' QR-Zahlung aktiv') )
 		), st, save );
 	}
 
 	function DescriptorCard( props ) {
 		var s = useState( { v: props.me.statementDescriptor || '', busy: false, msg: '', error: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
-		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true, msg: '', error: '' } ) ); api( 'PUT', '/api/auth/statement-descriptor', { statementDescriptor: st.v } ).then( function ( b ) { set( Object.assign( {}, st, { busy: false, msg: 'Gespeichert.', v: ( b && b.statementDescriptor ) || st.v } ) ); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
-		return cardForm( 'Zahlungs-Referenz', el( 'div', null,
-			Field( 'Text (5–22 Zeichen)', el( 'input', { value: st.v, maxLength: 22, onChange: function ( e ) { set( Object.assign( {}, st, { v: e.target.value } ) ); } } ), 'Erscheint auf der Kartenabrechnung des Kunden.' )
+		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true, msg: '', error: '' } ) ); api( 'PUT', '/api/auth/statement-descriptor', { statementDescriptor: st.v } ).then( function ( b ) { set( Object.assign( {}, st, { busy: false, msg: _t('Gespeichert.'), v: ( b && b.statementDescriptor ) || st.v } ) ); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
+		return cardForm( _t('Zahlungs-Referenz'), el( 'div', null,
+			Field( _t('Text (5–22 Zeichen)'), el( 'input', { value: st.v, maxLength: 22, onChange: function ( e ) { set( Object.assign( {}, st, { v: e.target.value } ) ); } } ), _t('Erscheint auf der Kartenabrechnung des Kunden.') )
 		), st, save );
 	}
 
 	function PasswordCard() {
 		var s = useState( { cur: '', nw: '', busy: false, msg: '', error: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
-		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true, msg: '', error: '' } ) ); api( 'PUT', '/api/auth/password', { currentPassword: st.cur, newPassword: st.nw } ).then( function () { set( { cur: '', nw: '', busy: false, msg: 'Passwort geändert.', error: '' } ); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
-		return cardForm( 'Passwort ändern', el( 'div', null,
-			Field( 'Aktuelles Passwort', el( 'input', { type: 'password', value: st.cur, onChange: function ( e ) { set( Object.assign( {}, st, { cur: e.target.value } ) ); } } ) ),
-			Field( 'Neues Passwort', el( 'input', { type: 'password', value: st.nw, onChange: function ( e ) { set( Object.assign( {}, st, { nw: e.target.value } ) ); } } ) )
+		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true, msg: '', error: '' } ) ); api( 'PUT', '/api/auth/password', { currentPassword: st.cur, newPassword: st.nw } ).then( function () { set( { cur: '', nw: '', busy: false, msg: _t('Passwort geändert.'), error: '' } ); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
+		return cardForm( _t('Passwort ändern'), el( 'div', null,
+			Field( _t('Aktuelles Passwort'), el( 'input', { type: 'password', value: st.cur, onChange: function ( e ) { set( Object.assign( {}, st, { cur: e.target.value } ) ); } } ) ),
+			Field( _t('Neues Passwort'), el( 'input', { type: 'password', value: st.nw, onChange: function ( e ) { set( Object.assign( {}, st, { nw: e.target.value } ) ); } } ) )
 		), st, save );
 	}
 
 	// --- Shell + router -----------------------------------------------------
 
 	var NAV = [
-		{ key: 'overview', label: 'Übersicht', icon: 'dashboard' },
-		{ key: 'checkouts', label: 'Checkouts', icon: 'cart' },
-		{ key: 'embed', label: 'Einbindung', icon: 'editor-code' },
-		{ key: 'orders', label: 'Bestellungen', icon: 'list-view' },
-		{ key: 'customers', label: 'Kunden', icon: 'groups' },
-		{ key: 'invoices', label: 'Rechnungen', icon: 'media-document' },
-		{ key: 'emails', label: 'E-Mails', icon: 'email' },
-		{ key: 'marketing', label: 'Marketing', icon: 'megaphone' },
-		{ key: 'onboarding', label: 'Verifizierung', icon: 'id' },
-		{ key: 'billing', label: 'Tarif', icon: 'cart' },
-		{ key: 'support', label: 'Support', icon: 'sos' },
-		{ key: 'settings', label: 'Einstellungen', icon: 'admin-generic' },
+		{ key: 'overview', label: _t('Übersicht'), icon: 'dashboard' },
+		{ key: 'checkouts', label: _t('Checkouts'), icon: 'cart' },
+		{ key: 'embed', label: _t('Einbindung'), icon: 'editor-code' },
+		{ key: 'orders', label: _t('Bestellungen'), icon: 'list-view' },
+		{ key: 'customers', label: _t('Kunden'), icon: 'groups' },
+		{ key: 'invoices', label: _t('Rechnungen'), icon: 'media-document' },
+		{ key: 'emails', label: _t('E-Mails'), icon: 'email' },
+		{ key: 'marketing', label: _t('Marketing'), icon: 'megaphone' },
+		{ key: 'onboarding', label: _t('Verifizierung'), icon: 'id' },
+		{ key: 'billing', label: _t('Tarif'), icon: 'cart' },
+		{ key: 'support', label: _t('Support'), icon: 'sos' },
+		{ key: 'settings', label: _t('Einstellungen'), icon: 'admin-generic' },
 	];
 
 	// Views, die ein verbundenes Konto brauchen (Zahlungsempfang etc.).
-	var WALL_TITLES = { orders: 'Bestellungen', customers: 'Kunden', invoices: 'Rechnungen', emails: 'E-Mails', marketing: 'Marketing', onboarding: 'Verifizierung', billing: 'Tarif', webhooks: 'Webhooks', support: 'Support', settings: 'Einstellungen' };
+	var WALL_TITLES = { orders: _t('Bestellungen'), customers: _t('Kunden'), invoices: _t('Rechnungen'), emails: _t('E-Mails'), marketing: _t('Marketing'), onboarding: _t('Verifizierung'), billing: _t('Tarif'), webhooks: _t('Webhooks'), support: _t('Support'), settings: _t('Einstellungen') };
 
 	function ConnectWall( props ) {
 		return el( 'div', { className: 'ec-wall' },
 			el( 'span', { className: 'dashicons dashicons-lock ec-wall-ico' } ),
-			el( 'h2', { className: 'ec-wall-title' }, props.title || 'Konto verbinden' ),
-			el( 'p', { className: 'ec-wall-text' }, props.text || 'Registriere dich kostenlos, um Zahlungen zu empfangen und diese Funktion zu nutzen.' ),
-			el( 'button', { className: 'ec-btn ec-btn-primary', onClick: props.onConnect }, 'Konto verbinden' )
+			el( 'h2', { className: 'ec-wall-title' }, props.title || _t('Konto verbinden') ),
+			el( 'p', { className: 'ec-wall-text' }, props.text || _t('Registriere dich kostenlos, um Zahlungen zu empfangen und diese Funktion zu nutzen.') ),
+			el( 'button', { className: 'ec-btn ec-btn-primary', onClick: props.onConnect }, _t('Konto verbinden') )
 		);
 	}
 
 	function LocalOverview( props ) {
 		return el( 'div', { className: 'ec-hero' },
-			el( 'h2', null, 'Willkommen bei EasyCheckout' ),
-			el( 'p', null, 'Richte deinen Checkout in Ruhe ein und teste alles. Erst wenn du echte Zahlungen empfangen möchtest, verbindest du dein Konto.' ),
+			el( 'h2', null, _t('Willkommen bei EasyCheckout') ),
+			el( 'p', null, _t('Richte deinen Checkout in Ruhe ein und teste alles. Erst wenn du echte Zahlungen empfangen möchtest, verbindest du dein Konto.') ),
 			el( 'div', { className: 'ec-hero-actions' },
-				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { props.navigate( 'checkouts' ); } }, 'Checkout erstellen' ),
-				el( 'button', { className: 'ec-btn', onClick: props.onConnect }, 'Konto verbinden' )
+				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { props.navigate( 'checkouts' ); } }, _t('Checkout erstellen') ),
+				el( 'button', { className: 'ec-btn', onClick: props.onConnect }, _t('Konto verbinden') )
 			)
 		);
 	}
 
-	function pmLabel( m ) { return { bank: 'Banküberweisung', card: 'Karte', twint: 'TWINT', qr: 'QR-Rechnung' }[ m ] || m; }
+	function pmLabel( m ) { return { bank: _t('Banküberweisung'), card: _t('Karte'), twint: 'TWINT', qr: _t('QR-Rechnung') }[ m ] || m; }
 
 	function DemoView( props ) {
-		var cols = props.columns || [ 'Eintrag' ];
+		var cols = props.columns || [ _t('Eintrag') ];
 		return el( 'div', null,
 			el( 'div', { className: 'ec-banner' },
 				el( 'span', { className: 'dashicons dashicons-info-outline' } ),
-				el( 'span', { className: 'ec-banner-txt' }, props.hint || 'Diese Daten erscheinen, sobald du dein Konto für den Online-Zahlungsempfang verbindest.' ),
-				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onConnect }, 'Konto verbinden' )
+				el( 'span', { className: 'ec-banner-txt' }, props.hint || _t('Diese Daten erscheinen, sobald du dein Konto für den Online-Zahlungsempfang verbindest.') ),
+				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onConnect }, _t('Konto verbinden') )
 			),
 			el( 'table', { className: 'ec-table' },
 				el( 'thead', null, el( 'tr', null, cols.map( function ( h, i ) { return el( 'th', { key: i }, h ); } ) ) ),
-				el( 'tbody', null, el( 'tr', null, el( 'td', { colSpan: cols.length, className: 'ec-muted', style: { textAlign: 'center', padding: '28px' } }, 'Noch keine Einträge.' ) ) )
+				el( 'tbody', null, el( 'tr', null, el( 'td', { colSpan: cols.length, className: 'ec-muted', style: { textAlign: 'center', padding: '28px' } }, _t('Noch keine Einträge.') ) ) )
 			)
 		);
 	}
@@ -1295,36 +1296,36 @@
 		return el( 'div', null,
 			el( 'div', { className: 'ec-banner' },
 				el( 'span', { className: 'dashicons dashicons-info-outline' } ),
-				el( 'span', { className: 'ec-banner-txt' }, 'Checkouts mit Banküberweisung funktionieren ohne Konto. Für Karten-/TWINT-Zahlungen verbinde dein Konto.' ),
-				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onConnect }, 'Verbinden' )
+				el( 'span', { className: 'ec-banner-txt' }, _t('Checkouts mit Banküberweisung funktionieren ohne Konto. Für Karten-/TWINT-Zahlungen verbinde dein Konto.') ),
+				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onConnect }, _t('Verbinden') )
 			),
 			ErrorBox( st.error ),
 			( st.items && st.items.length >= 1 ) ?
 				el( 'div', { className: 'ec-card', style: { maxWidth: '640px', marginBottom: '16px' } },
-					el( 'h3', null, 'Weitere Checkouts & Online-Zahlung' ),
-					el( 'p', { className: 'ec-muted', style: { marginTop: 0 } }, 'Im kostenlosen Modus betreibst du einen Checkout mit Banküberweisung. Für weitere Checkouts sowie Karten-/TWINT-Zahlungen erstelle ein Konto auf easycheckout.ch – dein gebuchter Plan wird nach dem Verbinden hier übernommen.' ),
+					el( 'h3', null, _t('Weitere Checkouts & Online-Zahlung') ),
+					el( 'p', { className: 'ec-muted', style: { marginTop: 0 } }, _t('Im kostenlosen Modus betreibst du einen Checkout mit Banküberweisung. Für weitere Checkouts sowie Karten-/TWINT-Zahlungen erstelle ein Konto auf easycheckout.ch – dein gebuchter Plan wird nach dem Verbinden hier übernommen.') ),
 					el( 'div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
-						el( 'a', { className: 'ec-btn ec-btn-primary', href: ( ecNative.appUrl || 'https://www.easycheckout.ch' ) + '/#preise', target: '_blank', rel: 'noopener' }, 'Preise ansehen (easycheckout.ch)' ),
-						el( 'button', { className: 'ec-btn', onClick: props.onConnect }, 'Konto verbinden' )
+						el( 'a', { className: 'ec-btn ec-btn-primary', href: ( ecNative.appUrl || 'https://www.easycheckout.ch' ) + '/#preise', target: '_blank', rel: 'noopener' }, _t('Preise ansehen (easycheckout.ch)') ),
+						el( 'button', { className: 'ec-btn', onClick: props.onConnect }, _t('Konto verbinden') )
 					)
 				) :
 				el( 'form', { className: 'ec-inline-form', onSubmit: create },
-					el( 'input', { type: 'text', placeholder: 'Name des Checkouts', value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ),
-					el( 'button', { type: 'submit', className: 'ec-btn ec-btn-primary', disabled: st.busy }, '+ Checkout erstellen' )
+					el( 'input', { type: 'text', placeholder: _t('Name des Checkouts'), value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ),
+					el( 'button', { type: 'submit', className: 'ec-btn ec-btn-primary', disabled: st.busy }, _t('+ Checkout erstellen') )
 				),
 			st.items === null ? Spinner() :
-				( st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Checkouts. Erstelle deinen ersten oben.' ) :
+				( st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, _t('Noch keine Checkouts. Erstelle deinen ersten oben.') ) :
 					el( 'table', { className: 'ec-table' },
-						el( 'thead', null, el( 'tr', null, el( 'th', null, 'Name' ), el( 'th', null, 'Produkte' ), el( 'th', null, 'Zahlung' ), el( 'th', null, '' ) ) ),
+						el( 'thead', null, el( 'tr', null, el( 'th', null, _t('Name') ), el( 'th', null, _t('Produkte') ), el( 'th', null, _t('Zahlung') ), el( 'th', null, '' ) ) ),
 						el( 'tbody', null, st.items.map( function ( c ) {
 							return el( 'tr', { key: c.id },
 								el( 'td', null, c.name ),
 								el( 'td', null, ( c.products || [] ).length ),
 								el( 'td', null, ( c.paymentMethods || [] ).map( pmLabel ).join( ', ' ) || '—' ),
 								el( 'td', { style: { textAlign: 'right' } },
-									el( 'a', { className: 'ec-btn ec-btn-sm', href: previewUrl( c.slug ), target: '_blank', rel: 'noopener' }, 'Ansehen' ),
-									el( 'button', { className: 'ec-btn ec-btn-sm ec-ml', onClick: function () { up( { editId: c.id } ); } }, 'Bearbeiten' ),
-									el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger ec-ml', onClick: function () { del( c.id ); } }, 'Löschen' ) ) );
+									el( 'a', { className: 'ec-btn ec-btn-sm', href: previewUrl( c.slug ), target: '_blank', rel: 'noopener' }, _t('Ansehen') ),
+									el( 'button', { className: 'ec-btn ec-btn-sm ec-ml', onClick: function () { up( { editId: c.id } ); } }, _t('Bearbeiten') ),
+									el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger ec-ml', onClick: function () { del( c.id ); } }, _t('Löschen') ) ) );
 						} ) )
 					)
 				)
@@ -1341,8 +1342,8 @@
 					if ( inp ) { inp.select(); }
 					if ( navigator.clipboard && navigator.clipboard.writeText ) { navigator.clipboard.writeText( value ); }
 					else if ( inp ) { try { document.execCommand( 'copy' ); } catch ( x ) {} }
-					var b = e.target; b.textContent = 'Kopiert ✓'; setTimeout( function () { b.textContent = 'Kopieren'; }, 1500 );
-				} }, 'Kopieren' )
+					var b = e.target; b.textContent = _t('Kopiert ✓'); setTimeout( function () { b.textContent = _t('Kopieren'); }, 1500 );
+				} }, _t('Kopieren') )
 			)
 		);
 	}
@@ -1392,7 +1393,7 @@
 		function setChoice( fi, ci, v ) { var f = st.customFields.slice(); var os = ( f[ fi ].options || [] ).slice(); os[ ci ] = v; f[ fi ] = Object.assign( {}, f[ fi ], { options: os } ); up( { customFields: f } ); }
 
 		function doSave() {
-			if ( ! st.name.trim() ) { up( { error: 'Bitte einen Produktnamen angeben.' } ); return; }
+			if ( ! st.name.trim() ) { up( { error: _t('Bitte einen Produktnamen angeben.') } ); return; }
 			var product = {
 				id: st.id || ecUid( 'p_' ),
 				name: st.name.trim(),
@@ -1417,79 +1418,79 @@
 		var cur = props.currency || 'CHF';
 		return el( 'div', { className: 'ec-modal', onClick: props.onClose },
 			el( 'div', { className: 'ec-modal-card ec-modal-lg', onClick: function ( e ) { e.stopPropagation(); } },
-				el( 'button', { className: 'ec-modal-x', onClick: props.onClose, 'aria-label': 'Schliessen' }, '×' ),
-				el( 'h3', null, st.id ? 'Produkt bearbeiten' : 'Neues Produkt' ),
+				el( 'button', { className: 'ec-modal-x', onClick: props.onClose, 'aria-label': _t('Schliessen') }, '×' ),
+				el( 'h3', null, st.id ? 'Produkt bearbeiten' : _t('Neues Produkt') ),
 				ErrorBox( st.error ),
 				// Basis
 				el( 'div', { className: 'ec-two' },
-					Field( 'Name', el( 'input', { type: 'text', value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
+					Field( _t('Name'), el( 'input', { type: 'text', value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
 					Field( 'Preis (' + cur + ')', el( 'input', { type: 'number', step: '0.05', value: st.price, onChange: function ( e ) { up( { price: e.target.value } ); } } ) )
 				),
-				Field( 'Beschreibung', el( 'input', { type: 'text', value: st.description, onChange: function ( e ) { up( { description: e.target.value } ); } } ) ),
-				( props.categories && props.categories.length ) ? Field( 'Kategorie', el( 'select', { value: st.categoryId || '', onChange: function ( e ) { up( { categoryId: e.target.value } ); } },
-					el( 'option', { value: '' }, '— keine —' ),
-					props.categories.map( function ( c ) { return el( 'option', { key: c.id, value: c.id }, c.name || '(ohne Name)' ); } )
+				Field( _t('Beschreibung'), el( 'input', { type: 'text', value: st.description, onChange: function ( e ) { up( { description: e.target.value } ); } } ) ),
+				( props.categories && props.categories.length ) ? Field( _t('Kategorie'), el( 'select', { value: st.categoryId || '', onChange: function ( e ) { up( { categoryId: e.target.value } ); } },
+					el( 'option', { value: '' }, _t('— keine —') ),
+					props.categories.map( function ( c ) { return el( 'option', { key: c.id, value: c.id }, c.name || _t('(ohne Name)') ); } )
 				) ) : null,
-				Field( 'Bild', el( 'div', null,
+				Field( _t('Bild'), el( 'div', null,
 					st.imageUrl ? el( 'img', { src: st.imageUrl, className: 'ec-thumb-lg' } ) : null,
 					el( 'div', { style: { display: 'flex', gap: '8px', marginTop: st.imageUrl ? '8px' : '0' } },
-						FilePick( st.imgBusy ? 'Lädt…' : ( st.imageUrl ? 'Bild ändern' : 'Bild hochladen' ), function ( f ) { up( { imgBusy: true } ); localUpload( f ).then( function ( d ) { up( { imageUrl: d.url, imgBusy: false } ); } ).catch( function ( e ) { up( { imgBusy: false, error: e.message } ); } ); } ),
-						st.imageUrl ? el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { up( { imageUrl: '' } ); } }, 'Entfernen' ) : null
+						FilePick( st.imgBusy ? 'Lädt…' : ( st.imageUrl ? 'Bild ändern' : _t('Bild hochladen') ), function ( f ) { up( { imgBusy: true } ); localUpload( f ).then( function ( d ) { up( { imageUrl: d.url, imgBusy: false } ); } ).catch( function ( e ) { up( { imgBusy: false, error: e.message } ); } ); } ),
+						st.imageUrl ? el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { up( { imageUrl: '' } ); } }, _t('Entfernen') ) : null
 					)
 				) ),
 				// Fulfillment-Preise
-				el( 'h4', { className: 'ec-sub-h' }, 'Liefer-/Abholpreise (optional)' ),
-				el( 'p', { className: 'ec-hint' }, 'Leer lassen = Standardpreis gilt. Liefergebühr wird einmal pro Position berechnet (nur bei Lieferung).' ),
+				el( 'h4', { className: 'ec-sub-h' }, _t('Liefer-/Abholpreise (optional)') ),
+				el( 'p', { className: 'ec-hint' }, _t('Leer lassen = Standardpreis gilt. Liefergebühr wird einmal pro Position berechnet (nur bei Lieferung).') ),
 				el( 'div', { className: 'ec-three' },
-					Field( 'Abholpreis', el( 'input', { type: 'number', step: '0.05', placeholder: 'Standard', value: st.pickupPrice, onChange: function ( e ) { up( { pickupPrice: e.target.value } ); } } ) ),
-					Field( 'Lieferpreis', el( 'input', { type: 'number', step: '0.05', placeholder: 'Standard', value: st.deliveryPrice, onChange: function ( e ) { up( { deliveryPrice: e.target.value } ); } } ) ),
-					Field( 'Liefergebühr', el( 'input', { type: 'number', step: '0.05', placeholder: '0.00', value: st.deliveryFee, onChange: function ( e ) { up( { deliveryFee: e.target.value } ); } } ) )
+					Field( _t('Abholpreis'), el( 'input', { type: 'number', step: '0.05', placeholder: _t('Standard'), value: st.pickupPrice, onChange: function ( e ) { up( { pickupPrice: e.target.value } ); } } ) ),
+					Field( _t('Lieferpreis'), el( 'input', { type: 'number', step: '0.05', placeholder: _t('Standard'), value: st.deliveryPrice, onChange: function ( e ) { up( { deliveryPrice: e.target.value } ); } } ) ),
+					Field( _t('Liefergebühr'), el( 'input', { type: 'number', step: '0.05', placeholder: '0.00', value: st.deliveryFee, onChange: function ( e ) { up( { deliveryFee: e.target.value } ); } } ) )
 				),
 				// Optionsgruppen
-				el( 'h4', { className: 'ec-sub-h' }, 'Optionen (z. B. Grösse, Farbe)' ),
+				el( 'h4', { className: 'ec-sub-h' }, _t('Optionen (z. B. Grösse, Farbe)') ),
 				st.optionGroups.map( function ( g, gi ) {
 					return el( 'div', { key: gi, className: 'ec-subcard' },
 						el( 'div', { className: 'ec-inline-form', style: { alignItems: 'center' } },
-							el( 'input', { type: 'text', placeholder: 'Gruppenname (z. B. Grösse)', value: g.name, onChange: function ( e ) { setGroup( gi, 'name', e.target.value ); } } ),
-							el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delGroup( gi ); } }, 'Gruppe entfernen' )
+							el( 'input', { type: 'text', placeholder: _t('Gruppenname (z. B. Grösse)'), value: g.name, onChange: function ( e ) { setGroup( gi, 'name', e.target.value ); } } ),
+							el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delGroup( gi ); } }, _t('Gruppe entfernen') )
 						),
 						( g.options || [] ).map( function ( o, oi ) {
 							return el( 'div', { key: oi, className: 'ec-inline-form', style: { alignItems: 'center', marginTop: 6 } },
-								el( 'input', { type: 'text', placeholder: 'Option (z. B. L)', value: o.label, onChange: function ( e ) { setOpt( gi, oi, 'label', e.target.value ); } } ),
-								el( 'input', { type: 'number', step: '0.05', placeholder: 'Aufschlag', style: { maxWidth: '120px' }, value: o.priceModifier, onChange: function ( e ) { setOpt( gi, oi, 'priceModifier', e.target.value ); } } ),
+								el( 'input', { type: 'text', placeholder: _t('Option (z. B. L)'), value: o.label, onChange: function ( e ) { setOpt( gi, oi, 'label', e.target.value ); } } ),
+								el( 'input', { type: 'number', step: '0.05', placeholder: _t('Aufschlag'), style: { maxWidth: '120px' }, value: o.priceModifier, onChange: function ( e ) { setOpt( gi, oi, 'priceModifier', e.target.value ); } } ),
 								el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delOpt( gi, oi ); } }, '×' )
 							);
 						} ),
-						el( 'button', { className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: function () { addOpt( gi ); } }, '+ Option' )
+						el( 'button', { className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: function () { addOpt( gi ); } }, _t('+ Option') )
 					);
 				} ),
-				el( 'button', { className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: addGroup }, '+ Optionsgruppe' ),
+				el( 'button', { className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: addGroup }, _t('+ Optionsgruppe') ),
 				// Infofelder
-				el( 'h4', { className: 'ec-sub-h' }, 'Infofelder (z. B. Allergien, Grösse)' ),
+				el( 'h4', { className: 'ec-sub-h' }, _t('Infofelder (z. B. Allergien, Grösse)') ),
 				st.customFields.map( function ( f, fi ) {
 					return el( 'div', { key: fi, className: 'ec-subcard' },
 						el( 'div', { className: 'ec-inline-form', style: { alignItems: 'center' } },
-							el( 'input', { type: 'text', placeholder: 'Feldname (z. B. Allergien)', value: f.label, onChange: function ( e ) { setField( fi, 'label', e.target.value ); } } ),
-							el( 'select', { value: f.fieldType, onChange: function ( e ) { setField( fi, 'fieldType', e.target.value ); } }, el( 'option', { value: 'text' }, 'Textfeld' ), el( 'option', { value: 'checkbox' }, 'Checkboxen' ) ),
-							el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! f.required, onChange: function ( e ) { setField( fi, 'required', e.target.checked ); } } ), el( 'span', null, 'Pflicht' ) ),
+							el( 'input', { type: 'text', placeholder: _t('Feldname (z. B. Allergien)'), value: f.label, onChange: function ( e ) { setField( fi, 'label', e.target.value ); } } ),
+							el( 'select', { value: f.fieldType, onChange: function ( e ) { setField( fi, 'fieldType', e.target.value ); } }, el( 'option', { value: 'text' }, _t('Textfeld') ), el( 'option', { value: 'checkbox' }, _t('Checkboxen') ) ),
+							el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! f.required, onChange: function ( e ) { setField( fi, 'required', e.target.checked ); } } ), el( 'span', null, _t('Pflicht') ) ),
 							el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delField( fi ); } }, '×' )
 						),
 						f.fieldType === 'checkbox' ? el( 'div', { style: { marginTop: 8 } },
 							( f.options || [] ).map( function ( opt, ci ) {
 								return el( 'div', { key: ci, className: 'ec-inline-form', style: { alignItems: 'center', marginTop: 6 } },
-									el( 'input', { type: 'text', placeholder: 'Auswahl (z. B. Vegetarisch)', value: opt, onChange: function ( e ) { setChoice( fi, ci, e.target.value ); } } ),
+									el( 'input', { type: 'text', placeholder: _t('Auswahl (z. B. Vegetarisch)'), value: opt, onChange: function ( e ) { setChoice( fi, ci, e.target.value ); } } ),
 									el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delChoice( fi, ci ); } }, '×' )
 								);
 							} ),
-							el( 'button', { className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: function () { addChoice( fi ); } }, '+ Auswahl' )
+							el( 'button', { className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: function () { addChoice( fi ); } }, _t('+ Auswahl') )
 						) : null
 					);
 				} ),
-				el( 'button', { className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: addField }, '+ Infofeld' ),
+				el( 'button', { className: 'ec-btn ec-btn-sm', style: { marginTop: 8 }, onClick: addField }, _t('+ Infofeld') ),
 				// Footer
 				el( 'div', { style: { display: 'flex', gap: '8px', marginTop: '18px' } },
-					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: doSave }, 'Übernehmen' ),
-					el( 'button', { className: 'ec-btn', onClick: props.onClose }, 'Abbrechen' )
+					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: doSave }, _t('Übernehmen') ),
+					el( 'button', { className: 'ec-btn', onClick: props.onClose }, _t('Abbrechen') )
 				)
 			)
 		);
@@ -1549,78 +1550,78 @@
 		}
 		function prodBadges( p ) {
 			var b = [];
-			if ( ( p.optionGroups || [] ).length ) { b.push( ( p.optionGroups || [] ).length + ' Option(en)' ); }
-			if ( ( p.customFields || [] ).length ) { b.push( ( p.customFields || [] ).length + ' Infofeld(er)' ); }
-			if ( p.deliveryPrice != null || p.pickupPrice != null || p.deliveryFee != null ) { b.push( 'Liefer/Abhol' ); }
+			if ( ( p.optionGroups || [] ).length ) { b.push( ( p.optionGroups || [] ).length + _t(' Option(en)') ); }
+			if ( ( p.customFields || [] ).length ) { b.push( ( p.customFields || [] ).length + _t(' Infofeld(er)') ); }
+			if ( p.deliveryPrice != null || p.pickupPrice != null || p.deliveryFee != null ) { b.push( _t('Liefer/Abhol') ); }
 			return b.length ? el( 'span', { className: 'ec-tags' }, b.join( ' · ' ) ) : null;
 		}
 		return el( 'div', null,
 			el( 'div', { className: 'ec-page-head' },
 				el( 'div', { className: 'ec-head-left' },
-					el( 'button', { className: 'ec-btn ec-btn-sm', onClick: props.onBack }, '← Zurück' ),
-					el( 'h2', null, st.name || 'Checkout' ) ),
+					el( 'button', { className: 'ec-btn ec-btn-sm', onClick: props.onBack }, _t('← Zurück') ),
+					el( 'h2', null, st.name || _t('Checkout') ) ),
 				el( 'div', { className: 'ec-topbar-right' },
-					el( 'a', { className: 'ec-btn ec-btn-sm', href: previewUrl( st.slug ), target: '_blank', rel: 'noopener' }, 'Ansehen' ),
-					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: save, disabled: st.busy }, st.busy ? 'Speichern…' : 'Speichern' ) ) ),
-			st.saved && el( 'div', { className: 'ec-alert' }, 'Gespeichert. (Vorschau zeigt den gespeicherten Stand.)' ),
+					el( 'a', { className: 'ec-btn ec-btn-sm', href: previewUrl( st.slug ), target: '_blank', rel: 'noopener' }, _t('Ansehen') ),
+					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: save, disabled: st.busy }, st.busy ? 'Speichern…' : _t('Speichern') ) ) ),
+			st.saved && el( 'div', { className: 'ec-alert' }, _t('Gespeichert. (Vorschau zeigt den gespeicherten Stand.)') ),
 			ErrorBox( st.error ),
 			el( 'div', { className: 'ec-form-grid' },
 				el( 'div', { className: 'ec-card' },
-					el( 'h3', null, 'Allgemein' ),
-					Field( 'Name', el( 'input', { type: 'text', value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
-					Field( 'Slug (URL)', el( 'input', { type: 'text', value: st.slug, onChange: function ( e ) { up( { slug: e.target.value } ); } } ) ),
-					Field( 'Titel der Produktliste', el( 'input', { type: 'text', placeholder: 'Produkte', value: st.productsTitle, onChange: function ( e ) { up( { productsTitle: e.target.value } ); } } ) ),
-					Field( 'Primärfarbe', el( 'div', { className: 'ec-color-row' }, el( 'input', { type: 'color', value: st.primary, onChange: function ( e ) { up( { primary: e.target.value } ); } } ), el( 'input', { type: 'text', value: st.primary, onChange: function ( e ) { up( { primary: e.target.value } ); } } ) ) ),
-					Field( 'Währung', el( 'input', { type: 'text', value: st.currency, maxLength: 3, onChange: function ( e ) { up( { currency: e.target.value.toUpperCase() } ); } } ) ),
-					Field( 'Logo', el( 'div', null,
+					el( 'h3', null, _t('Allgemein') ),
+					Field( _t('Name'), el( 'input', { type: 'text', value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
+					Field( _t('Slug (URL)'), el( 'input', { type: 'text', value: st.slug, onChange: function ( e ) { up( { slug: e.target.value } ); } } ) ),
+					Field( _t('Titel der Produktliste'), el( 'input', { type: 'text', placeholder: _t('Produkte'), value: st.productsTitle, onChange: function ( e ) { up( { productsTitle: e.target.value } ); } } ) ),
+					Field( _t('Primärfarbe'), el( 'div', { className: 'ec-color-row' }, el( 'input', { type: 'color', value: st.primary, onChange: function ( e ) { up( { primary: e.target.value } ); } } ), el( 'input', { type: 'text', value: st.primary, onChange: function ( e ) { up( { primary: e.target.value } ); } } ) ) ),
+					Field( _t('Währung'), el( 'input', { type: 'text', value: st.currency, maxLength: 3, onChange: function ( e ) { up( { currency: e.target.value.toUpperCase() } ); } } ) ),
+					Field( _t('Logo'), el( 'div', null,
 						st.logoUrl ? el( 'img', { src: st.logoUrl, className: 'ec-thumb-lg' } ) : null,
 						el( 'div', { style: { display: 'flex', gap: '8px', marginTop: st.logoUrl ? '8px' : '0' } },
-							FilePick( st.logoUrl ? 'Logo ändern' : 'Logo hochladen', function ( f ) { localUpload( f ).then( function ( d ) { up( { logoUrl: d.url } ); } ).catch( function ( e ) { up( { error: e.message } ); } ); } ),
-							st.logoUrl ? el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { up( { logoUrl: '' } ); } }, 'Entfernen' ) : null
+							FilePick( st.logoUrl ? 'Logo ändern' : _t('Logo hochladen'), function ( f ) { localUpload( f ).then( function ( d ) { up( { logoUrl: d.url } ); } ).catch( function ( e ) { up( { error: e.message } ); } ); } ),
+							st.logoUrl ? el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { up( { logoUrl: '' } ); } }, _t('Entfernen') ) : null
 						)
 					) )
 				),
 				el( 'div', { className: 'ec-card' },
-					el( 'h3', null, 'Zahlungsart' ),
-					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.bank, onChange: function ( e ) { up( { bank: e.target.checked } ); } } ), el( 'span', null, 'Banküberweisung (ohne Konto)' ) ),
-					el( 'p', { className: 'ec-hint' }, 'Karte & TWINT benötigen ein verbundenes Konto.' ),
-					el( 'button', { className: 'ec-btn ec-btn-sm', onClick: props.onConnect, style: { marginTop: 8 } }, 'Konto verbinden für Online-Zahlung' ),
-					el( 'h3', { style: { marginTop: 18 } }, 'Abholung & Lieferung' ),
-					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.pickupEnabled, onChange: function ( e ) { up( { pickupEnabled: e.target.checked } ); } } ), el( 'span', null, 'Abholung anbieten' ) ),
-					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.deliveryEnabled, onChange: function ( e ) { up( { deliveryEnabled: e.target.checked } ); } } ), el( 'span', null, 'Lieferung anbieten (mit Liefergebühr je Produkt)' ) ),
-					el( 'h3', { style: { marginTop: 18 } }, 'MwSt.' ),
-					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.vatEnabled, onChange: function ( e ) { up( { vatEnabled: e.target.checked } ); } } ), el( 'span', null, 'MwSt. ausweisen' ) ),
-					st.vatEnabled && Field( 'MwSt-Satz (%)', el( 'input', { type: 'number', step: '0.1', value: st.vatRate, onChange: function ( e ) { up( { vatRate: e.target.value } ); } } ) )
+					el( 'h3', null, _t('Zahlungsart') ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.bank, onChange: function ( e ) { up( { bank: e.target.checked } ); } } ), el( 'span', null, _t('Banküberweisung (ohne Konto)') ) ),
+					el( 'p', { className: 'ec-hint' }, _t('Karte & TWINT benötigen ein verbundenes Konto.') ),
+					el( 'button', { className: 'ec-btn ec-btn-sm', onClick: props.onConnect, style: { marginTop: 8 } }, _t('Konto verbinden für Online-Zahlung') ),
+					el( 'h3', { style: { marginTop: 18 } }, _t('Abholung & Lieferung') ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.pickupEnabled, onChange: function ( e ) { up( { pickupEnabled: e.target.checked } ); } } ), el( 'span', null, _t('Abholung anbieten') ) ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.deliveryEnabled, onChange: function ( e ) { up( { deliveryEnabled: e.target.checked } ); } } ), el( 'span', null, _t('Lieferung anbieten (mit Liefergebühr je Produkt)') ) ),
+					el( 'h3', { style: { marginTop: 18 } }, _t('MwSt.') ),
+					el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.vatEnabled, onChange: function ( e ) { up( { vatEnabled: e.target.checked } ); } } ), el( 'span', null, _t('MwSt. ausweisen') ) ),
+					st.vatEnabled && Field( _t('MwSt-Satz (%)'), el( 'input', { type: 'number', step: '0.1', value: st.vatRate, onChange: function ( e ) { up( { vatRate: e.target.value } ); } } ) )
 				)
 			),
 			el( 'div', { className: 'ec-card', style: { marginTop: 16 } },
-				el( 'h3', null, 'Kategorien (optional)' ),
-				el( 'p', { className: 'ec-hint' }, 'Gruppiere Produkte. „Nur ein Produkt" = Auswahl per Radio; „Menge fix 1" = kein Mengenzähler.' ),
+				el( 'h3', null, _t('Kategorien (optional)') ),
+				el( 'p', { className: 'ec-hint' }, _t('Gruppiere Produkte. „Nur ein Produkt" = Auswahl per Radio; „Menge fix 1" = kein Mengenzähler.') ),
 				st.categories.length ? el( 'div', null, st.categories.map( function ( cat, i ) {
 					return el( 'div', { key: cat.id || i, className: 'ec-subcard' },
 						el( 'div', { className: 'ec-inline-form', style: { alignItems: 'center' } },
-							el( 'input', { type: 'text', placeholder: 'Kategoriename', value: cat.name, onChange: function ( e ) { setCategory( i, 'name', e.target.value ); } } ),
-							el( 'input', { type: 'text', placeholder: 'Beschreibung (optional)', value: cat.description || '', onChange: function ( e ) { setCategory( i, 'description', e.target.value ); } } ),
-							el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delCategory( i ); } }, 'Entfernen' )
+							el( 'input', { type: 'text', placeholder: _t('Kategoriename'), value: cat.name, onChange: function ( e ) { setCategory( i, 'name', e.target.value ); } } ),
+							el( 'input', { type: 'text', placeholder: _t('Beschreibung (optional)'), value: cat.description || '', onChange: function ( e ) { setCategory( i, 'description', e.target.value ); } } ),
+							el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger', onClick: function () { delCategory( i ); } }, _t('Entfernen') )
 						),
 						el( 'div', { style: { display: 'flex', gap: '16px', marginTop: 6, flexWrap: 'wrap' } },
-							el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! cat.singleProduct, onChange: function ( e ) { setCategory( i, 'singleProduct', e.target.checked ); } } ), el( 'span', null, 'Nur ein Produkt wählbar' ) ),
-							el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: cat.allowQuantity !== false, onChange: function ( e ) { setCategory( i, 'allowQuantity', e.target.checked ); } } ), el( 'span', null, 'Menge wählbar' ) )
+							el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: !! cat.singleProduct, onChange: function ( e ) { setCategory( i, 'singleProduct', e.target.checked ); } } ), el( 'span', null, _t('Nur ein Produkt wählbar') ) ),
+							el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: cat.allowQuantity !== false, onChange: function ( e ) { setCategory( i, 'allowQuantity', e.target.checked ); } } ), el( 'span', null, _t('Menge wählbar') ) )
 						)
 					);
-				} ) ) : el( 'p', { className: 'ec-muted' }, 'Keine Kategorien.' ),
+				} ) ) : el( 'p', { className: 'ec-muted' }, _t('Keine Kategorien.') ),
 				el( 'div', { style: { display: 'flex', gap: '8px', marginTop: 10, alignItems: 'center', flexWrap: 'wrap' } },
-					el( 'button', { className: 'ec-btn ec-btn-sm', onClick: addCategory }, '+ Kategorie' ),
-					st.categories.length ? el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.categorySelection === 'single', onChange: function ( e ) { up( { categorySelection: e.target.checked ? 'single' : 'multiple' } ); } } ), el( 'span', null, 'Kunde darf nur aus EINER Kategorie wählen' ) ) : null
+					el( 'button', { className: 'ec-btn ec-btn-sm', onClick: addCategory }, _t('+ Kategorie') ),
+					st.categories.length ? el( 'label', { className: 'ec-check' }, el( 'input', { type: 'checkbox', checked: st.categorySelection === 'single', onChange: function ( e ) { up( { categorySelection: e.target.checked ? 'single' : 'multiple' } ); } } ), el( 'span', null, _t('Kunde darf nur aus EINER Kategorie wählen') ) ) : null
 				)
 			),
 			el( 'div', { className: 'ec-card', style: { marginTop: 16 } },
 				el( 'div', { className: 'ec-page-head' },
-					el( 'h3', { style: { margin: 0 } }, 'Produkte' ),
-					el( 'button', { className: 'ec-btn ec-btn-primary ec-btn-sm', onClick: function () { up( { editing: 'new' } ); } }, '+ Produkt' ) ),
-				st.products.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Produkte.' ) :
+					el( 'h3', { style: { margin: 0 } }, _t('Produkte') ),
+					el( 'button', { className: 'ec-btn ec-btn-primary ec-btn-sm', onClick: function () { up( { editing: 'new' } ); } }, _t('+ Produkt') ) ),
+				st.products.length === 0 ? el( 'p', { className: 'ec-muted' }, _t('Noch keine Produkte.') ) :
 					el( 'table', { className: 'ec-table' },
-						el( 'thead', null, el( 'tr', null, el( 'th', null, 'Bild' ), el( 'th', null, 'Produkt' ), el( 'th', null, 'Kategorie' ), el( 'th', null, 'Preis' ), el( 'th', null, '' ) ) ),
+						el( 'thead', null, el( 'tr', null, el( 'th', null, _t('Bild') ), el( 'th', null, _t('Produkt') ), el( 'th', null, _t('Kategorie') ), el( 'th', null, _t('Preis') ), el( 'th', null, '' ) ) ),
 						el( 'tbody', null, st.products.map( function ( p, i ) {
 							return el( 'tr', { key: p.id || i },
 								el( 'td', null, p.imageUrl ? el( 'img', { src: p.imageUrl, className: 'ec-thumb' } ) : el( 'span', { className: 'ec-thumb ec-thumb-empty' } ) ),
@@ -1628,11 +1629,11 @@
 								el( 'td', null, p.categoryId ? catName( p.categoryId ) : '—' ),
 								el( 'td', null, fmtMoney( p.price, st.currency ) ),
 								el( 'td', { style: { textAlign: 'right' } },
-									el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { up( { editing: i } ); } }, 'Bearbeiten' ),
-									el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger ec-ml', onClick: function () { delProduct( i ); } }, 'Entfernen' ) ) );
+									el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { up( { editing: i } ); } }, _t('Bearbeiten') ),
+									el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger ec-ml', onClick: function () { delProduct( i ); } }, _t('Entfernen') ) ) );
 						} ) )
 					),
-				el( 'p', { className: 'ec-hint' }, 'Danach oben rechts „Speichern" nicht vergessen.' )
+				el( 'p', { className: 'ec-hint' }, _t('Danach oben rechts „Speichern" nicht vergessen.') )
 			),
 			st.editing !== null ? el( LocalProductEditor, {
 				product: st.editing === 'new' ? {} : st.products[ st.editing ],
@@ -1642,15 +1643,15 @@
 				onClose: function () { up( { editing: null } ); }
 			} ) : null,
 			el( 'div', { className: 'ec-card', style: { marginTop: 16 } },
-				el( 'h3', null, 'Einbindung' ),
+				el( 'h3', null, _t('Einbindung') ),
 				el( 'p', { className: 'ec-hint', style: { marginBottom: 12 } }, 'So bindest du diesen Checkout auf deiner Website ein (bitte zuerst speichern):' ),
-				CopyRow( 'Shortcode – in eine WordPress-Seite einfügen', '[easycheckout slug="' + ( st.slug || '' ) + '"]' ),
-				CopyRow( 'Direkter Link – ohne Seite, teilbar', previewUrl( st.slug || '' ) ),
+				CopyRow( _t('Shortcode – in eine WordPress-Seite einfügen'), '[easycheckout slug="' + ( st.slug || '' ) + '"]' ),
+				CopyRow( _t('Direkter Link – ohne Seite, teilbar'), previewUrl( st.slug || '' ) ),
 				el( 'ol', { style: { margin: '10px 0 0 18px', fontSize: '13px', color: '#6b7280', lineHeight: '1.8' } },
-					el( 'li', null, 'Firma + IBAN unter „Einstellungen" hinterlegen (erscheinen auf der Rechnung).' ),
-					el( 'li', null, 'Einbetten: neue WP-Seite anlegen, Shortcode einfügen, veröffentlichen.' ),
-					el( 'li', null, 'Oder einfach den direkten Link teilen (E-Mail, Social, QR).' ),
-					el( 'li', null, 'Testen: oben rechts „Ansehen".' )
+					el( 'li', null, _t('Firma + IBAN unter „Einstellungen" hinterlegen (erscheinen auf der Rechnung).') ),
+					el( 'li', null, _t('Einbetten: neue WP-Seite anlegen, Shortcode einfügen, veröffentlichen.') ),
+					el( 'li', null, _t('Oder einfach den direkten Link teilen (E-Mail, Social, QR).') ),
+					el( 'li', null, _t('Testen: oben rechts „Ansehen".') )
 				)
 			)
 		);
@@ -1671,26 +1672,26 @@
 		function linkFor( slug ) { return previewUrl( slug ); }
 		return el( 'div', null,
 			el( 'div', { className: 'ec-card', style: { maxWidth: '760px', marginBottom: '16px' } },
-				el( 'h3', null, 'So bindest du deine Checkouts ein' ),
+				el( 'h3', null, _t('So bindest du deine Checkouts ein') ),
 				el( 'ol', { style: { margin: '4px 0 0 18px', lineHeight: '1.9', fontSize: '14px' } },
-					el( 'li', null, el( 'b', null, 'Einbetten: ' ), 'neue WordPress-Seite anlegen, den Shortcode einfügen, veröffentlichen.' ),
-					el( 'li', null, el( 'b', null, 'Direkter Link: ' ), 'die Link-URL teilen (E-Mail, Social, QR).' ),
-					el( 'li', null, 'Vorschau jederzeit über „Ansehen".' ),
+					el( 'li', null, el( 'b', null, 'Einbetten: ' ), _t('neue WordPress-Seite anlegen, den Shortcode einfügen, veröffentlichen.') ),
+					el( 'li', null, el( 'b', null, 'Direkter Link: ' ), _t('die Link-URL teilen (E-Mail, Social, QR).') ),
+					el( 'li', null, _t('Vorschau jederzeit über „Ansehen".') ),
 					authed
-						? el( 'li', null, 'Diese Checkouts stammen aus deinem verbundenen easyCheckout-Konto – Name, Link und Shortcode gehen automatisch mit.' )
-						: el( 'li', null, 'Firmenangaben + IBAN unter „Einstellungen" hinterlegen (erscheinen auf der Rechnung).' )
+						? el( 'li', null, _t('Diese Checkouts stammen aus deinem verbundenen easyCheckout-Konto – Name, Link und Shortcode gehen automatisch mit.') )
+						: el( 'li', null, _t('Firmenangaben + IBAN unter „Einstellungen" hinterlegen (erscheinen auf der Rechnung).') )
 				)
 			),
 			ErrorBox( st.error ),
 			st.items === null ? Spinner() :
-				( st.items.length === 0 ? el( 'div', { className: 'ec-card', style: { maxWidth: '760px' } }, el( 'p', { className: 'ec-muted' }, 'Noch keine Checkouts. Lege zuerst unter „Checkouts" einen an.' ) ) :
+				( st.items.length === 0 ? el( 'div', { className: 'ec-card', style: { maxWidth: '760px' } }, el( 'p', { className: 'ec-muted' }, _t('Noch keine Checkouts. Lege zuerst unter „Checkouts" einen an.') ) ) :
 					st.items.map( function ( c ) {
 						return el( 'div', { key: c.id, className: 'ec-card', style: { maxWidth: '760px', marginBottom: '14px' } },
 							el( 'div', { className: 'ec-page-head' },
 								el( 'h3', { style: { margin: 0 } }, c.name ),
-								el( 'a', { className: 'ec-btn ec-btn-sm', href: linkFor( c.slug ), target: '_blank', rel: 'noopener' }, 'Ansehen' ) ),
-							CopyRow( 'Shortcode – in eine WordPress-Seite einfügen', '[easycheckout slug="' + c.slug + '"]' ),
-							CopyRow( 'Direkter Link – teilbar', linkFor( c.slug ) )
+								el( 'a', { className: 'ec-btn ec-btn-sm', href: linkFor( c.slug ), target: '_blank', rel: 'noopener' }, _t('Ansehen') ) ),
+							CopyRow( _t('Shortcode – in eine WordPress-Seite einfügen'), '[easycheckout slug="' + c.slug + '"]' ),
+							CopyRow( _t('Direkter Link – teilbar'), linkFor( c.slug ) )
 						);
 					} )
 				)
@@ -1714,14 +1715,14 @@
 		function saveComp() {
 			set( Object.assign( {}, st, { cBusy: true, error: '' } ) );
 			post( 'easycheckout_company_save', { data: JSON.stringify( st.comp ) } ).then( function ( j ) {
-				if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || 'Fehler' ); }
+				if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || _t('Fehler') ); }
 				set( Object.assign( {}, st, { cBusy: false, cSaved: true } ) );
 			} ).catch( function ( e ) { set( Object.assign( {}, st, { cBusy: false, error: e.message } ) ); } );
 		}
 		function saveBank() {
 			set( Object.assign( {}, st, { bBusy: true, error: '' } ) );
 			post( 'easycheckout_bank_save', { data: JSON.stringify( st.bank ) } ).then( function ( j ) {
-				if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || 'Fehler' ); }
+				if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || _t('Fehler') ); }
 				set( Object.assign( {}, st, { bBusy: false, bSaved: true } ) );
 			} ).catch( function ( e ) { set( Object.assign( {}, st, { bBusy: false, error: e.message } ) ); } );
 		}
@@ -1730,36 +1731,36 @@
 		return el( 'div', null,
 			el( 'div', { className: 'ec-banner' },
 				el( 'span', { className: 'dashicons dashicons-info-outline' } ),
-				el( 'span', { className: 'ec-banner-txt' }, 'Firmenangaben und Bankverbindung erscheinen auf der Rechnung/Bestätigung. Für Online-Zahlungen (Karte/TWINT) verbinde dein Konto.' ),
-				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onConnect }, 'Verbinden' )
+				el( 'span', { className: 'ec-banner-txt' }, _t('Firmenangaben und Bankverbindung erscheinen auf der Rechnung/Bestätigung. Für Online-Zahlungen (Karte/TWINT) verbinde dein Konto.') ),
+				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onConnect }, _t('Verbinden') )
 			),
 			ErrorBox( st.error ),
 			el( 'div', { className: 'ec-card', style: { maxWidth: '640px', marginBottom: '16px' } },
-				el( 'h3', null, 'Firmenangaben (für Rechnung)' ),
-				st.cSaved && el( 'div', { className: 'ec-alert' }, 'Gespeichert.' ),
-				Field( 'Firma', el( 'input', { type: 'text', value: c.name || '', onChange: function ( e ) { setComp( 'name', e.target.value ); } } ) ),
-				Field( 'Strasse und Hausnummer', el( 'input', { type: 'text', value: c.street || '', onChange: function ( e ) { setComp( 'street', e.target.value ); } } ) ),
+				el( 'h3', null, _t('Firmenangaben (für Rechnung)') ),
+				st.cSaved && el( 'div', { className: 'ec-alert' }, _t('Gespeichert.') ),
+				Field( _t('Firma'), el( 'input', { type: 'text', value: c.name || '', onChange: function ( e ) { setComp( 'name', e.target.value ); } } ) ),
+				Field( _t('Strasse und Hausnummer'), el( 'input', { type: 'text', value: c.street || '', onChange: function ( e ) { setComp( 'street', e.target.value ); } } ) ),
 				el( 'div', { className: 'ec-two' },
 					Field( 'PLZ', el( 'input', { type: 'text', value: c.postalCode || '', onChange: function ( e ) { setComp( 'postalCode', e.target.value ); } } ) ),
-					Field( 'Ort', el( 'input', { type: 'text', value: c.city || '', onChange: function ( e ) { setComp( 'city', e.target.value ); } } ) )
+					Field( _t('Ort'), el( 'input', { type: 'text', value: c.city || '', onChange: function ( e ) { setComp( 'city', e.target.value ); } } ) )
 				),
 				el( 'div', { className: 'ec-two' },
-					Field( 'Land', el( 'input', { type: 'text', value: c.country || '', onChange: function ( e ) { setComp( 'country', e.target.value ); } } ) ),
-					Field( 'MwSt-Nummer', el( 'input', { type: 'text', value: c.vatNumber || '', placeholder: 'CHE-...', onChange: function ( e ) { setComp( 'vatNumber', e.target.value ); } } ) )
+					Field( _t('Land'), el( 'input', { type: 'text', value: c.country || '', onChange: function ( e ) { setComp( 'country', e.target.value ); } } ) ),
+					Field( _t('MwSt-Nummer'), el( 'input', { type: 'text', value: c.vatNumber || '', placeholder: 'CHE-...', onChange: function ( e ) { setComp( 'vatNumber', e.target.value ); } } ) )
 				),
 				el( 'div', { className: 'ec-two' },
-					Field( 'E-Mail', el( 'input', { type: 'email', value: c.email || '', onChange: function ( e ) { setComp( 'email', e.target.value ); } } ) ),
-					Field( 'Telefon', el( 'input', { type: 'text', value: c.phone || '', onChange: function ( e ) { setComp( 'phone', e.target.value ); } } ) )
+					Field( _t('E-Mail'), el( 'input', { type: 'email', value: c.email || '', onChange: function ( e ) { setComp( 'email', e.target.value ); } } ) ),
+					Field( _t('Telefon'), el( 'input', { type: 'text', value: c.phone || '', onChange: function ( e ) { setComp( 'phone', e.target.value ); } } ) )
 				),
-				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: saveComp, disabled: st.cBusy }, st.cBusy ? 'Speichern…' : 'Firmenangaben speichern' )
+				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: saveComp, disabled: st.cBusy }, st.cBusy ? 'Speichern…' : _t('Firmenangaben speichern') )
 			),
 			el( 'div', { className: 'ec-card', style: { maxWidth: '640px' } },
-				el( 'h3', null, 'Bankverbindung (für Überweisung)' ),
-				st.bSaved && el( 'div', { className: 'ec-alert' }, 'Gespeichert.' ),
+				el( 'h3', null, _t('Bankverbindung (für Überweisung)') ),
+				st.bSaved && el( 'div', { className: 'ec-alert' }, _t('Gespeichert.') ),
 				Field( 'IBAN', el( 'input', { type: 'text', value: b.iban || '', placeholder: 'CH00 0000 0000 0000 0000 0', onChange: function ( e ) { setBank( 'iban', e.target.value ); } } ) ),
-				Field( 'Kontoinhaber', el( 'input', { type: 'text', value: b.holder || '', onChange: function ( e ) { setBank( 'holder', e.target.value ); } } ) ),
-				Field( 'Bank (optional)', el( 'input', { type: 'text', value: b.bankName || '', onChange: function ( e ) { setBank( 'bankName', e.target.value ); } } ) ),
-				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: saveBank, disabled: st.bBusy }, st.bBusy ? 'Speichern…' : 'Bankverbindung speichern' )
+				Field( _t('Kontoinhaber'), el( 'input', { type: 'text', value: b.holder || '', onChange: function ( e ) { setBank( 'holder', e.target.value ); } } ) ),
+				Field( _t('Bank (optional)'), el( 'input', { type: 'text', value: b.bankName || '', onChange: function ( e ) { setBank( 'bankName', e.target.value ); } } ) ),
+				el( 'button', { className: 'ec-btn ec-btn-primary', onClick: saveBank, disabled: st.bBusy }, st.bBusy ? 'Speichern…' : _t('Bankverbindung speichern') )
 			)
 		);
 	}
@@ -1768,45 +1769,45 @@
 		var s = useState( { items: null, error: '', detail: null } );
 		var st = s[ 0 ], set = s[ 1 ];
 		function up( o ) { set( Object.assign( {}, st, o ) ); }
-		function load() { post( 'easycheckout_local_orders', {} ).then( function ( j ) { if ( j.success ) { up( { items: j.data, error: '' } ); } else { up( { items: [], error: ( j.data && j.data.message ) || 'Fehler' } ); } } ); }
+		function load() { post( 'easycheckout_local_orders', {} ).then( function ( j ) { if ( j.success ) { up( { items: j.data, error: '' } ); } else { up( { items: [], error: ( j.data && j.data.message ) || _t('Fehler') } ); } } ); }
 		useEffect( function () { load(); }, [] );
 		function setStatus( id, status ) { post( 'easycheckout_local_order_update', { id: id, status: status } ).then( load ); }
 		function del( id ) { post( 'easycheckout_local_order_delete', { id: id } ).then( function () { up( { detail: null } ); load(); } ); }
-		var STAT = { awaiting_transfer: [ 'Wartet auf Zahlung', 'ec-badge-off' ], paid: [ 'Bezahlt', 'ec-badge-on' ], cancelled: [ 'Storniert', 'ec-badge-err' ] };
+		var STAT = { awaiting_transfer: [ _t('Wartet auf Zahlung'), 'ec-badge-off' ], paid: [ _t('Bezahlt'), 'ec-badge-on' ], cancelled: [ _t('Storniert'), 'ec-badge-err' ] };
 		function addr( a ) { if ( ! a ) { return '—'; } return [ a.street, ( ( a.postalCode || '' ) + ' ' + ( a.city || '' ) ).trim(), a.country ].filter( Boolean ).join( ', ' ) || '—'; }
 		function detailModal( o ) {
 			function row( k, v ) { return el( 'div', { className: 'ec-kv-row' }, el( 'span', null, k ), el( 'span', null, v || '—' ) ); }
 			return el( 'div', { className: 'ec-modal', onClick: function () { up( { detail: null } ); } },
 				el( 'div', { className: 'ec-modal-card', onClick: function ( e ) { e.stopPropagation(); } },
-					el( 'h3', null, 'Bestellung ' + o.ref ),
-					row( 'Status', ( STAT[ o.status ] || [ o.status ] )[ 0 ] ),
-					row( 'Datum', fmtDate( o.createdAt ) ),
-					o.fulfillmentMode ? row( 'Art', o.fulfillmentMode === 'delivery' ? 'Lieferung' : 'Abholung' ) : null,
-					row( 'Kunde', o.customerName ),
-					o.customerCompany ? row( 'Firma', o.customerCompany ) : null,
-					row( 'E-Mail', o.customerEmail ),
-					o.customerPhone ? row( 'Telefon', o.customerPhone ) : null,
-					row( 'Rechnungsadresse', addr( o.billing ) ),
-					( o.fulfillmentMode === 'delivery' && ! o.sameAddress ) ? row( 'Lieferadresse', addr( o.delivery ) ) : null,
+					el( 'h3', null, _t('Bestellung ') + o.ref ),
+					row( _t('Status'), ( STAT[ o.status ] || [ o.status ] )[ 0 ] ),
+					row( _t('Datum'), fmtDate( o.createdAt ) ),
+					o.fulfillmentMode ? row( _t('Art'), o.fulfillmentMode === 'delivery' ? 'Lieferung' : _t('Abholung') ) : null,
+					row( _t('Kunde'), o.customerName ),
+					o.customerCompany ? row( _t('Firma'), o.customerCompany ) : null,
+					row( _t('E-Mail'), o.customerEmail ),
+					o.customerPhone ? row( _t('Telefon'), o.customerPhone ) : null,
+					row( _t('Rechnungsadresse'), addr( o.billing ) ),
+					( o.fulfillmentMode === 'delivery' && ! o.sameAddress ) ? row( _t('Lieferadresse'), addr( o.delivery ) ) : null,
 					el( 'table', { className: 'ec-table', style: { margin: '14px 0' } },
-						el( 'thead', null, el( 'tr', null, el( 'th', null, 'Produkt' ), el( 'th', null, 'Menge' ), el( 'th', null, 'Betrag' ) ) ),
+						el( 'thead', null, el( 'tr', null, el( 'th', null, _t('Produkt') ), el( 'th', null, _t('Menge') ), el( 'th', null, _t('Betrag') ) ) ),
 						el( 'tbody', null, ( o.items || [] ).map( function ( it, i ) {
 							var subs = [];
 							( it.options || [] ).forEach( function ( op ) { subs.push( op.label ); } );
 							( it.customFields || [] ).forEach( function ( f ) { subs.push( f.label + ': ' + ( Array.isArray( f.value ) ? f.value.join( ', ' ) : f.value ) ); } );
-							if ( it.deliveryFee ) { subs.push( 'Liefergebühr ' + fmtMoney( it.deliveryFee, o.currency ) ); }
+							if ( it.deliveryFee ) { subs.push( _t('Liefergebühr ') + fmtMoney( it.deliveryFee, o.currency ) ); }
 							return el( 'tr', { key: i },
 								el( 'td', null, el( 'div', null, it.name ), subs.length ? el( 'span', { className: 'ec-tags' }, subs.join( ' · ' ) ) : null ),
 								el( 'td', null, it.qty ),
 								el( 'td', null, fmtMoney( it.lineTotal, o.currency ) ) );
 						} ) )
 					),
-					( o.deliveryFeeTotal ) ? row( 'Liefergebühren', fmtMoney( o.deliveryFeeTotal, o.currency ) ) : null,
-					row( 'Total', fmtMoney( o.total, o.currency ) ),
+					( o.deliveryFeeTotal ) ? row( _t('Liefergebühren'), fmtMoney( o.deliveryFeeTotal, o.currency ) ) : null,
+					row( _t('Total'), fmtMoney( o.total, o.currency ) ),
 					el( 'div', { style: { display: 'flex', gap: '8px', marginTop: '16px', flexWrap: 'wrap' } },
-						o.status !== 'paid' ? el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { setStatus( o.id, 'paid' ); up( { detail: null } ); } }, 'Als bezahlt markieren' ) : null,
-						el( 'button', { className: 'ec-btn', onClick: function () { up( { detail: null } ); } }, 'Schliessen' ),
-						el( 'button', { className: 'ec-btn ec-btn-danger', onClick: function () { del( o.id ); } }, 'Löschen' )
+						o.status !== 'paid' ? el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { setStatus( o.id, 'paid' ); up( { detail: null } ); } }, _t('Als bezahlt markieren') ) : null,
+						el( 'button', { className: 'ec-btn', onClick: function () { up( { detail: null } ); } }, _t('Schliessen') ),
+						el( 'button', { className: 'ec-btn ec-btn-danger', onClick: function () { del( o.id ); } }, _t('Löschen') )
 					)
 				)
 			);
@@ -1814,14 +1815,14 @@
 		return el( 'div', null,
 			el( 'div', { className: 'ec-banner' },
 				el( 'span', { className: 'dashicons dashicons-info-outline' } ),
-				el( 'span', { className: 'ec-banner-txt' }, 'Bestellungen per Banküberweisung (lokal). Für Online-Zahlungen verbinde dein Konto.' ),
-				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onConnect }, 'Verbinden' )
+				el( 'span', { className: 'ec-banner-txt' }, _t('Bestellungen per Banküberweisung (lokal). Für Online-Zahlungen verbinde dein Konto.') ),
+				el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onConnect }, _t('Verbinden') )
 			),
 			ErrorBox( st.error ),
 			st.items === null ? Spinner() :
-				( st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, 'Noch keine Bestellungen.' ) :
+				( st.items.length === 0 ? el( 'p', { className: 'ec-muted' }, _t('Noch keine Bestellungen.') ) :
 					el( 'table', { className: 'ec-table' },
-						el( 'thead', null, el( 'tr', null, el( 'th', null, 'Ref' ), el( 'th', null, 'Kunde' ), el( 'th', null, 'Betrag' ), el( 'th', null, 'Status' ), el( 'th', null, 'Datum' ), el( 'th', null, '' ) ) ),
+						el( 'thead', null, el( 'tr', null, el( 'th', null, _t('Ref') ), el( 'th', null, _t('Kunde') ), el( 'th', null, _t('Betrag') ), el( 'th', null, _t('Status') ), el( 'th', null, _t('Datum') ), el( 'th', null, '' ) ) ),
 						el( 'tbody', null, st.items.map( function ( o ) {
 							var stat = STAT[ o.status ] || [ o.status, 'ec-badge-off' ];
 							return el( 'tr', { key: o.id },
@@ -1831,9 +1832,9 @@
 								el( 'td', null, el( 'span', { className: 'ec-badge ' + stat[ 1 ] }, stat[ 0 ] ) ),
 								el( 'td', null, fmtDate( o.createdAt ) ),
 								el( 'td', { style: { textAlign: 'right' } },
-									el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { up( { detail: o } ); } }, 'Details' ),
-									o.status !== 'paid' && el( 'button', { className: 'ec-btn ec-btn-sm ec-ml', onClick: function () { setStatus( o.id, 'paid' ); } }, 'Als bezahlt' ),
-									el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger ec-ml', onClick: function () { del( o.id ); } }, 'Löschen' ) ) );
+									el( 'button', { className: 'ec-btn ec-btn-sm', onClick: function () { up( { detail: o } ); } }, _t('Details') ),
+									o.status !== 'paid' && el( 'button', { className: 'ec-btn ec-btn-sm ec-ml', onClick: function () { setStatus( o.id, 'paid' ); } }, _t('Als bezahlt') ),
+									el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-danger ec-ml', onClick: function () { del( o.id ); } }, _t('Löschen') ) ) );
 						} ) )
 					)
 				),
@@ -1844,7 +1845,7 @@
 	function ConnectModal( props ) {
 		return el( 'div', { className: 'ec-modal', onClick: props.onClose },
 			el( 'div', { className: 'ec-modal-card', onClick: function ( e ) { e.stopPropagation(); } },
-				el( 'button', { className: 'ec-modal-x', onClick: props.onClose, 'aria-label': 'Schliessen' }, '×' ),
+				el( 'button', { className: 'ec-modal-x', onClick: props.onClose, 'aria-label': _t('Schliessen') }, '×' ),
 				el( LoginView, { onAuthed: props.onAuthed } )
 			)
 		);
@@ -1863,13 +1864,13 @@
 			// laeuft lokal; datengetriebene Bereiche als sichtbare Demo; nur
 			// Verifizierung/Tarif verlangen echtes Verbinden.
 			var DEMO_COLS = {
-				orders: [ 'Bestellung', 'Kunde', 'Betrag', 'Status', 'Datum' ],
-				customers: [ 'Kunde', 'E-Mail', 'Bestellungen', 'Umsatz' ],
-				invoices: [ 'Nummer', 'Kunde', 'Betrag', 'Status' ],
-				emails: [ 'Vorlage', 'Betreff', 'Status' ],
-				marketing: [ 'Kampagne', 'Betreff', 'Status' ],
-				webhooks: [ 'URL', 'Events', 'Status' ],
-				support: [ 'Betreff', 'Status', 'Datum' ]
+				orders: [ _t('Bestellung'), _t('Kunde'), _t('Betrag'), _t('Status'), _t('Datum') ],
+				customers: [ _t('Kunde'), _t('E-Mail'), _t('Bestellungen'), _t('Umsatz') ],
+				invoices: [ _t('Nummer'), _t('Kunde'), _t('Betrag'), _t('Status') ],
+				emails: [ _t('Vorlage'), _t('Betreff'), _t('Status') ],
+				marketing: [ _t('Kampagne'), _t('Betreff'), _t('Status') ],
+				webhooks: [ 'URL', _t('Events'), _t('Status') ],
+				support: [ _t('Betreff'), _t('Status'), _t('Datum') ]
 			};
 			if ( route.view === 'checkouts' || route.view === 'checkout' || route.view === 'products' ) {
 				content = el( LocalCheckouts, { onConnect: props.onOpenConnect } );
@@ -1884,7 +1885,7 @@
 			} else if ( DEMO_COLS[ route.view ] ) {
 				content = el( DemoView, { columns: DEMO_COLS[ route.view ], onConnect: props.onOpenConnect } );
 			} else {
-				content = el( ConnectWall, { title: WALL_TITLES[ route.view ] || 'Konto verbinden', onConnect: props.onOpenConnect } );
+				content = el( ConnectWall, { title: WALL_TITLES[ route.view ] || _t('Konto verbinden'), onConnect: props.onOpenConnect } );
 			}
 		} else {
 			switch ( route.view ) {
@@ -1911,11 +1912,11 @@
 		var curLabel = curNav ? curNav.label : 'EasyCheckout';
 		var merchantName = ( props.merchant && ( props.merchant.companyName || props.merchant.email ) ) || '';
 
-		var PLAN = { free: 'Free', freeplus: 'Free+', basic: 'Basic', pro: 'Pro', invoices: 'Rechnungen' };
+		var PLAN = { free: 'Free', freeplus: 'Free+', basic: 'Basic', pro: 'Pro', invoices: _t('Rechnungen') };
 		var planLabel = ( props.merchant && props.merchant.plan ) ? ( PLAN[ props.merchant.plan ] || props.merchant.plan ) : '';
 		var statusEl = props.authed
-			? [ el( 'span', { key: 'p', className: 'ec-conn-badge ec-conn-on' }, 'Verbunden' + ( planLabel ? ' · ' + planLabel : '' ) ), el( 'span', { key: 'm', className: 'ec-merchant' }, merchantName ), el( 'button', { key: 'b', className: 'ec-btn ec-btn-sm', onClick: logout }, 'Abmelden' ) ]
-			: [ el( 'span', { key: 'nb', className: 'ec-conn-badge' }, 'Nicht verbunden' ), el( 'button', { key: 'c', className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onOpenConnect }, 'Konto verbinden' ) ];
+			? [ el( 'span', { key: 'p', className: 'ec-conn-badge ec-conn-on' }, _t('Verbunden') + ( planLabel ? ' · ' + planLabel : '' ) ), el( 'span', { key: 'm', className: 'ec-merchant' }, merchantName ), el( 'button', { key: 'b', className: 'ec-btn ec-btn-sm', onClick: logout }, _t('Abmelden') ) ]
+			: [ el( 'span', { key: 'nb', className: 'ec-conn-badge' }, _t('Nicht verbunden') ), el( 'button', { key: 'c', className: 'ec-btn ec-btn-sm ec-btn-primary', onClick: props.onOpenConnect }, _t('Konto verbinden') ) ];
 
 		// Navigation laeuft ueber die WordPress-Untermenues; die native App
 		// zeigt nur die aktuelle Sektion + eine schlanke Kopfzeile.
