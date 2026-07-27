@@ -74,6 +74,10 @@ class WC_Settings_Tab {
                         'site'   => __('Schrift der Website (empfohlen)', 'easycheckout'),
                         'system' => __('Neutrale System-Schrift', 'easycheckout'),
                      ]],
+                    ['type' => 'checkbox', 'id' => 'easycheckout_design[showPowered]', 'title' => __('„Powered by"-Hinweis', 'easycheckout'),
+                     'label' => __('„Powered by easyCheckout" unten in der Kasse anzeigen', 'easycheckout'),
+                     'default' => 'no',
+                     'desc' => __('Standardmäßig aus. Aktiviert erscheint ein kleiner Link zu easycheckout.ch am Ende der Kasse.', 'easycheckout')],
                     ['type' => 'sectionend', 'id' => 'ec_design_e'],
                 ];
             case 'shop':

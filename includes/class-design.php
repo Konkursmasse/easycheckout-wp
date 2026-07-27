@@ -75,6 +75,16 @@ class Design {
     }
 
     /**
+     * „Powered by easyCheckout"-Hinweis in der Kasse anzeigen?
+     * STANDARD: aus (kein externer Link auf der öffentlichen Seite —
+     * WordPress.org-konform). Nur wenn der Händler es bewusst aktiviert.
+     */
+    public static function show_powered() {
+        $d = self::design();
+        return isset($d['showPowered']) && $d['showPowered'] === 'yes';
+    }
+
+    /**
      * CSS-String: setzt --ec-p auf allen Kassen-Containern, wendet die
      * Design-Optionen (Hintergrund/Text/Button/Radius/Schrift) an und hängt
      * Custom CSS an. Nicht gesetzte Optionen erzeugen KEINE Regeln, damit das

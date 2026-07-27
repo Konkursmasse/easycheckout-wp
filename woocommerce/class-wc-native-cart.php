@@ -59,6 +59,7 @@ class WC_Native_Cart {
             'logo'       => \EasyCheckout\Design::logo_url(),
             'brandColor' => \EasyCheckout\Design::color(),
             'ecIcon'     => EASYCHECKOUT_PLUGIN_URL . 'assets/images/easycheckout-icon.png',
+            'showPowered' => \EasyCheckout\Design::show_powered() ? '1' : '',
         ]);
         wp_enqueue_script('easycheckout-wc-cart');
 

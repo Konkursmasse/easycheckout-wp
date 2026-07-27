@@ -48,6 +48,7 @@
         return sel;
     }
     function powered() {
+        if (!(window.ecWcCart && ecWcCart.showPowered)) { return null; }
         // 1:1 wie im Original-Checkout (easycheckout.ch): „Powered by [Icon] easyCheckout".
         var link = h('a', {
             href: 'https://easycheckout.ch', target: '_blank', rel: 'noopener noreferrer',

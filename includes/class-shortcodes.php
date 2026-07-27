@@ -173,6 +173,7 @@ class Shortcodes {
                 'brandColor' => \EasyCheckout\Design::color(),
                 'logo'       => \EasyCheckout\Design::logo_url(),
                 'ecIcon'     => EASYCHECKOUT_PLUGIN_URL . 'assets/images/easycheckout-icon.png',
+                'showPowered' => \EasyCheckout\Design::show_powered() ? '1' : '',
             ]);
             wp_enqueue_script('easycheckout-pay-checkout');
 
@@ -323,6 +324,7 @@ class Shortcodes {
             'slug'    => $slug,
             'primary' => $primary,
             'ecIcon'  => EASYCHECKOUT_PLUGIN_URL . 'assets/images/easycheckout-icon.png',
+            'showPowered' => \EasyCheckout\Design::show_powered() ? '1' : '',
         ]);
         wp_enqueue_script('easycheckout-account-checkout');
         $style = $primary ? ' style="--ec-p:' . esc_attr($primary) . ';"' : '';
@@ -463,6 +465,7 @@ class Shortcodes {
             'ajaxUrl'  => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('easycheckout_front'),
             'ecIcon'   => EASYCHECKOUT_PLUGIN_URL . 'assets/images/easycheckout-icon.png',
+            'showPowered' => \EasyCheckout\Design::show_powered() ? '1' : '',
             'checkout' => [
                 'slug'       => $c['slug'],
                 'name'       => $c['name'],

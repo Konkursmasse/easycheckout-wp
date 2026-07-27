@@ -49,6 +49,7 @@
         return sel;
     }
     function powered() {
+        if (!(window.ecPay && ecPay.showPowered)) { return null; }
         var icon = (window.ecPay && ecPay.ecIcon) ? ecPay.ecIcon : '';
         var link = h('a', { href: 'https://easycheckout.ch', target: '_blank', rel: 'noopener noreferrer', class: 'eclc-powered-link' }, [
             icon ? h('img', { class: 'eclc-powered-ico', src: icon, alt: 'easyCheckout', width: '16', height: '16' }) : null,
