@@ -124,12 +124,11 @@ Meist Browser- oder CDN-Cache. Seite mit Strg+Shift+R neu laden oder ein private
 
 == Screenshots ==
 
-1. Native WooCommerce-Kasse: zweispaltig, im Theme-Design, mit „Powered by easyCheckout".
+1. Native WooCommerce-Kasse: zweispaltig, im Theme-Design.
 2. Einstellungen – Sektion „Design": Logo-Upload, Farben, Radius, Schrift.
 3. Einstellungen – Sektion „Zahlung & Kasse" mit allen Checkout-Optionen.
-4. Einstellungen – Sektion „E-Mails": Vorlagen und Versand-Schalter.
-5. Natives EasyCheckout-Dashboard im WP-Admin: Übersicht mit Bestellungen, Kunden, Rechnungen.
-6. Produktseite mit „Sofort kaufen"-Button im Shop-Design.
+4. Natives EasyCheckout-Dashboard im WP-Admin: Übersicht mit Bestellungen, Kunden, Rechnungen.
+5. Produktseite mit „Sofort kaufen"-Button im Shop-Design.
 
 == Changelog ==
 
