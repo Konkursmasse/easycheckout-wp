@@ -1,4 +1,4 @@
-=== EasyCheckout – Checkout, Zahlungslinks & TWINT für die Schweiz ===
+=== EasyCheckout ===
 Contributors: easycheckout
 Tags: checkout, payments, twint, woocommerce, qr-bill
 Requires at least: 6.0
