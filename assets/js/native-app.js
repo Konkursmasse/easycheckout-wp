@@ -854,42 +854,6 @@
 			el( 'tbody', null, rows.map( function ( m ) { return el( 'tr', { key: m.id }, el( 'td', null, fmtDate( m.createdAt ) ), el( 'td', null, m.toEmail ), el( 'td', null, m.subject ), el( 'td', null, m.status ) ); } ) ) );
 	}
 
-	// --- Marketing ----------------------------------------------------------
-
-	function MarketingView() {
-		var s = useState( { subs: null, camps: null, error: '', newSub: '', editing: null } );
-		var st = s[ 0 ], set = s[ 1 ];
-		function load() {
-			api( 'GET', '/api/subscribers?limit=100' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { subs: ( b && b.subscribers ) || [] } ); } ); } ).catch( function () {} );
-			api( 'GET', '/api/marketing' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { camps: ( b && b.campaigns ) || [] } ); } ); } ).catch( function () {} );
-		}
-		useEffect( function () { load(); }, [] );
-		function addSub( e ) { e.preventDefault(); if ( ! st.newSub ) { return; } api( 'POST', '/api/subscribers', { email: st.newSub } ).then( function () { set( Object.assign( {}, st, { newSub: '' } ) ); load(); } ).catch( function ( err ) { window.alert( err.message ); } ); }
-		function sendCamp( c ) { if ( ! window.confirm( _t('Kampagne „') + c.name + _t('" jetzt senden?') ) ) { return; } api( 'POST', '/api/marketing/' + c.id + '/send', {} ).then( function ( b ) { window.alert( 'Gesendet: ' + ( b && b.sent != null ? b.sent : '?' ) ); load(); } ).catch( function ( err ) { window.alert( err.message ); } ); }
-		return el( 'div', null,
-			el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Marketing') ), el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { set( Object.assign( {}, st, { editing: {} } ) ); } }, _t('+ Kampagne') ) ),
-			st.editing && el( CampaignForm, { onClose: function () { set( Object.assign( {}, st, { editing: null } ) ); }, onSaved: function () { set( Object.assign( {}, st, { editing: null } ) ); load(); } } ),
-			el( 'div', { className: 'ec-form-grid' },
-				el( 'div', { className: 'ec-card' }, el( 'h3', null, 'Abonnenten (' + ( st.subs ? st.subs.length : '…' ) + ')' ),
-					el( 'form', { className: 'ec-inline-form', onSubmit: addSub }, el( 'input', { type: 'email', placeholder: _t('E-Mail'), value: st.newSub, onChange: function ( e ) { set( Object.assign( {}, st, { newSub: e.target.value } ) ); } } ), el( 'button', { className: 'ec-btn ec-btn-sm ec-btn-primary' }, '+' ) ),
-					st.subs === null ? Spinner() : el( 'ul', { className: 'ec-tasklist' }, st.subs.slice( 0, 30 ).map( function ( su ) { return el( 'li', { key: su.id }, su.email, su.name && el( 'span', { className: 'ec-muted' }, ' · ' + su.name ) ); } ) ) ),
-				el( 'div', { className: 'ec-card' }, el( 'h3', null, _t('Kampagnen') ),
-					st.camps === null ? Spinner() : st.camps.length === 0 ? el( 'p', { className: 'ec-muted' }, _t('Keine Kampagnen.') ) :
-						el( 'ul', { className: 'ec-tasklist' }, st.camps.map( function ( c ) { return el( 'li', { key: c.id }, el( 'strong', null, c.name ), ' (' + c.status + ') ', c.status !== 'sent' && el( 'a', { href: '#', onClick: function ( e ) { e.preventDefault(); sendCamp( c ); } }, 'senden' ) ); } ) ) )
-			)
-		);
-	}
-	function CampaignForm( props ) {
-		var s = useState( { name: '', subject: '', body: '', busy: false, error: '' } );
-		var st = s[ 0 ], set = s[ 1 ]; function up( o ) { set( Object.assign( {}, st, { error: '' }, o ) ); }
-		function save( e ) { e.preventDefault(); set( Object.assign( {}, st, { busy: true } ) ); api( 'POST', '/api/marketing', { name: st.name, subject: st.subject, body: st.body } ).then( function () { props.onSaved(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: false, error: err.message } ) ); } ); }
-		return el( 'div', { className: 'ec-modal' }, el( 'form', { className: 'ec-modal-card', onSubmit: save }, el( 'h3', null, _t('Neue Kampagne') ), ErrorBox( st.error ),
-			Field( _t('Name'), el( 'input', { required: true, value: st.name, onChange: function ( e ) { up( { name: e.target.value } ); } } ) ),
-			Field( _t('Betreff'), el( 'input', { required: true, value: st.subject, onChange: function ( e ) { up( { subject: e.target.value } ); } } ) ),
-			Field( _t('Inhalt (HTML)'), el( 'textarea', { rows: 8, value: st.body, onChange: function ( e ) { up( { body: e.target.value } ); } } ) ),
-			el( 'div', { className: 'ec-form-actions' }, el( 'button', { className: 'ec-btn ec-btn-primary', disabled: st.busy }, _t('Speichern') ), el( 'button', { type: 'button', className: 'ec-btn', onClick: props.onClose }, _t('Abbrechen') ) ) ) );
-	}
-
 	// --- Webhooks / Support / Billing ---------------------------------------
 
 	function WebhooksView() {
@@ -1248,7 +1212,6 @@
 		{ key: 'customers', label: _t('Kunden'), icon: 'groups' },
 		{ key: 'invoices', label: _t('Rechnungen'), icon: 'media-document' },
 		{ key: 'emails', label: _t('E-Mails'), icon: 'email' },
-		{ key: 'marketing', label: _t('Marketing'), icon: 'megaphone' },
 		{ key: 'onboarding', label: _t('Verifizierung'), icon: 'id' },
 		{ key: 'billing', label: _t('Tarif'), icon: 'cart' },
 		{ key: 'support', label: _t('Support'), icon: 'sos' },
@@ -1256,7 +1219,7 @@
 	];
 
 	// Views, die ein verbundenes Konto brauchen (Zahlungsempfang etc.).
-	var WALL_TITLES = { orders: _t('Bestellungen'), customers: _t('Kunden'), invoices: _t('Rechnungen'), emails: _t('E-Mails'), marketing: _t('Marketing'), onboarding: _t('Verifizierung'), billing: _t('Tarif'), webhooks: _t('Webhooks'), support: _t('Support'), settings: _t('Einstellungen') };
+	var WALL_TITLES = { orders: _t('Bestellungen'), customers: _t('Kunden'), invoices: _t('Rechnungen'), emails: _t('E-Mails'), onboarding: _t('Verifizierung'), billing: _t('Tarif'), webhooks: _t('Webhooks'), support: _t('Support'), settings: _t('Einstellungen') };
 
 	function ConnectWall( props ) {
 		return el( 'div', { className: 'ec-wall' },
@@ -1893,7 +1856,6 @@
 				customers: [ _t('Kunde'), _t('E-Mail'), _t('Bestellungen'), _t('Umsatz') ],
 				invoices: [ _t('Nummer'), _t('Kunde'), _t('Betrag'), _t('Status') ],
 				emails: [ _t('Vorlage'), _t('Betreff'), _t('Status') ],
-				marketing: [ _t('Kampagne'), _t('Betreff'), _t('Status') ],
 				webhooks: [ 'URL', _t('Events'), _t('Status') ],
 				support: [ _t('Betreff'), _t('Status'), _t('Datum') ]
 			};
@@ -1925,7 +1887,6 @@
 				case 'invoices': content = el( InvoicesView, { navigate: navigate } ); break;
 				case 'onboarding': content = el( OnboardingView, null ); break;
 				case 'emails': content = el( EmailsView, null ); break;
-				case 'marketing': content = el( MarketingView, null ); break;
 				case 'webhooks': content = el( WebhooksView, null ); break;
 				case 'support': content = el( SupportView, null ); break;
 				case 'billing': content = el( BillingView, null ); break;

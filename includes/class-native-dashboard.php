@@ -34,7 +34,6 @@ class Native_Dashboard {
             'ec-customers'  => [__('Kunden', 'easycheckout'), 'customers'],
             'ec-invoices'   => [__('Rechnungen', 'easycheckout'), 'invoices'],
             'ec-emails'     => [__('E-Mails', 'easycheckout'), 'emails'],
-            'ec-marketing'  => [__('Marketing', 'easycheckout'), 'marketing'],
             'ec-onboarding' => [__('Verifizierung', 'easycheckout'), 'onboarding'],
             'ec-billing'    => [__('Tarif', 'easycheckout'), 'billing'],
             'ec-support'    => [__('Support', 'easycheckout'), 'support'],
