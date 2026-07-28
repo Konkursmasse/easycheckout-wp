@@ -739,6 +739,6 @@ class Shortcodes {
      * @return string
      */
     private function format_price($price, $currency = 'CHF') {
-        return $currency . ' ' . number_format((float) $price, 2, '.', "'");
+        return Money::format($price, $currency);
     }
 }

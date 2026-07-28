@@ -114,9 +114,17 @@
 			} );
 	}
 
+	// Waehrungsgerechte Formatierung statt schweizerischer Schreibweise fuer alles:
+	// CHF «CHF 1'234.50», EUR «1.234,50 €».
 	function fmtMoney( n, cur ) {
 		if ( n == null || isNaN( n ) ) { return '—'; }
-		return ( cur || 'CHF' ) + ' ' + Number( n ).toFixed( 2 );
+		var code = ( cur || 'CHF' ).toString().toUpperCase().slice( 0, 3 ) || 'CHF';
+		var locale = code === 'EUR' ? 'de-DE' : ( code === 'USD' || code === 'GBP' ? 'en-US' : 'de-CH' );
+		try {
+			return new Intl.NumberFormat( locale, { style: 'currency', currency: code } ).format( Number( n ) );
+		} catch ( e ) {
+			return code + ' ' + Number( n ).toFixed( 2 );
+		}
 	}
 	function fmtDate( s ) { if ( ! s ) { return '—'; } try { return new Date( s ).toLocaleDateString( 'de-CH' ); } catch ( e ) { return s; } }
 	function fileToDataUrl( file ) { return new Promise( function ( res, rej ) { var r = new FileReader(); r.onload = function () { res( r.result ); }; r.onerror = rej; r.readAsDataURL( file ); } ); }
@@ -812,7 +820,7 @@
 		var st = s[ 0 ], set = s[ 1 ];
 		function load() {
 			api( 'GET', '/api/emails' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.templates ) || [] } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } );
-			api( 'GET', '/api/auth/me' ).then( function ( b ) { var m = ( b && b.merchant ) || b || {}; set( function ( p ) { return Object.assign( {}, p, { canInvoice: !! ( m.planLimits && m.planLimits.invoices ) } ); } ); } ).catch( function () { set( function ( p ) { return Object.assign( {}, p, { canInvoice: true } ); } ); } );
+			api( 'GET', '/api/auth/me' ).then( function ( b ) { var m = ( b && b.merchant ) || b || {}; window.ECNative = window.ECNative || {}; window.ECNative.merchant = m; var allowed = ( m.invoicesAllowed !== undefined ) ? !! m.invoicesAllowed : !! ( m.planLimits && m.planLimits.invoices ); set( function ( p ) { return Object.assign( {}, p, { canInvoice: allowed } ); } ); } ).catch( function () { set( function ( p ) { return Object.assign( {}, p, { canInvoice: true } ); } ); } );
 		}
 		useEffect( function () { load(); }, [] );
 		function byType( t ) { return ( st.items || [] ).filter( function ( x ) { return x.type === t; } )[ 0 ] || null; }
@@ -914,17 +922,25 @@
 					el( 'tbody', null, st.items.map( function ( t ) { return el( 'tr', { key: t.id }, el( 'td', null, el( 'code', null, t.ticketNumber ) ), el( 'td', null, t.subject ), el( 'td', null, t.status ), el( 'td', null, fmtDate( t.createdAt ) ) ); } ) ) ) );
 	}
 
-	// [ key, Label, Kommission ] – Sätze gespiegelt aus der Plattform (lib/plans.js).
-	// Zum Start bietet das Plugin bewusst nur Basic an (weitere Tarife bleiben auf der
-	// Plattform bestehen).
-	var PLANS = [
-		[ 'basic', 'Basic', '3,5 % + CHF 0,35' ],
-	];
+	// Tarife werden von der Plattform geholt (/api/plans), nicht mehr hier gepflegt.
+	// Vorher stand hier «3,5 % + CHF 0,35» — falsch in beiderlei Hinsicht: Basic
+	// kostet 2,9 % + 0.35, und die Waehrung haengt am Konto des Haendlers.
+	// Der Fallback greift nur, wenn die Plattform nicht erreichbar ist.
+	var PLAN_KEYS = [ 'basic' ]; // welche Tarife das Plugin anbietet
+	function planFeeLabel( plan, currency ) {
+		if ( ! plan ) { return ''; }
+		var cur = ( currency || 'CHF' ).toUpperCase();
+		var pct = String( plan.percentDisplay ).replace( '.', ',' );
+		var fix = Number( plan.fixed ).toFixed( 2 ).replace( '.', ',' );
+		return pct + ' % + ' + cur + ' ' + fix;
+	}
 	function BillingView() {
-		var s = useState( { me: null, error: '', busy: '' } );
+		var s = useState( { me: null, error: '', busy: '', plans: null } );
 		var st = s[ 0 ], set = s[ 1 ];
 		function load() { api( 'GET', '/api/auth/me' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { me: ( b && b.merchant ) || b } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { error: err.message } ); } ); } ); }
-		useEffect( function () { load(); }, [] );
+		// Tarifsaetze von der Plattform, damit sie nicht im Plugin veralten.
+		function loadPlans() { api( 'GET', '/api/plans' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { plans: ( b && b.plans ) || [] } ); } ); } ).catch( function () { set( function ( p ) { return Object.assign( {}, p, { plans: [] } ); } ); } ); }
+		useEffect( function () { load(); loadPlans(); }, [] );
 		function choose( plan ) {
 			if ( plan === 'free' ) { set( Object.assign( {}, st, { busy: plan } ) ); api( 'POST', '/api/subscription/checkout', { plan: 'free' } ).then( function () { set( Object.assign( {}, st, { busy: '' } ) ); load(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: '', error: err.message } ) ); } ); return; }
 			// Paid plans require card payment -> hosted billing in a new tab.
@@ -933,11 +949,11 @@
 		if ( ! st.me ) { return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Tarif') ) ), st.error ? ErrorBox( st.error ) : Spinner() ); }
 		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Tarif & Add-ons') ) ), ErrorBox( st.error ),
 			el( 'p', null, 'Aktueller Tarif: ', el( 'strong', null, st.me.plan ) ),
-			el( 'div', { className: 'ec-stat-grid' }, PLANS.map( function ( pl ) {
-				var current = st.me.plan === pl[ 0 ];
-				return el( 'div', { key: pl[ 0 ], className: 'ec-stat' }, el( 'div', { className: 'ec-stat-val', style: { fontSize: '18px' } }, pl[ 1 ] ),
-					el( 'div', { className: 'ec-stat-lbl', style: { marginTop: '4px' } }, 'Kommission: ', el( 'strong', null, pl[ 2 ] ) ),
-					el( 'button', { className: 'ec-btn ec-btn-sm' + ( current ? '' : ' ec-btn-primary' ), disabled: current || st.busy === pl[ 0 ], onClick: function () { choose( pl[ 0 ] ); }, style: { marginTop: '8px' } }, current ? 'Aktiv' : ( pl[ 0 ] === 'free' ? 'Wechseln' : _t('Upgrade ↗') ) ) );
+			el( 'div', { className: 'ec-stat-grid' }, ( st.plans || [] ).filter( function ( pl ) { return PLAN_KEYS.indexOf( pl.key ) !== -1; } ).map( function ( pl ) {
+				var current = st.me.plan === pl.key;
+				return el( 'div', { key: pl.key, className: 'ec-stat' }, el( 'div', { className: 'ec-stat-val', style: { fontSize: '18px' } }, pl.label ),
+					el( 'div', { className: 'ec-stat-lbl', style: { marginTop: '4px' } }, 'Kommission: ', el( 'strong', null, planFeeLabel( pl, st.me.defaultCurrency ) ) ),
+					el( 'button', { className: 'ec-btn ec-btn-sm' + ( current ? '' : ' ec-btn-primary' ), disabled: current || st.busy === pl.key, onClick: function () { choose( pl.key ); }, style: { marginTop: '8px' } }, current ? 'Aktiv' : ( pl.key === 'free' ? 'Wechseln' : _t('Upgrade ↗') ) ) );
 			} ) ),
 			el( 'p', { className: 'ec-muted ec-sm', style: { marginTop: '12px' } }, 'Kommission pro erfolgreicher Zahlung – alle Zahlungsgebühren inklusive, keine versteckten Kosten. Kostenpflichtige Tarife: Kartenzahlung über die sichere EasyCheckout-Seite (neuer Tab).' )
 		);
@@ -946,18 +962,22 @@
 	// --- Invoices -----------------------------------------------------------
 
 	function InvoicesView( props ) {
-		var s = useState( { items: null, error: '', editing: null, canInvoice: null, plan: '' } );
+		var s = useState( { items: null, error: '', editing: null, canInvoice: null, planHasInvoices: false, country: '', plan: '' } );
 		var st = s[ 0 ], set = s[ 1 ];
 		function load() { api( 'GET', '/api/invoices' ).then( function ( b ) { set( function ( p ) { return Object.assign( {}, p, { items: ( b && b.invoices ) || [], error: '' } ); } ); } ).catch( function ( err ) { set( function ( p ) { return Object.assign( {}, p, { items: [], error: err.message } ); } ); } ); }
-		function loadPlan() { api( 'GET', '/api/auth/me' ).then( function ( b ) { var m = ( b && b.merchant ) || b || {}; var lim = m.planLimits || {}; set( function ( p ) { return Object.assign( {}, p, { canInvoice: !! lim.invoices, plan: m.plan || '' } ); } ); } ).catch( function () { set( function ( p ) { return Object.assign( {}, p, { canInvoice: true } ); } ); } ); }
+		function loadPlan() { api( 'GET', '/api/auth/me' ).then( function ( b ) { var m = ( b && b.merchant ) || b || {}; var lim = m.planLimits || {}; window.ECNative = window.ECNative || {}; window.ECNative.merchant = m; var allowed = ( m.invoicesAllowed !== undefined ) ? !! m.invoicesAllowed : !! lim.invoices; set( function ( p ) { return Object.assign( {}, p, { canInvoice: allowed, planHasInvoices: !! lim.invoices, country: m.country || 'CH', plan: m.plan || '' } ); } ); } ).catch( function () { set( function ( p ) { return Object.assign( {}, p, { canInvoice: true } ); } ); } ); }
 		useEffect( function () { loadPlan(); load(); }, [] );
 		if ( st.canInvoice === null ) { return Spinner(); }
 		if ( st.canInvoice === false ) {
 			return el( 'div', null,
 				el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Rechnungen') ) ),
 				el( 'div', { className: 'ec-alert' },
-					el( 'p', null, el( 'strong', null, _t('Rechnungen sind in deinem Tarif nicht enthalten.') ) ),
-					el( 'p', { className: 'ec-muted' }, 'Verfügbar ab Tarif „Rechnungen", „Basic" oder „Pro". Aktueller Tarif: ' + ( st.plan || 'Free' ) + '.' ),
+					( st.planHasInvoices && st.country && st.country !== 'CH' )
+						? el( 'p', null, el( 'strong', null, _t('Rechnungen stehen derzeit nur für Händler mit Sitz in der Schweiz zur Verfügung.') ) )
+						: el( 'p', null, el( 'strong', null, _t('Rechnungen sind in deinem Tarif nicht enthalten.') ) ),
+					( st.planHasInvoices && st.country && st.country !== 'CH' )
+						? el( 'p', { className: 'ec-muted' }, 'Das Rechnungsmodul folgt Schweizer Vorgaben (QR-Rechnung, MwSt-Sätze, Pflichtangaben) und wäre für dein Land formal nicht korrekt.' )
+						: el( 'p', { className: 'ec-muted' }, 'Verfügbar ab Tarif „Rechnungen", „Basic" oder „Pro". Aktueller Tarif: ' + ( st.plan || 'Free' ) + '.' ),
 					el( 'button', { className: 'ec-btn ec-btn-primary', onClick: function () { if ( props.navigate ) { props.navigate( 'billing' ); } } }, _t('Tarif ansehen') )
 				)
 			);
@@ -1020,7 +1040,10 @@
 
 	function InvoiceForm( props ) {
 		var inv = props.invoice;
-		var init = { customerEmail: '', customerName: '', customerStreet: '', customerPostalCode: '', customerCity: '', customerCountry: 'CH', vatRate: 8.1, dueDate: '', notes: '', currency: 'CHF' };
+		// Vorbelegung aus dem Haendlerkonto statt fix Schweiz. Rechnungen sind zwar
+		// derzeit CH-only, aber die Werte sollen aus einer Quelle kommen.
+		var me = ( window.ECNative && window.ECNative.merchant ) || {};
+		var init = { customerEmail: '', customerName: '', customerStreet: '', customerPostalCode: '', customerCity: '', customerCountry: me.country || 'CH', vatRate: ( me.country && me.country !== 'CH' ) ? 0 : 8.1, dueDate: '', notes: '', currency: me.defaultCurrency || 'CHF' };
 		if ( inv ) { Object.keys( init ).forEach( function ( k ) { if ( inv[ k ] != null ) { init[ k ] = inv[ k ]; } } ); }
 		var items0 = ( inv && inv.items && inv.items.length ) ? inv.items.map( function ( i ) { return { quantity: i.quantity || 1, price: i.price != null ? i.price : '', description: i.description || '' }; } ) : [ { quantity: 1, price: '', description: '' } ];
 		var s = useState( Object.assign( { busy: false, error: '', items: items0 }, init ) );

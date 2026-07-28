@@ -29,7 +29,18 @@ function _t(s){try{return (window.ecWcCart&&ecWcCart.i18n&&ecWcCart.i18n[s])||s;
         (children || []).forEach(function (c) { if (c) { e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); } });
         return e;
     }
-    function money(n) { return CUR + ' ' + Number(n || 0).toFixed(2); }
+    // Waehrungsgerechte Formatierung: CHF «CHF 1'234.50», EUR «1.234,50 €».
+    // Intl kennt die Landeskonventionen; vorher war alles schweizerisch formatiert.
+    function ecFormatMoney( n, cur ) {
+        var code = ( cur || 'CHF' ).toString().toUpperCase().slice( 0, 3 ) || 'CHF';
+        var locale = code === 'EUR' ? 'de-DE' : ( code === 'USD' || code === 'GBP' ? 'en-US' : 'de-CH' );
+        try {
+            return new Intl.NumberFormat( locale, { style: 'currency', currency: code } ).format( Number( n ) || 0 );
+        } catch ( e ) {
+            return code + ' ' + ( Number( n ) || 0 ).toFixed( 2 );
+        }
+    }
+    function money(n) { return ecFormatMoney(n, CUR); }
 
     function post(action, fields) {
         var body = new URLSearchParams();
