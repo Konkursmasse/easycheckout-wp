@@ -926,7 +926,9 @@
 	// Vorher stand hier «3,5 % + CHF 0,35» — falsch in beiderlei Hinsicht: Basic
 	// kostet 2,9 % + 0.35, und die Waehrung haengt am Konto des Haendlers.
 	// Der Fallback greift nur, wenn die Plattform nicht erreichbar ist.
-	var PLAN_KEYS = [ 'basic' ]; // welche Tarife das Plugin anbietet
+	// Welche Tarife das Plugin anzeigt. Free und Basic sind die einzigen real
+	// vergebenen; die uebrigen bleiben dem Dashboard vorbehalten.
+	var PLAN_KEYS = [ 'free', 'basic' ];
 	function planFeeLabel( plan, currency ) {
 		if ( ! plan ) { return ''; }
 		var cur = ( currency || 'CHF' ).toUpperCase();
