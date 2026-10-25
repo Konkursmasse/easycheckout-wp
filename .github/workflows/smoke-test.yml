@@ -83,6 +83,8 @@ jobs:
           # Anmelden (wp-env: admin/password)
           curl -s -c cookies.txt -b cookies.txt -o /dev/null "$B/wp-login.php"
           curl -s -c cookies.txt -b cookies.txt -o /dev/null -d 'log=admin&pwd=password&wp-submit=Log+In&testcookie=1' "$B/wp-login.php"
+          # Erster Admin-Aufruf: WooCommerce leitet einmalig auf seinen Einrichtungsassistenten um.
+          curl -s -o /dev/null -b cookies.txt "$B/wp-admin/"
           pruefe "$B/" 200
           pruefe "$B/?pagename=kasse" 200
           pruefe "$B/?ec_local=gibt-es-nicht" 200
@@ -108,6 +110,7 @@ jobs:
         run: |
           wp-env run cli bash -c 'cat wp-content/debug.log 2>/dev/null || true' > debug.log
           cat debug.log
-          if grep -iE 'easycheckout' debug.log | grep -qiE 'fatal|warning|notice|deprecated'; then
+          # Nur Meldungen, die aus Dateien dieses Plugins stammen.
+          if grep -iE 'fatal|warning|notice|deprecated' debug.log | grep -q 'plugins/easycheckout/'; then
             echo "::error::PHP-Meldungen aus dem Plugin im debug.log"; exit 1
           fi
