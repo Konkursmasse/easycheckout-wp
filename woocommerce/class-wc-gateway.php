@@ -27,6 +27,13 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
     private $api;
 
     /**
+     * Checkout-Slug aus den Gateway-Einstellungen
+     *
+     * @var string
+     */
+    public $checkout_slug = '';
+
+    /**
      * Constructor
      */
     public function __construct() {

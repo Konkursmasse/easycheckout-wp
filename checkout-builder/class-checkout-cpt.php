@@ -104,14 +104,28 @@ class Checkout_CPT {
             'terms_url' => ['type' => 'string', 'default' => ''],
             'logo' => ['type' => 'string', 'default' => ''],
             'primary_color' => ['type' => 'string', 'default' => '#0066cc'],
-            'payment_methods' => ['type' => 'array', 'default' => ['card', 'twint']],
-            'products' => ['type' => 'array', 'default' => []],
+            'payment_methods' => ['type' => 'array', 'default' => ['card', 'twint'],
+                'items' => ['type' => 'string']],
+            'products' => ['type' => 'array', 'default' => [],
+                'items' => ['type' => 'object', 'additionalProperties' => true, 'properties' => [
+                    'id' => ['type' => 'string'],
+                    'name' => ['type' => 'string'],
+                    'description' => ['type' => 'string'],
+                    'price' => ['type' => 'number'],
+                    'sku' => ['type' => 'string'],
+                    'image' => ['type' => 'string'],
+                    'maxQuantity' => ['type' => 'integer'],
+                ]]],
             'email_notifications' => ['type' => 'boolean', 'default' => true],
         ];
 
         foreach ($meta_fields as $key => $args) {
+            // Arrays brauchen für die REST-API ein Schema der Einträge.
+            $show_in_rest = isset($args['items'])
+                ? ['schema' => ['type' => 'array', 'items' => $args['items']]]
+                : true;
             register_post_meta(self::POST_TYPE, self::META . $key, [
-                'show_in_rest' => true,
+                'show_in_rest' => $show_in_rest,
                 'single' => true,
                 'type' => $args['type'],
                 'default' => $args['default'],
