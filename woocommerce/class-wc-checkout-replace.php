@@ -73,7 +73,7 @@ class WC_Checkout_Replace {
         // Bestellung erst beim Bezahlen (mit den final gewählten Mengen).
         $wcCart = WC_Native_Cart::url();
         if ($wcCart !== '') {
-            wp_redirect($wcCart);
+            wp_safe_redirect($wcCart);
             exit;
         }
 

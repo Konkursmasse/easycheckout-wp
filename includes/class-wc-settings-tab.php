@@ -346,9 +346,13 @@ class WC_Settings_Tab {
             }
         }
         foreach ($this->platform_types() as $type => $def) {
-            $in = wp_unslash($_POST['ec_platform_mail'][$type] ?? []);
-            $subject = trim((string) ($in['subject'] ?? ''));
-            $body = trim((string) ($in['body'] ?? ''));
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing -- WC prüft den Nonce vor woocommerce_update_options_*.
+            $in = isset($_POST['ec_platform_mail'][$type]) && is_array($_POST['ec_platform_mail'][$type])
+                ? wp_unslash($_POST['ec_platform_mail'][$type]) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- Felder werden unten einzeln bereinigt.
+                : [];
+            $subject = trim(sanitize_text_field((string) ($in['subject'] ?? '')));
+            // Vorlagen dürfen HTML enthalten (Mail-Inhalt), aber nur erlaubtes.
+            $body = trim(wp_kses_post((string) ($in['body'] ?? '')));
             if ($subject !== '' && $body !== '') {
                 $api->request('POST', '/api/emails', [
                     'type' => $type, 'subject' => $subject, 'body' => $body, 'isActive' => true,
@@ -383,7 +387,7 @@ class WC_Settings_Tab {
             // $_POST übernehmen. Sonst bleibt das Logo trotz Auswahl leer.
             // phpcs:ignore WordPress.Security.NonceVerification -- WC prüft den Nonce vor woocommerce_update_options_*.
             if (isset($_POST['easycheckout_design']['logoUrl'])) {
-                $design['logoUrl'] = esc_url_raw(trim((string) wp_unslash($_POST['easycheckout_design']['logoUrl'])));
+                $design['logoUrl'] = esc_url_raw(trim(sanitize_text_field(wp_unslash($_POST['easycheckout_design']['logoUrl']))));
                 update_option('easycheckout_design', $design);
             }
 

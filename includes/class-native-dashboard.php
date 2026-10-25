@@ -757,7 +757,8 @@ class Native_Dashboard {
     public function ajax_login() {
         $this->guard();
         $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
-        $pass  = isset($_POST['password']) ? (string) wp_unslash($_POST['password']) : '';
+        // Passwort unverändert an die API (jede Bereinigung würde es verändern); wird nie gespeichert oder ausgegeben.
+        $pass  = isset($_POST['password']) ? (string) wp_unslash($_POST['password']) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
         $r = $this->api->login($email, $pass);
         if (is_wp_error($r)) {
             wp_send_json_error(['message' => $r->get_error_message()]);

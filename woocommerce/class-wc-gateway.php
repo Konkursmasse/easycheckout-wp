@@ -326,20 +326,20 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
      * Handle return from payment (success)
      */
     public function handle_return() {
-        $order_id = isset($_GET['order_id']) ? intval($_GET['order_id']) : 0;
-        $order_key = isset($_GET['key']) ? sanitize_text_field($_GET['key']) : '';
-        $ec_order_id = isset($_GET['orderId']) ? sanitize_text_field($_GET['orderId']) : '';
-        $status = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : '';
+        $order_id = isset($_GET['order_id']) ? absint(wp_unslash($_GET['order_id'])) : 0;
+        $order_key = isset($_GET['key']) ? sanitize_text_field(wp_unslash($_GET['key'])) : '';
+        $ec_order_id = isset($_GET['orderId']) ? sanitize_text_field(wp_unslash($_GET['orderId'])) : '';
+        $status = isset($_GET['status']) ? sanitize_key(wp_unslash($_GET['status'])) : '';
 
         if (!$order_id) {
-            wp_redirect(wc_get_checkout_url());
+            wp_safe_redirect(wc_get_checkout_url());
             exit;
         }
 
         $order = wc_get_order($order_id);
 
         if (!$order || $order->get_order_key() !== $order_key) {
-            wp_redirect(wc_get_checkout_url());
+            wp_safe_redirect(wc_get_checkout_url());
             exit;
         }
 
@@ -373,7 +373,7 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
         }
 
         // Redirect to thank you page
-        wp_redirect($this->get_return_url($order));
+        wp_safe_redirect($this->get_return_url($order));
         exit;
     }
 
@@ -381,18 +381,18 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
      * Handle return from payment (cancel)
      */
     public function handle_cancel() {
-        $order_id = isset($_GET['order_id']) ? intval($_GET['order_id']) : 0;
-        $order_key = isset($_GET['key']) ? sanitize_text_field($_GET['key']) : '';
+        $order_id = isset($_GET['order_id']) ? absint(wp_unslash($_GET['order_id'])) : 0;
+        $order_key = isset($_GET['key']) ? sanitize_text_field(wp_unslash($_GET['key'])) : '';
 
         if (!$order_id) {
-            wp_redirect(wc_get_checkout_url());
+            wp_safe_redirect(wc_get_checkout_url());
             exit;
         }
 
         $order = wc_get_order($order_id);
 
         if (!$order || $order->get_order_key() !== $order_key) {
-            wp_redirect(wc_get_checkout_url());
+            wp_safe_redirect(wc_get_checkout_url());
             exit;
         }
 
@@ -406,7 +406,7 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
         wc_add_notice(__('Payment was cancelled. Please try again.', 'easycheckout'), 'notice');
 
         // Redirect back to checkout
-        wp_redirect(wc_get_checkout_url());
+        wp_safe_redirect(wc_get_checkout_url());
         exit;
     }
 
