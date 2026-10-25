@@ -1,6 +1,6 @@
-/* global ecPay, Stripe */
-/* i18n: deutscher String = Key; fr/it via ecPay.i18n, sonst Fallback Deutsch */
-function _t(s){try{return (window.ecPay&&ecPay.i18n&&ecPay.i18n[s])||s;}catch(e){return s;}}
+/* global easycheckoutPay, Stripe */
+/* i18n: deutscher String = Key; fr/it via easycheckoutPay.i18n, sonst Fallback Deutsch */
+function _t(s){try{return (window.easycheckoutPay&&easycheckoutPay.i18n&&easycheckoutPay.i18n[s])||s;}catch(e){return s;}}
 /**
  * EasyCheckout – nativer WooCommerce-Warenkorb-Checkout (KEIN iFrame).
  * Optik + Felder identisch zum nativen Konto-Checkout (account-checkout.js /
@@ -13,7 +13,7 @@ function _t(s){try{return (window.ecPay&&ecPay.i18n&&ecPay.i18n[s])||s;}catch(e)
     'use strict';
 
     var root = document.getElementById('ec-pay-checkout');
-    if (!root || typeof ecPay === 'undefined') { return; }
+    if (!root || typeof easycheckoutPay === 'undefined') { return; }
 
     var stripe = null, elements = null, O = null, CUR = 'CHF', mode = 'pickup';
 
@@ -46,9 +46,9 @@ function _t(s){try{return (window.ecPay&&ecPay.i18n&&ecPay.i18n[s])||s;}catch(e)
     function post(action, fields) {
         var body = new URLSearchParams();
         body.append('action', 'easycheckout_' + action);
-        body.append('nonce', ecPay.nonce);
+        body.append('nonce', easycheckoutPay.nonce);
         Object.keys(fields || {}).forEach(function (k) { body.append(k, fields[k]); });
-        return fetch(ecPay.ajaxUrl, {
+        return fetch(easycheckoutPay.ajaxUrl, {
             method: 'POST', credentials: 'same-origin',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString(),
         }).then(function (r) { return r.json(); })
@@ -62,9 +62,9 @@ function _t(s){try{return (window.ecPay&&ecPay.i18n&&ecPay.i18n[s])||s;}catch(e)
         return sel;
     }
     function powered() {
-        if (!(window.ecPay && ecPay.showPowered)) { return null; }
-        var icon = (window.ecPay && ecPay.ecIcon) ? ecPay.ecIcon : '';
-        var link = h('a', { href: 'https://easycheckout.ch', target: '_blank', rel: 'noopener noreferrer', class: 'eclc-powered-link' }, [
+        if (!(window.easycheckoutPay && easycheckoutPay.showPowered)) { return null; }
+        var icon = (window.easycheckoutPay && easycheckoutPay.ecIcon) ? easycheckoutPay.ecIcon : '';
+        var link = h('a', { href: 'https://easycheckout.io', target: '_blank', rel: 'noopener noreferrer', class: 'eclc-powered-link' }, [
             icon ? h('img', { class: 'eclc-powered-ico', src: icon, alt: 'easyCheckout', width: '16', height: '16' }) : null,
             h('span', { class: 'eclc-powered-name', text: 'easyCheckout' }),
         ]);
@@ -94,7 +94,7 @@ function _t(s){try{return (window.ecPay&&ecPay.i18n&&ecPay.i18n[s])||s;}catch(e)
         root.innerHTML = '';
         // Primärfarbe für die eclc-*-Optik (Button/Akzente). Ohne diese Variable
         // bleibt der Button ungefärbt (unsichtbar).
-        root.style.setProperty('--ec-p', (O.design && O.design.primaryColor) ? O.design.primaryColor : ((window.ecPay && ecPay.brandColor) ? ecPay.brandColor : '#4F46E5'));
+        root.style.setProperty('--ec-p', (O.design && O.design.primaryColor) ? O.design.primaryColor : ((window.easycheckoutPay && easycheckoutPay.brandColor) ? easycheckoutPay.brandColor : '#4F46E5'));
         var items = O.lineItems || [];
 
         // --- Linke Spalte: Produkte (fest) ---
@@ -161,9 +161,9 @@ function _t(s){try{return (window.ecPay&&ecPay.i18n&&ecPay.i18n[s])||s;}catch(e)
                 company: companyI.value.trim(), phone: phoneI.value.trim(),
                 address: { street: bStreet.value.trim(), postalCode: bZip.value.trim(), city: bCity.value.trim(), country: bCountry.value },
             };
-            post('pay_patch', { token: ecPay.token, payload: JSON.stringify(patch) }).then(function (d) {
+            post('pay_patch', { token: easycheckoutPay.token, payload: JSON.stringify(patch) }).then(function (d) {
                 if ((d.status && d.status >= 400) || (d.body && d.body.error)) { throw new Error((d.body && d.body.error) || _t('Adresse konnte nicht gespeichert werden.')); }
-                return post('pay_intent', { token: ecPay.token, payload: JSON.stringify({}) });
+                return post('pay_intent', { token: easycheckoutPay.token, payload: JSON.stringify({}) });
             }).then(function (d) {
                 var b = d.body || {};
                 if ((d.status && d.status >= 400) || b.error) { throw new Error(b.error || _t('Zahlung konnte nicht initialisiert werden.')); }
@@ -192,7 +192,7 @@ function _t(s){try{return (window.ecPay&&ecPay.i18n&&ecPay.i18n[s])||s;}catch(e)
 
         var wrap = h('div', { class: 'eclc-wrap' }, [
             (function () {
-                var logoSrc = (O.merchant && O.merchant.logoUrl) || (window.ecPay && ecPay.logo) || '';
+                var logoSrc = (O.merchant && O.merchant.logoUrl) || (window.easycheckoutPay && easycheckoutPay.logo) || '';
                 return h('div', { class: 'eclc-header' }, [
                     logoSrc ? h('img', { class: 'eclc-logo', src: logoSrc, alt: '' }) : null,
                     h('h1', { class: 'eclc-title', text: (O.merchant && O.merchant.companyName) || 'Checkout' }),
@@ -219,20 +219,20 @@ function _t(s){try{return (window.ecPay&&ecPay.i18n&&ecPay.i18n[s])||s;}catch(e)
         var nb = btn.cloneNode(true); btn.parentNode.replaceChild(nb, btn);
         nb.addEventListener('click', function () {
             errEl.style.display = 'none'; nb.disabled = true; nb.textContent = _t('Zahlung läuft…');
-            stripe.confirmPayment({ elements: elements, confirmParams: { return_url: ecPay.successUrl || window.location.href }, redirect: 'if_required' })
+            stripe.confirmPayment({ elements: elements, confirmParams: { return_url: easycheckoutPay.successUrl || window.location.href }, redirect: 'if_required' })
                 .then(function (res) {
                     if (res.error) { fail2(errEl, res.error.message || _t('Zahlung fehlgeschlagen.')); nb.disabled = false; nb.textContent = _t('Jetzt bezahlen · ') + money(O.total); return; }
-                    window.location.href = ecPay.successUrl || window.location.origin;
+                    window.location.href = easycheckoutPay.successUrl || window.location.origin;
                 });
         });
     }
     function fail2(errEl, m) { errEl.textContent = m; errEl.style.display = 'block'; }
 
     loading(_t('Checkout wird geladen…'));
-    post('pay_get', { token: ecPay.token }).then(function (d) {
+    post('pay_get', { token: easycheckoutPay.token }).then(function (d) {
         var b = d.body || {};
         if ((d.status && d.status >= 400) || !b.order) { throw new Error((b && b.error) || _t('Bestellung nicht gefunden.')); }
-        if (b.alreadyPaid) { window.location.href = ecPay.successUrl || window.location.origin; return; }
+        if (b.alreadyPaid) { window.location.href = easycheckoutPay.successUrl || window.location.origin; return; }
         O = b.order; O.needsCustomerInfo = b.needsCustomerInfo; O.merchant = b.merchant; CUR = O.currency || 'CHF';
         mode = O.fulfillmentMode || 'pickup';
         render();

@@ -153,3 +153,41 @@
     });
 
 })(jQuery);
+
+/**
+ * Webhook automatisch registrieren (Reiter „Webhooks").
+ * Texte und Nonce kommen aus easycheckoutAdmin (wp_localize_script).
+ */
+(function () {
+    'use strict';
+    var btn = document.getElementById('ec-register-webhook');
+    var params = window.easycheckoutAdmin || {};
+    var t = params.i18n || {};
+    if (!btn) { return; }
+    btn.addEventListener('click', function () {
+        var out = document.getElementById('ec-register-webhook-result');
+        btn.disabled = true;
+        out.style.color = '';
+        out.textContent = t.registering || '';
+        var body = new URLSearchParams();
+        body.append('action', 'easycheckout_register_webhook');
+        body.append('nonce', params.webhookNonce || '');
+        fetch(params.ajaxUrl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() })
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+                btn.disabled = false;
+                var msg = (j && j.data && j.data.message) ? j.data.message : (j && j.success ? 'OK' : (t.failed || ''));
+                out.textContent = msg;
+                out.style.color = (j && j.success) ? '#008a20' : '#d63638';
+                if (j && j.success && j.data && j.data.secret) {
+                    var s = document.getElementById('easycheckout_webhook_secret');
+                    if (s) { s.value = j.data.secret; }
+                }
+            })
+            .catch(function () {
+                btn.disabled = false;
+                out.textContent = t.registerError || '';
+                out.style.color = '#d63638';
+            });
+    });
+})();

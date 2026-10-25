@@ -1,6 +1,6 @@
-/* global ecAccount, Stripe */
-/* i18n: deutscher String = Key; fr/it via ecAccount.i18n, sonst Fallback Deutsch */
-function _t(s){try{return (window.ecAccount&&ecAccount.i18n&&ecAccount.i18n[s])||s;}catch(e){return s;}}
+/* global easycheckoutAccount, Stripe */
+/* i18n: deutscher String = Key; fr/it via easycheckoutAccount.i18n, sonst Fallback Deutsch */
+function _t(s){try{return (window.easycheckoutAccount&&easycheckoutAccount.i18n&&easycheckoutAccount.i18n[s])||s;}catch(e){return s;}}
 /* EasyCheckout – nativer KONTO-Checkout auf der Haendler-Domain.
    Design = local-checkout.css (anpassbar). Zahlung = Stripe Elements (white-label,
    der Kunde sieht nur easyCheckout). Daten/Bezahlung laufen ueber die
@@ -13,7 +13,7 @@ function _t(s){try{return (window.ecAccount&&ecAccount.i18n&&ecAccount.i18n[s])|
    Server (/pay) ist autoritativ und rechnet identisch. */
 ( function () {
 	'use strict';
-	if ( typeof ecAccount === 'undefined' ) { return; }
+	if ( typeof easycheckoutAccount === 'undefined' ) { return; }
 	var root = document.querySelector( '.ec-account-checkout[data-ec-account]' );
 	if ( ! root ) { return; }
 
@@ -104,9 +104,9 @@ function _t(s){try{return (window.ecAccount&&ecAccount.i18n&&ecAccount.i18n[s])|
 	function post( action, fields ) {
 		var body = new URLSearchParams();
 		body.append( 'action', action );
-		body.append( 'nonce', ecAccount.nonce );
+		body.append( 'nonce', easycheckoutAccount.nonce );
 		Object.keys( fields || {} ).forEach( function ( k ) { body.append( k, fields[ k ] ); } );
-		return fetch( ecAccount.ajaxUrl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() } )
+		return fetch( easycheckoutAccount.ajaxUrl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() } )
 			.then( function ( r ) { return r.json(); } )
 			.then( function ( j ) { if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || _t('Fehler') ); } return j.data; } );
 	}
@@ -117,9 +117,9 @@ function _t(s){try{return (window.ecAccount&&ecAccount.i18n&&ecAccount.i18n[s])|
 		sel.value = val || 'CH'; return sel;
 	}
 	function powered() {
-		if ( ! ( window.ecAccount && ecAccount.showPowered ) ) { return null; }
-		var icon = ( window.ecAccount && ecAccount.ecIcon ) ? ecAccount.ecIcon : '';
-		var link = h( 'a', { href: 'https://easycheckout.ch', target: '_blank', rel: 'noopener noreferrer', class: 'eclc-powered-link' }, [
+		if ( ! ( window.easycheckoutAccount && easycheckoutAccount.showPowered ) ) { return null; }
+		var icon = ( window.easycheckoutAccount && easycheckoutAccount.ecIcon ) ? easycheckoutAccount.ecIcon : '';
+		var link = h( 'a', { href: 'https://easycheckout.io', target: '_blank', rel: 'noopener noreferrer', class: 'eclc-powered-link' }, [
 			icon ? h( 'img', { class: 'eclc-powered-ico', src: icon, alt: 'easyCheckout', width: '16', height: '16' } ) : null,
 			h( 'span', { class: 'eclc-powered-name', text: 'easyCheckout' } )
 		] );
@@ -393,7 +393,7 @@ function _t(s){try{return (window.ecAccount&&ecAccount.i18n&&ecAccount.i18n[s])|
 				sameAddress: sameCb.checked,
 				newsletterOptIn: false
 			};
-			post( 'easycheckout_pub_pay', { slug: ecAccount.slug, payload: JSON.stringify( payload ) } ).then( function ( d ) {
+			post( 'easycheckout_pub_pay', { slug: easycheckoutAccount.slug, payload: JSON.stringify( payload ) } ).then( function ( d ) {
 				var body = d.body || {};
 				if ( ( d.status && d.status >= 400 ) || body.error ) { throw new Error( body.error || ( _t('Fehler ') + d.status ) ); }
 				if ( ! body.clientSecret || ! body.publishableKey ) { throw new Error( _t('Zahlung konnte nicht initialisiert werden.') ); }
@@ -470,7 +470,7 @@ function _t(s){try{return (window.ecAccount&&ecAccount.i18n&&ecAccount.i18n[s])|
 
 	// Start: Checkout-Daten laden
 	loadingView( _t('Checkout wird geladen…') );
-	post( 'easycheckout_pub_checkout', { slug: ecAccount.slug } ).then( function ( d ) {
+	post( 'easycheckout_pub_checkout', { slug: easycheckoutAccount.slug } ).then( function ( d ) {
 		var body = d.body || {};
 		if ( ( d.status && d.status >= 400 ) || ! body.checkout ) { throw new Error( ( body && body.error ) || _t('Checkout nicht gefunden.') ); }
 		C = body.checkout;

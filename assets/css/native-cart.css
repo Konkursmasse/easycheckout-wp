@@ -1,0 +1,19 @@
+/* Native WooCommerce-Kasse (?ec_wccart=1), siehe WC_Native_Cart::maybe_render(). */
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+#ec-pay-checkout {
+    background: #f8fafc;
+    min-height: 100vh;
+    font-family: inherit;
+}
+#ec-pay-checkout input,
+#ec-pay-checkout select,
+#ec-pay-checkout button,
+#ec-pay-checkout .eclc-title,
+#ec-pay-checkout .eclc-col-h,
+#ec-pay-checkout .eclc-pname {
+    font-family: inherit;
+}

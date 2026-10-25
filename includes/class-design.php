@@ -2,12 +2,14 @@
 /**
  * EasyCheckout – zentrale Design-/Anpassungsschnittstelle für Entwickler.
  *
- * Liefert die Markenfarbe (--ec-p) und optionales Custom CSS für alle
+ * Liefert die Markenfarbe (--ec-p) und die Design-Optionen für alle
  * Kassen-Renderer (WC-Warenkorb-Kasse, /pay-Kasse, Konto-Checkout, Shortcode).
- * Beides ist über die Gateway-Einstellungen setzbar UND per Filter überschreibbar:
+ * Die Farbe ist in den Gateway-Einstellungen setzbar. Entwickler können beides
+ * per Filter überschreiben, ohne die Plugin-Dateien zu ändern:
  *   - Farbe:      apply_filters('easycheckout_checkout_color', $hex)
- *   - Custom CSS: apply_filters('easycheckout_checkout_css', $css)
- * So kann ein Entwickler das Design ohne Editieren der Plugin-Dateien anpassen.
+ *   - Zusatz-CSS: apply_filters('easycheckout_checkout_css', '')
+ * Ein Eingabefeld für eigenes CSS gibt es bewusst nicht (WordPress.org-Richtlinie);
+ * dafür ist der CSS-Editor von WordPress da (Customizer bzw. Website-Editor).
  *
  * @package EasyCheckout
  */
@@ -34,13 +36,9 @@ class Design {
         return (string) apply_filters('easycheckout_checkout_color', $c);
     }
 
-    /** Vom Händler/Entwickler hinterlegtes Custom CSS. Einstellung → Filter. */
+    /** Zusatz-CSS aus dem Entwickler-Filter (kein Eingabefeld). */
     public static function css() {
-        $s = self::settings();
-        $css = (string) ($s['custom_css'] ?? '');
-        $css = (string) apply_filters('easycheckout_checkout_css', $css);
-        // Kein Ausbruch aus dem <style>-Tag.
-        return str_ireplace(['</style', '<style'], '', $css);
+        return wp_strip_all_tags((string) apply_filters('easycheckout_checkout_css', ''));
     }
 
     /** Farbwert grob absichern (Hex/rgb/hsl/Farbname). */
@@ -87,7 +85,7 @@ class Design {
     /**
      * CSS-String: setzt --ec-p auf allen Kassen-Containern, wendet die
      * Design-Optionen (Hintergrund/Text/Button/Radius/Schrift) an und hängt
-     * Custom CSS an. Nicht gesetzte Optionen erzeugen KEINE Regeln, damit das
+     * das Zusatz-CSS aus dem Filter an. Nicht gesetzte Optionen erzeugen KEINE Regeln, damit das
      * Standard-Design unangetastet bleibt.
      */
     public static function inline_css() {
@@ -125,12 +123,20 @@ class Design {
         return $out;
     }
 
-    /** <style>-Block für standalone gerenderte Kassen-Seiten in den <head> geben. */
-    public static function head() {
-        echo '<style id="easycheckout-brand">' . self::inline_css() . '</style>';
+    /**
+     * Design-CSS für eigenständig gerenderte Kassen-Seiten einreihen.
+     * Wird vor wp_print_styles() aufgerufen und nach den übrigen Kassen-
+     * Stylesheets ausgegeben, damit die Markenfarbe sie überstimmt.
+     *
+     * @param string[] $deps Stylesheets, nach denen das Design-CSS kommt.
+     */
+    public static function enqueue_brand($deps = []) {
+        wp_register_style('easycheckout-brand', false, $deps, EASYCHECKOUT_VERSION);
+        wp_enqueue_style('easycheckout-brand');
+        wp_add_inline_style('easycheckout-brand', self::inline_css());
     }
 
-    /** Custom CSS in ein bereits registriertes Stylesheet einhängen (Shortcode-Fall). */
+    /** Design-CSS in ein bereits registriertes Stylesheet einhängen (Shortcode-Fall). */
     public static function enqueue_inline($handle = 'easycheckout-local-checkout') {
         if (wp_style_is($handle, 'registered') || wp_style_is($handle, 'enqueued')) {
             wp_add_inline_style($handle, self::inline_css());

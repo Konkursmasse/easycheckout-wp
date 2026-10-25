@@ -66,7 +66,7 @@ class WC_Session_Builder {
             return $payment_url;
         }
         $id = wp_generate_password(24, false);
-        set_transient('ec_embed_' . $id, $payment_url, 30 * MINUTE_IN_SECONDS);
+        set_transient('easycheckout_embed_' . $id, $payment_url, 30 * MINUTE_IN_SECONDS);
         // Die native Zwei-Spalten-Kasse (?ec_pay) nur beim VOLLSTÄNDIGEN Kassen-Ersatz
         // ($allow_native). Buy-Now/Express/Gateway zeigen das /pay-Terminal (?ec_embed).
         $param = ($mode === 'inline' && $allow_native) ? 'ec_pay' : 'ec_embed';
@@ -161,6 +161,7 @@ class WC_Session_Builder {
             'currency'      => $order->get_currency(),
             'success_url'   => $success_url,
             'cancel_url'    => $cancel_url,
+            /* translators: %s: order number */
             'description'   => sprintf(__('Bestellung %s', 'easycheckout'), $order->get_order_number()),
             'vat_inclusive' => true,
             'line_items'    => $line_items,

@@ -17,7 +17,7 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
 global $wpdb;
 
 // 1) Bekannte Einzel-Optionen.
-$options = [
+$easycheckout_options = [
     'easycheckout_api_url',
     'easycheckout_api_key',
     'easycheckout_webhook_secret',
@@ -31,13 +31,13 @@ $options = [
     'easycheckout_processed_events',
     'woocommerce_easycheckout_settings',
 ];
-foreach ($options as $option) {
-    delete_option($option);
+foreach ($easycheckout_options as $easycheckout_option) {
+    delete_option($easycheckout_option);
 }
 
 // 2) Alle uebrigen Plugin-Optionen und Transients per Praefix (z. B. ec_embed_*,
 //    easycheckout_*-Transients wie der Release-Cache).
-$like_sets = [
+$easycheckout_like_sets = [
     $wpdb->esc_like('easycheckout_') . '%',
     $wpdb->esc_like('ec_embed_') . '%',
     $wpdb->esc_like('_transient_easycheckout_') . '%',
@@ -45,13 +45,13 @@ $like_sets = [
     $wpdb->esc_like('_site_transient_easycheckout_') . '%',
     $wpdb->esc_like('_site_transient_timeout_easycheckout_') . '%',
 ];
-foreach ($like_sets as $like) {
-    $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $like));
+foreach ($easycheckout_like_sets as $easycheckout_like) {
+    $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $easycheckout_like));
 }
 
 // 3) Transaktionstabelle entfernen.
-$table = $wpdb->prefix . 'easycheckout_transactions';
-$wpdb->query("DROP TABLE IF EXISTS {$table}");
+$easycheckout_table = $wpdb->prefix . 'easycheckout_transactions';
+$wpdb->query("DROP TABLE IF EXISTS {$easycheckout_table}");
 
 // 4) Aufgeraeumte Rewrite-Regeln erzwingen (CPT-Endpunkte).
 if (function_exists('flush_rewrite_rules')) {

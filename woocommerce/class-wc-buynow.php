@@ -110,7 +110,7 @@ class WC_BuyNow {
         $variation_id = isset($_POST['variation_id']) ? absint($_POST['variation_id']) : 0;
         $quantity     = isset($_POST['quantity']) ? max(1, absint($_POST['quantity'])) : 1;
         $variation    = (isset($_POST['variation']) && is_array($_POST['variation']))
-            ? wc_clean(wp_unslash($_POST['variation']))
+            ? wc_clean(wp_unslash($_POST['variation'])) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- wc_clean() bereinigt rekursiv.
             : [];
 
         $product = wc_get_product($variation_id ?: $product_id);

@@ -162,6 +162,13 @@ class EasyCheckout {
         // Optional (Opt-in): WooCommerce-Kasse komplett durch EasyCheckout ersetzen.
         new WooCommerce\WC_Checkout_Replace();
 
+        // Styles des Zahlart-Hinweises in der WooCommerce-Kasse.
+        add_action('wp_enqueue_scripts', function() {
+            if (function_exists('is_checkout') && is_checkout()) {
+                wp_enqueue_style('easycheckout-wc-payment-info', EASYCHECKOUT_PLUGIN_URL . 'assets/css/wc-payment-info.css', [], EASYCHECKOUT_VERSION);
+            }
+        });
+
         // Direkter Menuepunkt "EasyCheckout" im WooCommerce-Menue -> springt
         // ohne Umweg (Einstellungen -> Zahlungen -> EasyCheckout) direkt in
         // die Gateway-Einstellungen. Slug mit ".php" wird von WP als Link
@@ -265,7 +272,7 @@ class EasyCheckout {
         }
 
         // Check for checkout CPT
-        if ($post && $post->post_type === 'ec_checkout') {
+        if ($post && $post->post_type === CheckoutBuilder\Checkout_CPT::POST_TYPE) {
             return true;
         }
 
@@ -280,7 +287,8 @@ class EasyCheckout {
         register_rest_route('easycheckout/v1', '/webhook', [
             'methods' => 'POST',
             'callback' => [$this->webhooks, 'handle_webhook'],
-            'permission_callback' => '__return_true',
+            // Prüft die HMAC-Signatur der Anfrage gegen das Webhook-Secret.
+            'permission_callback' => [$this->webhooks, 'permission_check'],
         ]);
     }
 

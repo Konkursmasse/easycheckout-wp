@@ -30,7 +30,7 @@ class WC_Cart_Order {
             'customer_id' => get_current_user_id(),
         ]);
         if (is_wp_error($order)) {
-            throw new \Exception($order->get_error_message());
+            throw new \Exception(esc_html($order->get_error_message()));
         }
 
         // Positionen.

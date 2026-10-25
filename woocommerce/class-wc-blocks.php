@@ -60,6 +60,13 @@ class WC_Blocks_Payment_Method extends AbstractPaymentMethodType {
     private $gateway_settings;
 
     /**
+     * WooCommerce-Gateway-Instanz (oder null, wenn nicht registriert)
+     *
+     * @var \WC_Payment_Gateway|null
+     */
+    private $gateway = null;
+
+    /**
      * Initialize
      */
     public function initialize() {
@@ -102,7 +109,7 @@ class WC_Blocks_Payment_Method extends AbstractPaymentMethodType {
         );
 
         wp_register_script(
-            'stripe-js',
+            'easycheckout-stripe',
             'https://js.stripe.com/v3/',
             [],
             null,
