@@ -904,6 +904,14 @@ class Native_Dashboard {
         if (!$enabled || get_option('easycheckout_api_key', '')) {
             return; // Gateway aus, oder Key vorhanden -> alles gut.
         }
+        // Nur dort zeigen, wo es um Plugins, Zahlungen oder EasyCheckout geht,
+        // nicht auf jeder Admin-Seite.
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+        $screen_id = $screen ? (string) $screen->id : '';
+        if ($screen_id !== 'plugins' && $screen_id !== 'woocommerce_page_wc-settings'
+            && strpos($screen_id, 'easycheckout') === false) {
+            return;
+        }
         $url = admin_url('admin.php?page=' . $this->page_slug);
         if ($this->api->is_authenticated()) {
             $msg = __('EasyCheckout ist verbunden, aber das WooCommerce-Gateway ist noch nicht aktiviert. „Sofort kaufen", der Kassen-Ersatz und die Bezahlung sind deshalb inaktiv.', 'easycheckout');
@@ -913,7 +921,7 @@ class Native_Dashboard {
             $btn = __('Mit EasyCheckout verbinden', 'easycheckout');
         }
         printf(
-            '<div class="notice notice-error"><p><strong>EasyCheckout:</strong> %s</p><p><a class="button button-primary" href="%s">%s</a></p></div>',
+            '<div class="notice notice-warning is-dismissible"><p><strong>EasyCheckout:</strong> %s</p><p><a class="button button-primary" href="%s">%s</a></p></div>',
             esc_html($msg), esc_url($url), esc_html($btn)
         );
     }

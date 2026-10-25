@@ -343,25 +343,22 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
             exit;
         }
 
-        // Check payment status from EasyCheckout if order ID provided
-        if ($ec_order_id) {
+        // Die EasyCheckout-Bestell-ID wird beim Anlegen der Zahlung gespeichert.
+        // Aus der Rückkehr-URL nur übernehmen, wenn noch keine da ist — sonst
+        // könnte jemand per URL eine fremde, bezahlte Bestellung verknüpfen.
+        if ($ec_order_id && !$order->get_meta('_easycheckout_order_id')) {
             $order->update_meta_data('_easycheckout_order_id', $ec_order_id);
             $order->save();
         }
 
-        // Express-Bestellungen NICHT vorzeitig als bezahlt markieren: Bestand und
-        // Abschluss laufen ueber payment_complete() im order.paid-Webhook (der
-        // zugleich die im Fast-Checkout erfasste Adresse nachtraegt). Wuerde hier
-        // vorab auf processing gesetzt, uebersaehe der Webhook payment_complete
-        // (is_paid) und der Bestand bliebe unreduziert.
+        // Die Rückkehr-URL ist vom Käufer veränderbar und beweist KEINE Zahlung.
+        // Bezahlt markiert nur der signierte order.paid-Webhook (payment_complete():
+        // Status, Bestand, Mails); bis dahin bleibt die Bestellung „Zahlung
+        // ausstehend". Kein Wechsel auf „Wartestellung", der dem Kunden eine
+        // zusätzliche WooCommerce-Mail schicken würde.
         $is_express = $order->get_created_via() === 'easycheckout_express';
-
-        // Beim regulaeren Gateway-Flow ist die Adresse bereits erfasst -> als
-        // Zwischenstatus processing setzen, der Webhook bestaetigt endgueltig.
-        if (!$is_express && ($status === 'success' || $status === 'paid')) {
-            if (!$order->is_paid()) {
-                $order->update_status('processing', __('Payment received via EasyCheckout, awaiting webhook confirmation.', 'easycheckout'));
-            }
+        if (!$is_express && ($status === 'success' || $status === 'paid') && !$order->is_paid()) {
+            $order->add_order_note(__('Customer returned from EasyCheckout. Waiting for the payment confirmation (webhook).', 'easycheckout'));
         }
 
         // Warenkorb leeren: Beim Express umgeht der Flow den WC-Checkout, der den
