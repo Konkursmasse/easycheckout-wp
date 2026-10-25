@@ -131,7 +131,7 @@ class Native_Dashboard {
             true
         );
 
-        wp_localize_script('easycheckout-native', 'ecNative', [
+        wp_localize_script('easycheckout-native', 'easycheckoutNative', [
             'i18n'     => easycheckout_dashboard_i18n(),
             'ajaxUrl'  => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('easycheckout_native'),
@@ -169,7 +169,7 @@ class Native_Dashboard {
 
     public function ajax_local_save() {
         $this->guard();
-        $data = isset($_POST['data']) ? json_decode(wp_unslash($_POST['data']), true) : [];
+        $data = easycheckout_post_json('data');
         if (!is_array($data)) { $data = []; }
         $all = (array) get_option(self::LOCAL_OPT, []);
         $id = (!empty($data['id'])) ? sanitize_text_field($data['id']) : '';
@@ -291,7 +291,7 @@ class Native_Dashboard {
 
     public function ajax_bank_save() {
         $this->guard();
-        $data = isset($_POST['data']) ? json_decode(wp_unslash($_POST['data']), true) : [];
+        $data = easycheckout_post_json('data');
         if (!is_array($data)) { $data = []; }
         $bank = [
             'iban'     => isset($data['iban']) ? strtoupper(preg_replace('/\s+/', '', sanitize_text_field($data['iban']))) : '',
@@ -317,7 +317,7 @@ class Native_Dashboard {
 
     public function ajax_company_save() {
         $this->guard();
-        $data = isset($_POST['data']) ? json_decode(wp_unslash($_POST['data']), true) : [];
+        $data = easycheckout_post_json('data');
         if (!is_array($data)) { $data = []; }
         $c = [];
         foreach (['name', 'street', 'postalCode', 'city', 'country', 'phone', 'vatNumber'] as $k) {
@@ -451,11 +451,11 @@ class Native_Dashboard {
      */
     public function ajax_local_upload() {
         $this->guard();
-        if (empty($_FILES['file']) || !is_uploaded_file($_FILES['file']['tmp_name'])) {
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- wp_handle_upload() prüft Name, Typ und Inhalt.
+        if (empty($_FILES['file']['tmp_name']) || !is_uploaded_file($_FILES['file']['tmp_name'])) {
             wp_send_json_error(['message' => 'Keine Datei.'], 400);
         }
         require_once ABSPATH . 'wp-admin/includes/file.php';
-        require_once ABSPATH . 'wp-admin/includes/media.php';
         require_once ABSPATH . 'wp-admin/includes/image.php';
         $overrides = ['test_form' => false, 'mimes' => ['jpg|jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp']];
         $moved = wp_handle_upload($_FILES['file'], $overrides);
@@ -500,7 +500,7 @@ class Native_Dashboard {
         $requestedMode = isset($_POST['fulfillmentMode']) ? sanitize_key(wp_unslash($_POST['fulfillmentMode'])) : '';
         $mode = ($requestedMode === 'delivery' && $deliveryEnabled) ? 'delivery' : 'pickup';
 
-        $itemsIn = isset($_POST['items']) ? json_decode(wp_unslash($_POST['items']), true) : [];
+        $itemsIn = easycheckout_post_json('items');
         if (!is_array($itemsIn)) { $itemsIn = []; }
         $byId = [];
         foreach ((array) ($checkout['products'] ?? []) as $p) { $byId[$p['id']] = $p; }
@@ -523,7 +523,12 @@ class Native_Dashboard {
                     if (in_array((string) $o['id'], $selectedIds, true)) { $match = $o; break; }
                 }
                 if (!$match) {
-                    wp_send_json_error(['message' => sprintf(__('Bitte eine Auswahl für „%1$s" bei „%2$s" treffen.', 'easycheckout'), $g['name'], $p['name'])], 400);
+                    wp_send_json_error(['message' => sprintf(
+                        /* translators: 1: option group name, 2: product name */
+                        __('Bitte eine Auswahl für „%1$s" bei „%2$s" treffen.', 'easycheckout'),
+                        $g['name'],
+                        $p['name']
+                    )], 400);
                 }
                 $chosenOpts[] = ['group' => $g['name'], 'label' => $match['label'], 'priceModifier' => (float) $match['priceModifier']];
             }
@@ -543,7 +548,12 @@ class Native_Dashboard {
                     $empty = ($val === '');
                 }
                 if (!empty($f['required']) && $empty) {
-                    wp_send_json_error(['message' => sprintf(__('Bitte „%1$s" bei „%2$s" ausfüllen.', 'easycheckout'), $f['label'], $p['name'])], 400);
+                    wp_send_json_error(['message' => sprintf(
+                        /* translators: 1: field label, 2: product name */
+                        __('Bitte „%1$s" bei „%2$s" ausfüllen.', 'easycheckout'),
+                        $f['label'],
+                        $p['name']
+                    )], 400);
                 }
                 if (!$empty) { $answers[] = ['label' => $f['label'], 'value' => $val]; }
             }
@@ -573,10 +583,10 @@ class Native_Dashboard {
 
         $company    = isset($_POST['company']) ? sanitize_text_field(wp_unslash($_POST['company'])) : '';
         $phone      = isset($_POST['phone']) ? sanitize_text_field(wp_unslash($_POST['phone'])) : '';
-        $newsletter = !empty($_POST['newsletter']) && $_POST['newsletter'] === '1';
-        $sameAddr   = !isset($_POST['sameAddress']) || $_POST['sameAddress'] === '1';
-        $billing    = self::sanitize_address(isset($_POST['billing']) ? json_decode(wp_unslash($_POST['billing']), true) : []);
-        $delivery   = $sameAddr ? $billing : self::sanitize_address(isset($_POST['delivery']) ? json_decode(wp_unslash($_POST['delivery']), true) : []);
+        $newsletter = isset($_POST['newsletter']) && sanitize_key(wp_unslash($_POST['newsletter'])) === '1';
+        $sameAddr   = !isset($_POST['sameAddress']) || sanitize_key(wp_unslash($_POST['sameAddress'])) === '1';
+        $billing    = self::sanitize_address(easycheckout_post_json('billing'));
+        $delivery   = $sameAddr ? $billing : self::sanitize_address(easycheckout_post_json('delivery'));
         if (!$billing['street'] || !$billing['postalCode'] || !$billing['city']) {
             wp_send_json_error(['message' => __('Bitte vollständige Rechnungsadresse angeben.', 'easycheckout')], 400);
         }
@@ -684,7 +694,11 @@ class Native_Dashboard {
 
             $subject = !empty($tpl['subject'])
                 ? strtr($tpl['subject'], $tokens)
-                : sprintf(__('Bestellbestätigung %s', 'easycheckout'), $ref);
+                : sprintf(
+                    /* translators: %s: order reference */
+                    __('Bestellbestätigung %s', 'easycheckout'),
+                    $ref
+                );
             $body = !empty($tpl['body']) ? strtr($tpl['body'], $tokens) : $defaultBody;
 
             // Absender: E-Mails-Sektion -> Firma -> WP-Default.
@@ -753,7 +767,7 @@ class Native_Dashboard {
 
     public function ajax_register() {
         $this->guard();
-        $data = isset($_POST['data']) ? json_decode(wp_unslash($_POST['data']), true) : [];
+        $data = easycheckout_post_json('data');
         if (!is_array($data)) {
             $data = [];
         }
@@ -932,11 +946,11 @@ class Native_Dashboard {
     public function ajax_proxy() {
         $this->guard();
         $method = isset($_POST['method']) ? strtoupper(sanitize_text_field(wp_unslash($_POST['method']))) : 'GET';
-        $path   = isset($_POST['path']) ? wp_unslash($_POST['path']) : '';
-        $body   = isset($_POST['body']) ? json_decode(wp_unslash($_POST['body']), true) : null;
+        $path   = isset($_POST['path']) ? easycheckout_sanitize_api_path(sanitize_text_field(wp_unslash($_POST['path']))) : '';
+        $body   = easycheckout_post_json('body', null);
 
         // Only allow /api/ paths.
-        if (strpos($path, '/api/') !== 0) {
+        if ($path === '') {
             wp_send_json_error(['message' => 'Invalid path'], 400);
         }
 
@@ -953,20 +967,28 @@ class Native_Dashboard {
     public function ajax_upload() {
         $this->guard();
         $method = isset($_POST['method']) ? strtoupper(sanitize_text_field(wp_unslash($_POST['method']))) : 'POST';
-        $path   = isset($_POST['path']) ? wp_unslash($_POST['path']) : '';
-        if (strpos($path, '/api/') !== 0) {
+        $path   = isset($_POST['path']) ? easycheckout_sanitize_api_path(sanitize_text_field(wp_unslash($_POST['path']))) : '';
+        if ($path === '') {
             wp_send_json_error(['message' => 'Invalid path'], 400);
         }
 
         $files = [];
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Jede Datei wird unten einzeln geprüft.
         foreach ($_FILES as $field => $f) {
-            if (!empty($f['tmp_name']) && is_uploaded_file($f['tmp_name'])) {
-                $files[$field] = [
-                    'name' => sanitize_file_name($f['name']),
-                    'type' => $f['type'],
-                    'tmp_name' => $f['tmp_name'],
-                ];
+            if (empty($f['tmp_name']) || !is_uploaded_file($f['tmp_name']) || empty($f['name'])) {
+                continue;
             }
+            $name = sanitize_file_name(wp_unslash($f['name']));
+            // Dateityp aus dem Inhalt bestimmen, nicht aus der Angabe des Browsers.
+            $check = wp_check_filetype_and_ext($f['tmp_name'], $name);
+            if (empty($check['type'])) {
+                wp_send_json_error(['message' => __('Dateityp nicht erlaubt.', 'easycheckout')], 400);
+            }
+            $files[sanitize_key($field)] = [
+                'name' => $check['proper_filename'] ? sanitize_file_name($check['proper_filename']) : $name,
+                'type' => $check['type'],
+                'tmp_name' => $f['tmp_name'],
+            ];
         }
         if (empty($files)) {
             wp_send_json_error(['message' => 'Keine Datei.'], 400);

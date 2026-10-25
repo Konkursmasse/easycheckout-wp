@@ -53,6 +53,14 @@ class Updater {
         // force-check-Parameter wird auf der Update-Seite gesetzt.
         add_action('load-update-core.php', [$this, 'maybe_flush_on_force_check']);
         add_action('load-plugins.php', [$this, 'maybe_flush_on_force_check']);
+
+        // Mitgelieferte Übersetzungen (languages/) laden. Nur die Self-Hosting-
+        // Fassung braucht das: auf WordPress.org kommen die Übersetzungen von
+        // translate.wordpress.org, und das .org-ZIP enthält weder diese Datei
+        // noch den Ordner languages/.
+        add_action('init', function () {
+            load_plugin_textdomain('easycheckout', false, dirname(EASYCHECKOUT_PLUGIN_BASENAME) . '/languages');
+        });
     }
 
     /**

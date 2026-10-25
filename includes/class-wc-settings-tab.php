@@ -58,7 +58,7 @@ class WC_Settings_Tab {
             case 'design':
                 return [
                     ['type' => 'title', 'id' => 'ec_design_t', 'title' => __('Checkout-Design', 'easycheckout'),
-                     'desc' => __('Gilt für die native Kasse, Shortcode-Checkouts und die Bestellbestätigung. Feinschliff ist zusätzlich über „Eigenes CSS" in Zahlung & Kasse möglich.', 'easycheckout')],
+                     'desc' => __('Gilt für die native Kasse, Shortcode-Checkouts und die Bestellbestätigung. Für weitere Anpassungen eignet sich der CSS-Editor von WordPress (Customizer bzw. Website-Editor).', 'easycheckout')],
                     ['type' => 'easycheckout_media', 'id' => 'easycheckout_design[logoUrl]',
                      'title' => __('Logo', 'easycheckout'),
                      'desc' => __('Wird oben in der Kasse und in Bestell-Mails (Absendername) verwendet.', 'easycheckout')],
@@ -399,9 +399,14 @@ class WC_Settings_Tab {
 
     /** Mediathek nur auf unserem Tab laden. */
     public function maybe_enqueue_media($hook) {
-        if ($hook === 'woocommerce_page_wc-settings'
-            && isset($_GET['tab']) && $_GET['tab'] === self::TAB) {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nur die Wahl des Reiters, keine Aktion.
+        $tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
+        if ($hook === 'woocommerce_page_wc-settings' && $tab === self::TAB) {
             wp_enqueue_media();
+            wp_enqueue_script('easycheckout-media-pick', EASYCHECKOUT_PLUGIN_URL . 'assets/js/media-pick.js', ['jquery'], EASYCHECKOUT_VERSION, true);
+            wp_localize_script('easycheckout-media-pick', 'easycheckoutMediaPick', [
+                'title' => __('Logo wählen', 'easycheckout'),
+            ]);
         }
     }
 
@@ -424,19 +429,6 @@ class WC_Settings_Tab {
                 <?php if ($option_value) : ?>
                     <p><img src="<?php echo esc_url($option_value); ?>" style="max-height:60px;max-width:220px;border:1px solid #e5e7eb;border-radius:6px;padding:4px;background:#fff;" alt="" /></p>
                 <?php endif; ?>
-                <script>
-                jQuery(function($){
-                    $('.ec-media-pick').off('click.ec').on('click.ec', function(){
-                        var target = $(this).data('target');
-                        var frame = wp.media({ title: '<?php echo esc_js(__('Logo wählen', 'easycheckout')); ?>', multiple: false, library: { type: 'image' } });
-                        frame.on('select', function(){
-                            var url = frame.state().get('selection').first().toJSON().url;
-                            $('[id="' + target + '"]').val(url);
-                        });
-                        frame.open();
-                    });
-                });
-                </script>
             </td>
         </tr>
         <?php

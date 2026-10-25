@@ -1,15 +1,14 @@
 <?php
 /**
  * Plugin Name: EasyCheckout
- * Plugin URI: https://www.easycheckout.ch/handbuch/woocommerce
+ * Plugin URI: https://easycheckout.io/handbuch/woocommerce
  * Description: Accept payments with EasyCheckout - Credit Cards, TWINT, and Swiss QR-Bill. Works standalone or with WooCommerce.
- * Version: 1.0.89
- * Author: EasyCheckout
- * Author URI: https://www.easycheckout.ch
+ * Version: 1.0.90
+ * Author: lokal werbung GmbH
+ * Author URI: https://easycheckout.io/impressum
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: easycheckout
- * Domain Path: /languages
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * WC requires at least: 7.0
@@ -19,7 +18,7 @@
 defined('ABSPATH') || exit;
 
 // Plugin constants
-define('EASYCHECKOUT_VERSION', '1.0.89');
+define('EASYCHECKOUT_VERSION', '1.0.90');
 define('EASYCHECKOUT_PLUGIN_FILE', __FILE__);
 define('EASYCHECKOUT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EASYCHECKOUT_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -61,6 +60,8 @@ spl_autoload_register(function ($class) {
     }
 });
 
+// Bereinigung von JSON-Daten aus Anfragen (easycheckout_post_json() u. a.).
+require_once EASYCHECKOUT_PLUGIN_DIR . 'includes/functions-sanitize.php';
 // Kundenseitige Checkout-Übersetzungen (Funktionsdatei, kein Autoload).
 require_once EASYCHECKOUT_PLUGIN_DIR . 'includes/checkout-i18n.php';
 // Merchant-Dashboard-Übersetzungen (nutzt easycheckout_checkout_locale()).
@@ -130,13 +131,37 @@ register_deactivation_hook(__FILE__, 'easycheckout_deactivate');
  * Initialize the plugin
  */
 function easycheckout_init() {
-    // Load text domain
-    load_plugin_textdomain('easycheckout', false, dirname(EASYCHECKOUT_PLUGIN_BASENAME) . '/languages');
+    // Übersetzungen: WordPress.org lädt sie automatisch; die Self-Hosting-
+    // Fassung lädt die mitgelieferten in Updater::__construct().
 
     // Initialize core plugin
     EasyCheckout\EasyCheckout::instance();
 }
 add_action('plugins_loaded', 'easycheckout_init', 10);
+
+/**
+ * Präfix-Umstellung ab 1.0.90: Checkout-Beiträge hiessen bis dahin
+ * „ec_checkout" mit Meta-Feldern „_ec_*". WordPress.org verlangt ein
+ * eindeutiges Präfix; bestehende Einträge werden einmalig umbenannt, damit
+ * vorhandene Checkouts und ihre Einstellungen erhalten bleiben.
+ */
+function easycheckout_migrate_prefixes() {
+    if (get_option('easycheckout_prefix_version') === '2') {
+        return;
+    }
+    global $wpdb;
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery -- einmalige Umbenennung, kein Cache betroffen.
+    $wpdb->update($wpdb->posts, ['post_type' => 'easycheckout_page'], ['post_type' => 'ec_checkout']);
+    $keys = ['checkout_slug', 'description', 'currency', 'vat_rate', 'success_url', 'cancel_url',
+        'terms_url', 'logo', 'primary_color', 'payment_methods', 'products', 'email_notifications'];
+    foreach ($keys as $key) {
+        $wpdb->update($wpdb->postmeta, ['meta_key' => '_easycheckout_' . $key], ['meta_key' => '_ec_' . $key]);
+    }
+    // phpcs:enable
+    wp_cache_flush();
+    update_option('easycheckout_prefix_version', '2');
+}
+add_action('init', 'easycheckout_migrate_prefixes', 1);
 
 /**
  * Rewrite-Rules nach Plugin-Updates automatisch neu schreiben: Auto-Updates

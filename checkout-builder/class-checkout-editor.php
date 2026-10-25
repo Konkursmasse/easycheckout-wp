@@ -120,7 +120,7 @@ class Checkout_Editor {
             $checkout_options[] = [
                 'value' => $checkout->ID,
                 'label' => $checkout->post_title,
-                'slug' => get_post_meta($checkout->ID, '_ec_checkout_slug', true),
+                'slug' => Checkout_CPT::get_meta($checkout->ID, 'checkout_slug'),
             ];
         }
 

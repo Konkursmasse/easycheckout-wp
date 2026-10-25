@@ -102,7 +102,7 @@ class WC_Blocks_Payment_Method extends AbstractPaymentMethodType {
         );
 
         wp_register_script(
-            'stripe-js',
+            'easycheckout-stripe',
             'https://js.stripe.com/v3/',
             [],
             null,

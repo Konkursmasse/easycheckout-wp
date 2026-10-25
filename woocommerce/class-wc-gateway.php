@@ -161,14 +161,6 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
                 'placeholder' => '#4F46E5',
                 'desc_tip' => true,
             ],
-            'custom_css' => [
-                'title' => __('Eigenes CSS (Design)', 'easycheckout'),
-                'type' => 'textarea',
-                'css' => 'width:100%;height:150px;font-family:monospace;',
-                'description' => __('Eigenes CSS zum Anpassen der Kasse (Klassen: .eclc-*, Container #ec-pay-checkout / .ec-local-checkout, Variable --ec-p). Wird auf allen Kassen-Seiten eingebunden. Per Filter easycheckout_checkout_css erweiterbar.', 'easycheckout'),
-                'default' => '',
-                'desc_tip' => true,
-            ],
             'payment_methods' => [
                 'title' => __('Payment Methods', 'easycheckout'),
                 'type' => 'multiselect',
@@ -209,7 +201,7 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
      */
     public function payment_fields() {
         if ($this->description) {
-            echo wpautop(wptexturize($this->description));
+            echo wp_kses_post(wpautop(wptexturize($this->description)));
         }
 
         $payment_methods = $this->get_option('payment_methods', ['card', 'twint']);
@@ -220,7 +212,7 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
         ?>
         <div id="easycheckout-payment-info">
             <p class="easycheckout-redirect-notice">
-                <?php _e('Nach dem Absenden der Bestellung wirst du sicher zu EasyCheckout weitergeleitet – dort wählst du deine Zahlungsart und bezahlst.', 'easycheckout'); ?>
+                <?php esc_html_e('Nach dem Absenden der Bestellung wirst du sicher zu EasyCheckout weitergeleitet – dort wählst du deine Zahlungsart und bezahlst.', 'easycheckout'); ?>
             </p>
 
             <?php if (!empty($labels)) : ?>
@@ -232,39 +224,6 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
             <?php endif; ?>
         </div>
 
-        <style>
-            #easycheckout-payment-info {
-                padding: 14px 16px;
-                background: #f6f9fc;
-                border: 1px solid #e3e8ee;
-                border-radius: 8px;
-                margin-top: 10px;
-            }
-            #easycheckout-payment-info .easycheckout-redirect-notice {
-                margin: 0 0 10px;
-                color: #425466;
-                font-size: 14px;
-            }
-            #easycheckout-payment-info .easycheckout-methods-badges {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px;
-                margin: 0;
-                padding: 0;
-                list-style: none;
-            }
-            #easycheckout-payment-info .easycheckout-method-badge {
-                display: inline-flex;
-                align-items: center;
-                padding: 5px 12px;
-                background: #fff;
-                border: 1px solid #d7dee7;
-                border-radius: 999px;
-                font-size: 13px;
-                color: #334155;
-                line-height: 1.3;
-            }
-        </style>
         <?php
     }
 

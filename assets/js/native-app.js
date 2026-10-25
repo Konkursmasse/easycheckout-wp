@@ -1,7 +1,7 @@
-/* global wp, ecNative */
+/* global wp, easycheckoutNative */
 ( function () {
 	'use strict';
-	function _t(s){try{return (window.ecNative&&ecNative.i18n&&ecNative.i18n[s])||s;}catch(e){return s;}}
+	function _t(s){try{return (window.easycheckoutNative&&easycheckoutNative.i18n&&easycheckoutNative.i18n[s])||s;}catch(e){return s;}}
 
 	var el = wp.element.createElement;
 	var useState = wp.element.useState;
@@ -13,9 +13,9 @@
 	function post( action, fields ) {
 		var body = new URLSearchParams();
 		body.append( 'action', action );
-		body.append( 'nonce', ecNative.nonce );
+		body.append( 'nonce', easycheckoutNative.nonce );
 		Object.keys( fields || {} ).forEach( function ( k ) { body.append( k, fields[ k ] ); } );
-		return fetch( ecNative.ajaxUrl, {
+		return fetch( easycheckoutNative.ajaxUrl, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 			credentials: 'same-origin',
@@ -46,16 +46,16 @@
 	function localUpload( file ) {
 		var fd = new FormData();
 		fd.append( 'action', 'easycheckout_local_upload' );
-		fd.append( 'nonce', ecNative.nonce );
+		fd.append( 'nonce', easycheckoutNative.nonce );
 		fd.append( 'file', file );
-		return fetch( ecNative.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd } )
+		return fetch( easycheckoutNative.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd } )
 			.then( function ( r ) { return r.json(); } )
 			.then( function ( j ) { if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || _t('Upload fehlgeschlagen') ); } return j.data; } );
 	}
 
 	// Vorschau der Einbettung auf der EIGENEN Domain (lokal ODER Konto-Checkout).
 	// Fuehrt NIE auf easycheckout.ch — der Checkout wird auf der Haendler-Seite gezeigt.
-	function previewUrl( slug ) { return ( ecNative.siteUrl || '/' ) + '?ec_preview=' + encodeURIComponent( slug ); }
+	function previewUrl( slug ) { return ( easycheckoutNative.siteUrl || '/' ) + '?ec_preview=' + encodeURIComponent( slug ); }
 
 	// Einen lokalen Checkout ins verbundene Konto veroeffentlichen (Name/Slug/
 	// Produkte inkl. Bild) und danach lokal loeschen -> Konto-Checkout ersetzt den
@@ -100,11 +100,11 @@
 	function uploadFile( method, path, field, file ) {
 		var fd = new FormData();
 		fd.append( 'action', 'easycheckout_native_upload' );
-		fd.append( 'nonce', ecNative.nonce );
+		fd.append( 'nonce', easycheckoutNative.nonce );
 		fd.append( 'method', method );
 		fd.append( 'path', path );
 		fd.append( field, file );
-		return fetch( ecNative.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd } )
+		return fetch( easycheckoutNative.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd } )
 			.then( function ( r ) { return r.json(); } )
 			.then( function ( j ) {
 				if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || _t('Upload fehlgeschlagen') ); }
@@ -667,7 +667,7 @@
 		}
 		useEffect( function () { load(); }, [] );
 
-		var appUrl = ( ecNative.appUrl || 'https://www.easycheckout.ch' ).replace( /\/$/, '' );
+		var appUrl = ( easycheckoutNative.appUrl || 'https://www.easycheckout.ch' ).replace( /\/$/, '' );
 		var backHere = window.location.href;
 		var startUrl = appUrl + '/onboarding?return_url=' + encodeURIComponent( backHere );
 		var frameUrl = appUrl + '/onboarding?embed=1';
@@ -910,7 +910,7 @@
 		function choose( plan ) {
 			if ( plan === 'free' ) { set( Object.assign( {}, st, { busy: plan } ) ); api( 'POST', '/api/subscription/checkout', { plan: 'free' } ).then( function () { set( Object.assign( {}, st, { busy: '' } ) ); load(); } ).catch( function ( err ) { set( Object.assign( {}, st, { busy: '', error: err.message } ) ); } ); return; }
 			// Paid plans require card payment -> hosted billing in a new tab.
-			window.open( ecNative.appUrl + '/dashboard/billing', '_blank', 'noopener' );
+			window.open( easycheckoutNative.appUrl + '/dashboard/billing', '_blank', 'noopener' );
 		}
 		if ( ! st.me ) { return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Tarif') ) ), st.error ? ErrorBox( st.error ) : Spinner() ); }
 		return el( 'div', null, el( 'div', { className: 'ec-page-head' }, el( 'h2', null, _t('Tarif & Add-ons') ) ), ErrorBox( st.error ),
@@ -959,7 +959,7 @@
 		// Freigabe-Token erzeugen, dann die Ansicht bzw. das PDF in einem neuen Tab
 		// öffnen. Läuft ohne vorheriges Versenden.
 		function openInvoice( inv, mode ) {
-			var appUrl = ( ecNative.appUrl || 'https://www.easycheckout.ch' ).replace( /\/$/, '' );
+			var appUrl = ( easycheckoutNative.appUrl || 'https://www.easycheckout.ch' ).replace( /\/$/, '' );
 			function go( token ) {
 				if ( ! token ) { window.alert( _t('Vorschau-Link konnte nicht erstellt werden.') ); return; }
 				var url = ( mode === 'pdf' )
@@ -1293,7 +1293,7 @@
 					el( 'h3', null, _t('Weitere Checkouts & Online-Zahlung') ),
 					el( 'p', { className: 'ec-muted', style: { marginTop: 0 } }, _t('Im kostenlosen Modus betreibst du einen Checkout mit Banküberweisung. Für weitere Checkouts sowie Karten-/TWINT-Zahlungen erstelle ein Konto auf easycheckout.ch – dein gebuchter Plan wird nach dem Verbinden hier übernommen.') ),
 					el( 'div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
-						el( 'a', { className: 'ec-btn ec-btn-primary', href: ( ecNative.appUrl || 'https://www.easycheckout.ch' ) + '/#preise', target: '_blank', rel: 'noopener' }, _t('Preise ansehen (easycheckout.ch)') ),
+						el( 'a', { className: 'ec-btn ec-btn-primary', href: ( easycheckoutNative.appUrl || 'https://www.easycheckout.ch' ) + '/#preise', target: '_blank', rel: 'noopener' }, _t('Preise ansehen (easycheckout.ch)') ),
 						el( 'button', { className: 'ec-btn', onClick: props.onConnect }, _t('Konto verbinden') )
 					)
 				) :
@@ -1921,7 +1921,7 @@
 	}
 
 	function App( props ) {
-		var s = useState( { authed: !! ecNative.authed, merchant: ecNative.merchant || {}, connect: false } );
+		var s = useState( { authed: !! easycheckoutNative.authed, merchant: easycheckoutNative.merchant || {}, connect: false } );
 		var st = s[ 0 ], set = s[ 1 ];
 		return el( Shell, {
 			authed: st.authed,
