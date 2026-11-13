@@ -84,7 +84,6 @@ class Native_Dashboard {
     }
 
     const LOCAL_OPT = 'easycheckout_local_checkouts';
-    const LOCAL_LIMIT = 1; // Gratis-Modus: 1 lokaler Checkout; mehr -> Konto auf easycheckout.ch
     const BANK_OPT = 'easycheckout_bank';
     const COMPANY_OPT = 'easycheckout_company';
     const ORDERS_OPT = 'easycheckout_local_orders';
@@ -174,12 +173,6 @@ class Native_Dashboard {
         $all = (array) get_option(self::LOCAL_OPT, []);
         $id = (!empty($data['id'])) ? sanitize_text_field($data['id']) : '';
         $isNew = ($id === '' || !isset($all[$id]));
-        if ($isNew && count($all) >= self::LOCAL_LIMIT) {
-            wp_send_json_error([
-                'message' => __('Im kostenlosen Modus ist ein Checkout möglich. Für weitere Checkouts und Online-Zahlung erstelle ein Konto auf easycheckout.ch.', 'easycheckout'),
-                'upgrade' => true,
-            ], 403);
-        }
         if ($id === '') { $id = 'loc_' . wp_generate_password(8, false, false); }
         $name = isset($data['name']) ? sanitize_text_field($data['name']) : 'Checkout';
 

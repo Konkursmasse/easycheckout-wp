@@ -4,7 +4,7 @@ Tags: checkout, payments, twint, woocommerce, qr-bill
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.90
+Stable tag: 1.0.91
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -150,6 +150,9 @@ Only if you enable it. The "Powered by easyCheckout" note at the bottom of the c
 
 == Changelog ==
 
+= 1.0.91 =
+* No limit on the number of local checkouts without an account.
+
 = 1.0.90 =
 * Changes from the WordPress.org plugin review: output escaping, input sanitizing, scripts and styles loaded via wp_enqueue, unique prefixes, signed webhooks only.
 * Removed the free-text custom CSS field; developers can use the `easycheckout_checkout_css` filter.
@@ -176,6 +179,9 @@ Only if you enable it. The "Powered by easyCheckout" note at the bottom of the c
 * First release: checkout pages, payment links, shortcodes, WooCommerce payment method, native dashboard, webhooks.
 
 == Upgrade Notice ==
+
+= 1.0.91 =
+Local checkouts without an account are no longer limited.
 
 = 1.0.90 =
 Security and compatibility update from the WordPress.org review. Existing checkouts are migrated automatically.

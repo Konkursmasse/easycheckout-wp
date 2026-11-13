@@ -1291,7 +1291,7 @@
 			( st.items && st.items.length >= 1 ) ?
 				el( 'div', { className: 'ec-card', style: { maxWidth: '640px', marginBottom: '16px' } },
 					el( 'h3', null, _t('Weitere Checkouts & Online-Zahlung') ),
-					el( 'p', { className: 'ec-muted', style: { marginTop: 0 } }, _t('Im kostenlosen Modus betreibst du einen Checkout mit Banküberweisung. Für weitere Checkouts sowie Karten-/TWINT-Zahlungen erstelle ein Konto auf easycheckout.ch – dein gebuchter Plan wird nach dem Verbinden hier übernommen.') ),
+					el( 'p', { className: 'ec-muted', style: { marginTop: 0 } }, _t('Ohne Konto betreibst du deine Checkouts mit Banküberweisung. Für Karten- und TWINT-Zahlungen erstelle ein Konto auf easycheckout.ch – dein gebuchter Plan wird nach dem Verbinden hier übernommen.') ),
 					el( 'div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
 						el( 'a', { className: 'ec-btn ec-btn-primary', href: ( easycheckoutNative.appUrl || 'https://www.easycheckout.ch' ) + '/#preise', target: '_blank', rel: 'noopener' }, _t('Preise ansehen (easycheckout.ch)') ),
 						el( 'button', { className: 'ec-btn', onClick: props.onConnect }, _t('Konto verbinden') )
