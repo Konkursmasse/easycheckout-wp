@@ -1,6 +1,6 @@
-/* global ecWcCart, Stripe */
-/* i18n: deutscher String = Key; fr/it via ecWcCart.i18n, sonst Fallback Deutsch */
-function _t(s){try{return (window.ecWcCart&&ecWcCart.i18n&&ecWcCart.i18n[s])||s;}catch(e){return s;}}
+/* global easycheckoutWcCart, Stripe */
+/* i18n: deutscher String = Key; fr/it via easycheckoutWcCart.i18n, sonst Fallback Deutsch */
+function _t(s){try{return (window.easycheckoutWcCart&&easycheckoutWcCart.i18n&&easycheckoutWcCart.i18n[s])||s;}catch(e){return s;}}
 /**
  * EasyCheckout – cart-getriebene native WooCommerce-Kasse (Option C).
  * Bildet den LIVE-WooCommerce-Warenkorb ab, inkl. Mengen-Stepper (ändert den
@@ -11,7 +11,7 @@ function _t(s){try{return (window.ecWcCart&&ecWcCart.i18n&&ecWcCart.i18n[s])||s;
     'use strict';
 
     var root = document.getElementById('ec-pay-checkout');
-    if (!root || typeof ecWcCart === 'undefined') { return; }
+    if (!root || typeof easycheckoutWcCart === 'undefined') { return; }
 
     var stripe = null, elements = null, CART = null, CUR = 'CHF', busy = false;
     var form = { email: '', name: '', company: '', phone: '', street: '', postalCode: '', city: '', country: 'CH',
@@ -45,9 +45,9 @@ function _t(s){try{return (window.ecWcCart&&ecWcCart.i18n&&ecWcCart.i18n[s])||s;
     function post(action, fields) {
         var body = new URLSearchParams();
         body.append('action', 'easycheckout_' + action);
-        body.append('nonce', ecWcCart.nonce);
+        body.append('nonce', easycheckoutWcCart.nonce);
         Object.keys(fields || {}).forEach(function (k) { body.append(k, fields[k]); });
-        return fetch(ecWcCart.ajaxUrl, {
+        return fetch(easycheckoutWcCart.ajaxUrl, {
             method: 'POST', credentials: 'same-origin',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString(),
         }).then(function (r) { return r.json(); })
@@ -61,19 +61,19 @@ function _t(s){try{return (window.ecWcCart&&ecWcCart.i18n&&ecWcCart.i18n[s])||s;
         return sel;
     }
     function powered() {
-        if (!(window.ecWcCart && ecWcCart.showPowered)) { return null; }
+        if (!(window.easycheckoutWcCart && easycheckoutWcCart.showPowered)) { return null; }
         // 1:1 wie im Original-Checkout (easycheckout.ch): „Powered by [Icon] easyCheckout".
         var link = h('a', {
-            href: 'https://easycheckout.ch', target: '_blank', rel: 'noopener noreferrer',
+            href: 'https://easycheckout.io', target: '_blank', rel: 'noopener noreferrer',
             class: 'eclc-powered-link',
         }, [
-            ecWcCart.ecIcon ? h('img', { class: 'eclc-powered-ico', src: ecWcCart.ecIcon, alt: 'easyCheckout', width: '16', height: '16' }) : null,
+            easycheckoutWcCart.ecIcon ? h('img', { class: 'eclc-powered-ico', src: easycheckoutWcCart.ecIcon, alt: 'easyCheckout', width: '16', height: '16' }) : null,
             h('span', { class: 'eclc-powered-name', text: 'easyCheckout' }),
         ]);
         return h('div', { class: 'eclc-powered' }, [h('span', { text: _t('Powered by') }), link]);
     }
     function loading(m) { root.innerHTML = ''; root.appendChild(h('div', { class: 'eclc-wrap' }, [h('div', { class: 'eclc-cart', style: 'max-width:520px;margin:40px auto;text-align:center' }, [h('p', { class: 'eclc-empty', text: m || _t('Lädt…') })])])); }
-    function errView(m) { root.innerHTML = ''; root.appendChild(h('div', { class: 'eclc-wrap' }, [h('div', { class: 'eclc-cart', style: 'max-width:520px;margin:40px auto' }, [h('div', { class: 'eclc-err', text: m }), h('p', { style: 'text-align:center;margin-top:12px' }, [h('a', { href: ecWcCart.cartUrl, text: _t('Zurück zum Warenkorb') })])])])); }
+    function errView(m) { root.innerHTML = ''; root.appendChild(h('div', { class: 'eclc-wrap' }, [h('div', { class: 'eclc-cart', style: 'max-width:520px;margin:40px auto' }, [h('div', { class: 'eclc-err', text: m }), h('p', { style: 'text-align:center;margin-top:12px' }, [h('a', { href: easycheckoutWcCart.cartUrl, text: _t('Zurück zum Warenkorb') })])])])); }
 
     function setQty(key, qty) {
         if (busy) { return; }
@@ -106,7 +106,7 @@ function _t(s){try{return (window.ecWcCart&&ecWcCart.i18n&&ecWcCart.i18n[s])||s;
 
     function render() {
         root.innerHTML = '';
-        root.style.setProperty('--ec-p', (window.ecWcCart && ecWcCart.brandColor) ? ecWcCart.brandColor : '#4F46E5');
+        root.style.setProperty('--ec-p', (window.easycheckoutWcCart && easycheckoutWcCart.brandColor) ? easycheckoutWcCart.brandColor : '#4F46E5');
         var items = CART.items || [];
 
         var left = h('div', { class: 'eclc-left' }, [h('h2', { class: 'eclc-col-h', text: _t('Produkte') })]);
@@ -209,15 +209,15 @@ function _t(s){try{return (window.ecWcCart&&ecWcCart.i18n&&ecWcCart.i18n[s])||s;
         ]);
 
         var back = h('a', {
-            href: ecWcCart.cartUrl,
+            href: easycheckoutWcCart.cartUrl,
             style: 'display:inline-block;margin-bottom:12px;color:#64748b;text-decoration:none;font-size:14px;',
             text: '← Zurück zum Warenkorb',
         });
         var wrap = h('div', { class: 'eclc-wrap' }, [
             back,
             h('div', { class: 'eclc-header' }, [
-                ecWcCart.logo ? h('img', { class: 'eclc-logo', src: ecWcCart.logo, alt: ecWcCart.company || '' }) : null,
-                h('h1', { class: 'eclc-title', text: ecWcCart.company || 'Checkout' }),
+                easycheckoutWcCart.logo ? h('img', { class: 'eclc-logo', src: easycheckoutWcCart.logo, alt: easycheckoutWcCart.company || '' }) : null,
+                h('h1', { class: 'eclc-title', text: easycheckoutWcCart.company || 'Checkout' }),
             ]),
             h('div', { class: 'eclc-grid' }, [left, cart]),
             powered(),

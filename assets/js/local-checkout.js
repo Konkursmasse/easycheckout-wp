@@ -1,6 +1,6 @@
-/* global ecLocal, qrcode */
-/* i18n: deutscher String = Key; fr/it via ecLocal.i18n, sonst Fallback Deutsch */
-function _t(s){try{return (window.ecLocal&&ecLocal.i18n&&ecLocal.i18n[s])||s;}catch(e){return s;}}
+/* global easycheckoutLocal, qrcode */
+/* i18n: deutscher String = Key; fr/it via easycheckoutLocal.i18n, sonst Fallback Deutsch */
+function _t(s){try{return (window.easycheckoutLocal&&easycheckoutLocal.i18n&&easycheckoutLocal.i18n[s])||s;}catch(e){return s;}}
 /* EasyCheckout – lokaler Bankueberweisungs-Checkout (Frontend, ohne Konto).
    Layout/Design an die easycheckout.ch-Checkout-Seiten angelehnt. Volle Parität:
    Kategorien + Auswahlregeln, Produkt-Optionen (S/M/L/Farben) mit Aufschlag,
@@ -9,8 +9,8 @@ function _t(s){try{return (window.ecLocal&&ecLocal.i18n&&ecLocal.i18n[s])||s;}ca
    angezeigt – der Server (ajax_place_order) rechnet identisch und ist autoritativ. */
 ( function () {
 	'use strict';
-	if ( typeof ecLocal === 'undefined' || ! ecLocal.checkout ) { return; }
-	var C = ecLocal.checkout;
+	if ( typeof easycheckoutLocal === 'undefined' || ! easycheckoutLocal.checkout ) { return; }
+	var C = easycheckoutLocal.checkout;
 	var root = document.querySelector( '.ec-local-checkout[data-ec-local]' );
 	if ( ! root ) { return; }
 
@@ -98,9 +98,9 @@ function _t(s){try{return (window.ecLocal&&ecLocal.i18n&&ecLocal.i18n[s])||s;}ca
 	}
 
 	function powered() {
-		if ( ! ( window.ecLocal && ecLocal.showPowered ) ) { return null; }
-		var icon = ( window.ecLocal && ecLocal.ecIcon ) ? ecLocal.ecIcon : '';
-		var link = h( 'a', { href: 'https://easycheckout.ch', target: '_blank', rel: 'noopener noreferrer', class: 'eclc-powered-link' }, [
+		if ( ! ( window.easycheckoutLocal && easycheckoutLocal.showPowered ) ) { return null; }
+		var icon = ( window.easycheckoutLocal && easycheckoutLocal.ecIcon ) ? easycheckoutLocal.ecIcon : '';
+		var link = h( 'a', { href: 'https://easycheckout.io', target: '_blank', rel: 'noopener noreferrer', class: 'eclc-powered-link' }, [
 			icon ? h( 'img', { class: 'eclc-powered-ico', src: icon, alt: 'easyCheckout', width: '16', height: '16' } ) : null,
 			h( 'span', { class: 'eclc-powered-name', text: 'easyCheckout' } )
 		] );
@@ -389,7 +389,7 @@ function _t(s){try{return (window.ecLocal&&ecLocal.i18n&&ecLocal.i18n[s])||s;}ca
 			var delivery = ( mode === 'delivery' && ! sameCb.checked ) ? { street: dStreet.value, postalCode: dZip.value, city: dCity.value, country: dCountry.value } : billing;
 			var body = new URLSearchParams();
 			body.append( 'action', 'easycheckout_place_order' );
-			body.append( 'nonce', ecLocal.nonce );
+			body.append( 'nonce', easycheckoutLocal.nonce );
 			body.append( 'slug', C.slug );
 			body.append( 'items', JSON.stringify( items ) );
 			body.append( 'fulfillmentMode', mode );
@@ -401,7 +401,7 @@ function _t(s){try{return (window.ecLocal&&ecLocal.i18n&&ecLocal.i18n[s])||s;}ca
 			body.append( 'sameAddress', sameCb.checked ? '1' : '0' );
 			body.append( 'billing', JSON.stringify( billing ) );
 			body.append( 'delivery', JSON.stringify( delivery ) );
-			fetch( ecLocal.ajaxUrl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() } )
+			fetch( easycheckoutLocal.ajaxUrl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() } )
 				.then( function ( r ) { return r.json(); } )
 				.then( function ( j ) {
 					if ( ! j.success ) { throw new Error( ( j.data && j.data.message ) || _t('Fehler') ); }

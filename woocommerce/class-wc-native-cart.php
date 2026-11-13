@@ -44,13 +44,14 @@ class WC_Native_Cart {
 
     /** Native Kassen-Seite ausgeben. */
     public function maybe_render() {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Öffentliche Kassen-Seite, löst keine Aktion aus.
         if (empty($_GET['ec_wccart'])) { return; }
         if (!function_exists('WC')) { return; }
 
         wp_enqueue_style('easycheckout-local-checkout', EASYCHECKOUT_PLUGIN_URL . 'assets/css/local-checkout.css', [], EASYCHECKOUT_VERSION);
-        wp_register_script('stripe-js', 'https://js.stripe.com/v3/', [], null, true);
-        wp_register_script('easycheckout-wc-cart', EASYCHECKOUT_PLUGIN_URL . 'assets/js/wc-cart-checkout.js', ['stripe-js'], EASYCHECKOUT_VERSION, true);
-        wp_localize_script('easycheckout-wc-cart', 'ecWcCart', [
+        wp_register_script('easycheckout-stripe', 'https://js.stripe.com/v3/', [], null, true);
+        wp_register_script('easycheckout-wc-cart', EASYCHECKOUT_PLUGIN_URL . 'assets/js/wc-cart-checkout.js', ['easycheckout-stripe'], EASYCHECKOUT_VERSION, true);
+        wp_localize_script('easycheckout-wc-cart', 'easycheckoutWcCart', [
             'i18n' => easycheckout_checkout_i18n(),
             'ajaxUrl'    => admin_url('admin-ajax.php'),
             'nonce'      => wp_create_nonce('easycheckout_front'),
@@ -64,18 +65,22 @@ class WC_Native_Cart {
         ]);
         wp_enqueue_script('easycheckout-wc-cart');
 
+        // Kasse erbt die Theme-Schrift, eigener Hintergrund, dazu Markenfarbe und
+        // Design-Optionen. Spät eingereiht (Priorität 999), damit diese Styles
+        // nach denen des Themes ausgegeben werden und sie überstimmen.
+        add_action('wp_enqueue_scripts', function () {
+            wp_enqueue_style('easycheckout-native-cart', EASYCHECKOUT_PLUGIN_URL . 'assets/css/native-cart.css', ['easycheckout-local-checkout'], EASYCHECKOUT_VERSION);
+            \EasyCheckout\Design::enqueue_brand(['easycheckout-native-cart']);
+        }, 999);
+
         nocache_headers();
-        echo '<!DOCTYPE html><html ' . get_language_attributes() . '><head><meta charset="' . esc_attr(get_bloginfo('charset')) . '">';
+        echo '<!DOCTYPE html><html ';
+        language_attributes();
+        echo '><head><meta charset="' . esc_attr(get_bloginfo('charset')) . '">';
         echo '<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">';
         echo '<title>' . esc_html__('Checkout', 'easycheckout') . '</title>';
         // Theme laden (Schriften + Styles), damit die Kasse sich dem Shop-Design anpasst.
         wp_head();
-        // Kasse erbt die Theme-Schrift; eigener Hintergrund. Nach wp_head, um zu gewinnen.
-        echo '<style>html,body{margin:0;padding:0}#ec-pay-checkout{background:#f8fafc;min-height:100vh;font-family:inherit}'
-            . '#ec-pay-checkout input,#ec-pay-checkout select,#ec-pay-checkout button,#ec-pay-checkout .eclc-title,'
-            . '#ec-pay-checkout .eclc-col-h,#ec-pay-checkout .eclc-pname{font-family:inherit}</style>';
-        // Entwickler-Design: Markenfarbe (--ec-p) + Custom CSS.
-        \EasyCheckout\Design::head();
         // WICHTIG: Klasse ec-local-checkout aktiviert den CSS-Scope aus
         // local-checkout.css (box-sizing-Reset + Typo-Basis) — ohne sie ragen
         // die Eingabefelder ueber die Karte hinaus und Theme-Schriftgroessen
@@ -141,7 +146,7 @@ class WC_Native_Cart {
         if (!check_ajax_referer('easycheckout_front', 'nonce', false)) { wp_send_json_error(['message' => 'Ungültige Anfrage.'], 400); }
         if (!WC()->cart || WC()->cart->is_empty()) { wp_send_json_error(['message' => __('Der Warenkorb ist leer.', 'easycheckout')]); }
 
-        $c = isset($_POST['customer']) ? json_decode(wp_unslash($_POST['customer']), true) : [];
+        $c = easycheckout_post_json('customer');
         if (!is_array($c) || empty($c['email']) || empty($c['name'])) { wp_send_json_error(['message' => __('Bitte Name und E-Mail angeben.', 'easycheckout')]); }
 
         WC()->cart->calculate_totals();

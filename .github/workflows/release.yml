@@ -5,8 +5,9 @@ name: Release
 #   * easycheckout-wp.zip        – Self-Hosting/Direkt-Download, MIT Auto-Updater.
 #     Genau dieses Asset laedt der Auto-Updater (includes/class-updater.php) ->
 #     alle Kundenseiten aktualisieren sich selbststaendig.
-#   * easycheckout-wp-wporg.zip  – WordPress.org-Fassung, OHNE Auto-Updater und
-#     ohne Entwickler-Dokus. .org verwaltet Updates selbst.
+#   * easycheckout-wp-wporg.zip  – WordPress.org-Fassung, OHNE Auto-Updater, ohne
+#     mitgelieferte Übersetzungen und ohne Entwickler-Dokus. .org verwaltet Updates
+#     und Übersetzungen (translate.wordpress.org) selbst.
 
 on:
   push:
@@ -48,6 +49,8 @@ jobs:
                 --exclude='.wordpress-org' \
                 --exclude='.gitignore' \
                 --exclude='includes/class-updater.php' \
+                --exclude='languages/*.po' --exclude='languages/*.mo' \
+                --exclude='HANDBUCH.md' \
                 --exclude='API-REFERENCE.md' \
                 --exclude='INSTALL-UND-NUTZUNG.md' \
                 --exclude='PUBLISHING.md' \

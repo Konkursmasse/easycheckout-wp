@@ -47,7 +47,23 @@ class Webhook_Handler {
     }
 
     /**
-     * Handle incoming webhook
+     * permission_callback der Webhook-Route: nur Anfragen mit gültiger
+     * Signatur des hinterlegten Webhook-Secrets werden angenommen. Ohne
+     * Secret wird jede Anfrage abgelehnt (auch im Testmodus).
+     *
+     * @param \WP_REST_Request $request
+     * @return true|\WP_Error
+     */
+    public function permission_check($request) {
+        if ($this->verify_signature($request->get_body(), $request->get_header('X-EasyCheckout-Signature'))) {
+            return true;
+        }
+        $this->log('Webhook signature verification failed', 'error');
+        return new \WP_Error('easycheckout_invalid_signature', 'Invalid signature', ['status' => 401]);
+    }
+
+    /**
+     * Handle incoming webhook (Signatur bereits in permission_check() geprüft)
      *
      * @param \WP_REST_Request $request
      * @return \WP_REST_Response
@@ -56,15 +72,8 @@ class Webhook_Handler {
         // WICHTIG: Rohkörper verwenden (nicht das dekodierte Array). Die Signatur
         // wird über exakt diese Bytes gebildet; ein Re-Encode würde sie brechen.
         $payload = $request->get_body();
-        $signature = $request->get_header('X-EasyCheckout-Signature');
 
         $this->log('Webhook received: ' . substr($payload, 0, 500));
-
-        // Signatur prüfen (Format t=<ts>,v1=<hmac>). Enthält zugleich den Zeitstempel.
-        if (!$this->verify_signature($payload, $signature)) {
-            $this->log('Webhook signature verification failed', 'error');
-            return new \WP_REST_Response(['error' => 'Invalid signature'], 401);
-        }
 
         // Parse payload
         $data = json_decode($payload, true);
@@ -113,8 +122,9 @@ class Webhook_Handler {
      */
     private function verify_signature($payload, $signature) {
         if (empty($this->webhook_secret)) {
-            // Kein Secret hinterlegt: nur im Testmodus durchlassen (Dev), sonst ablehnen.
-            return get_option('easycheckout_test_mode', 'yes') === 'yes';
+            // Kein Secret hinterlegt: ablehnen. Das Secret setzt die automatische
+            // Webhook-Registrierung (Einstellungen > Webhooks bzw. Konto verbinden).
+            return false;
         }
 
         if (empty($signature)) {

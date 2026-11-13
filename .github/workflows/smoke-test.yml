@@ -1,0 +1,116 @@
+name: Smoke-Test
+
+# Startet ein echtes WordPress mit WooCommerce (wp-env, Docker), installiert die
+# WordPress.org-Fassung des Plugins und prüft:
+#   * Aktivierung ohne Fehler,
+#   * Umbenennung alter Checkout-Beiträge (ec_checkout / _ec_*) auf das neue Präfix,
+#   * Admin-Seiten und Kassen-Seiten laden ohne PHP-Fehler,
+#   * Webhook ohne Signatur wird abgelehnt (401).
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: WordPress.org-Fassung bauen
+        run: |
+          mkdir -p build/easycheckout
+          rsync -a --exclude='.git' --exclude='.github' --exclude='build' \
+                --exclude='node_modules' --exclude='*.zip' --exclude='.wordpress-org' \
+                --exclude='.gitignore' --exclude='includes/class-updater.php' \
+                --exclude='languages/*.po' --exclude='languages/*.mo' \
+                --exclude='API-REFERENCE.md' --exclude='INSTALL-UND-NUTZUNG.md' \
+                --exclude='PUBLISHING.md' --exclude='HANDBUCH.md' \
+                ./ build/easycheckout/
+          cat > .wp-env.json <<'EOF'
+          {
+            "core": null,
+            "plugins": ["https://downloads.wordpress.org/plugin/woocommerce.latest-stable.zip"],
+            "mappings": { "wp-content/plugins/easycheckout": "./build/easycheckout" },
+            "config": { "WP_DEBUG": true, "WP_DEBUG_LOG": true, "WP_DEBUG_DISPLAY": true }
+          }
+          EOF
+
+      - name: WordPress starten
+        run: |
+          npm install -g @wordpress/env@10
+          wp-env start
+
+      - name: Alte Daten anlegen (Stand 1.0.89)
+        run: |
+          wp-env run cli wp eval '
+            $id = wp_insert_post(["post_type" => "ec_checkout", "post_status" => "publish", "post_title" => "Alt-Checkout"]);
+            update_post_meta($id, "_ec_checkout_slug", "alt-slug");
+            update_post_meta($id, "_ec_primary_color", "#123456");
+            echo "legacy post $id\n";
+          '
+
+      - name: Plugin aktivieren und Umbenennung prüfen
+        run: |
+          wp-env run cli wp plugin activate easycheckout
+          wp-env run cli wp eval '
+            $posts = get_posts(["post_type" => "easycheckout_page", "post_status" => "any"]);
+            if (count($posts) !== 1) { fwrite(STDERR, "FEHLER: Beitrag nicht umbenannt\n"); exit(1); }
+            $slug = get_post_meta($posts[0]->ID, "_easycheckout_checkout_slug", true);
+            $color = get_post_meta($posts[0]->ID, "_easycheckout_primary_color", true);
+            if ($slug !== "alt-slug" || $color !== "#123456") { fwrite(STDERR, "FEHLER: Meta nicht umbenannt ($slug/$color)\n"); exit(1); }
+            if (get_posts(["post_type" => "ec_checkout", "post_status" => "any"])) { fwrite(STDERR, "FEHLER: alter Typ noch vorhanden\n"); exit(1); }
+            echo "Umbenennung ok: {$posts[0]->ID} $slug $color\n";
+          '
+
+      - name: Testseite mit Shortcode anlegen
+        run: |
+          wp-env run cli wp post create --post_type=page --post_status=publish --post_title=Kasse '--post_content=[easycheckout slug="demo"]' --porcelain
+
+      - name: Seiten aufrufen
+        run: |
+          set -u
+          B=http://localhost:8888
+          fehler=0
+          pruefe() {
+            code=$(curl -s -o page.html -w '%{http_code}' -b cookies.txt "$1")
+            if grep -qiE 'Fatal error|Parse error|Warning:|Notice:|Deprecated:|Uncaught' page.html; then
+              echo "::error::PHP-Meldung auf $1"; grep -iE 'Fatal error|Parse error|Warning:|Notice:|Deprecated:|Uncaught' page.html | head -5; fehler=1
+            fi
+            if [ "$code" != "$2" ]; then echo "::error::$1 -> HTTP $code (erwartet $2)"; fehler=1; else echo "ok $code $1"; fi
+          }
+          # Anmelden (wp-env: admin/password)
+          curl -s -c cookies.txt -b cookies.txt -o /dev/null "$B/wp-login.php"
+          curl -s -c cookies.txt -b cookies.txt -o /dev/null -d 'log=admin&pwd=password&wp-submit=Log+In&testcookie=1' "$B/wp-login.php"
+          # Erster Admin-Aufruf: WooCommerce leitet einmalig auf seinen Einrichtungsassistenten um.
+          curl -s -o /dev/null -b cookies.txt "$B/wp-admin/"
+          pruefe "$B/" 200
+          pruefe "$B/?pagename=kasse" 200
+          pruefe "$B/?ec_local=gibt-es-nicht" 200
+          pruefe "$B/wp-admin/admin.php?page=easycheckout" 200
+          pruefe "$B/wp-admin/admin.php?page=ec-checkouts" 200
+          pruefe "$B/wp-admin/options-general.php?page=easycheckout-settings" 200
+          pruefe "$B/wp-admin/options-general.php?page=easycheckout-settings&tab=webhooks" 200
+          pruefe "$B/wp-admin/options-general.php?page=easycheckout-settings&tab=design" 200
+          pruefe "$B/wp-admin/options-general.php?page=easycheckout-settings&tab=logs" 200
+          pruefe "$B/wp-admin/edit.php?post_type=easycheckout_page" 200
+          pruefe "$B/wp-admin/post-new.php?post_type=easycheckout_page" 200
+          for s in "" design shop invoice emails; do
+            pruefe "$B/wp-admin/admin.php?page=wc-settings&tab=easycheckout&section=$s" 200
+          done
+          pruefe "$B/wp-admin/admin.php?page=wc-settings&tab=checkout&section=easycheckout" 200
+          # Webhook ohne Signatur muss abgelehnt werden.
+          code=$(curl -s -o wh.json -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{"type":"order.paid","id":"evt_test","data":{}}' "$B/?rest_route=/easycheckout/v1/webhook")
+          if [ "$code" != "401" ]; then echo "::error::Webhook ohne Signatur -> HTTP $code (erwartet 401)"; cat wh.json; fehler=1; else echo "ok 401 Webhook ohne Signatur"; fi
+          exit $fehler
+
+      - name: Debug-Log prüfen
+        if: always()
+        run: |
+          wp-env run cli bash -c 'cat wp-content/debug.log 2>/dev/null || true' > debug.log
+          cat debug.log
+          # Nur Meldungen, die aus Dateien dieses Plugins stammen.
+          if grep -iE 'fatal|warning|notice|deprecated' debug.log | grep -q 'plugins/easycheckout/'; then
+            echo "::error::PHP-Meldungen aus dem Plugin im debug.log"; exit 1
+          fi

@@ -27,6 +27,13 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
     private $api;
 
     /**
+     * Checkout-Slug aus den Gateway-Einstellungen
+     *
+     * @var string
+     */
+    public $checkout_slug = '';
+
+    /**
      * Constructor
      */
     public function __construct() {
@@ -161,14 +168,6 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
                 'placeholder' => '#4F46E5',
                 'desc_tip' => true,
             ],
-            'custom_css' => [
-                'title' => __('Eigenes CSS (Design)', 'easycheckout'),
-                'type' => 'textarea',
-                'css' => 'width:100%;height:150px;font-family:monospace;',
-                'description' => __('Eigenes CSS zum Anpassen der Kasse (Klassen: .eclc-*, Container #ec-pay-checkout / .ec-local-checkout, Variable --ec-p). Wird auf allen Kassen-Seiten eingebunden. Per Filter easycheckout_checkout_css erweiterbar.', 'easycheckout'),
-                'default' => '',
-                'desc_tip' => true,
-            ],
             'payment_methods' => [
                 'title' => __('Payment Methods', 'easycheckout'),
                 'type' => 'multiselect',
@@ -209,7 +208,7 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
      */
     public function payment_fields() {
         if ($this->description) {
-            echo wpautop(wptexturize($this->description));
+            echo wp_kses_post(wpautop(wptexturize($this->description)));
         }
 
         $payment_methods = $this->get_option('payment_methods', ['card', 'twint']);
@@ -220,7 +219,7 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
         ?>
         <div id="easycheckout-payment-info">
             <p class="easycheckout-redirect-notice">
-                <?php _e('Nach dem Absenden der Bestellung wirst du sicher zu EasyCheckout weitergeleitet – dort wählst du deine Zahlungsart und bezahlst.', 'easycheckout'); ?>
+                <?php esc_html_e('Nach dem Absenden der Bestellung wirst du sicher zu EasyCheckout weitergeleitet – dort wählst du deine Zahlungsart und bezahlst.', 'easycheckout'); ?>
             </p>
 
             <?php if (!empty($labels)) : ?>
@@ -232,39 +231,6 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
             <?php endif; ?>
         </div>
 
-        <style>
-            #easycheckout-payment-info {
-                padding: 14px 16px;
-                background: #f6f9fc;
-                border: 1px solid #e3e8ee;
-                border-radius: 8px;
-                margin-top: 10px;
-            }
-            #easycheckout-payment-info .easycheckout-redirect-notice {
-                margin: 0 0 10px;
-                color: #425466;
-                font-size: 14px;
-            }
-            #easycheckout-payment-info .easycheckout-methods-badges {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px;
-                margin: 0;
-                padding: 0;
-                list-style: none;
-            }
-            #easycheckout-payment-info .easycheckout-method-badge {
-                display: inline-flex;
-                align-items: center;
-                padding: 5px 12px;
-                background: #fff;
-                border: 1px solid #d7dee7;
-                border-radius: 999px;
-                font-size: 13px;
-                color: #334155;
-                line-height: 1.3;
-            }
-        </style>
         <?php
     }
 
@@ -367,42 +333,39 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
      * Handle return from payment (success)
      */
     public function handle_return() {
-        $order_id = isset($_GET['order_id']) ? intval($_GET['order_id']) : 0;
-        $order_key = isset($_GET['key']) ? sanitize_text_field($_GET['key']) : '';
-        $ec_order_id = isset($_GET['orderId']) ? sanitize_text_field($_GET['orderId']) : '';
-        $status = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : '';
+        $order_id = isset($_GET['order_id']) ? absint(wp_unslash($_GET['order_id'])) : 0;
+        $order_key = isset($_GET['key']) ? sanitize_text_field(wp_unslash($_GET['key'])) : '';
+        $ec_order_id = isset($_GET['orderId']) ? sanitize_text_field(wp_unslash($_GET['orderId'])) : '';
+        $status = isset($_GET['status']) ? sanitize_key(wp_unslash($_GET['status'])) : '';
 
         if (!$order_id) {
-            wp_redirect(wc_get_checkout_url());
+            wp_safe_redirect(wc_get_checkout_url());
             exit;
         }
 
         $order = wc_get_order($order_id);
 
         if (!$order || $order->get_order_key() !== $order_key) {
-            wp_redirect(wc_get_checkout_url());
+            wp_safe_redirect(wc_get_checkout_url());
             exit;
         }
 
-        // Check payment status from EasyCheckout if order ID provided
-        if ($ec_order_id) {
+        // Die EasyCheckout-Bestell-ID wird beim Anlegen der Zahlung gespeichert.
+        // Aus der Rückkehr-URL nur übernehmen, wenn noch keine da ist — sonst
+        // könnte jemand per URL eine fremde, bezahlte Bestellung verknüpfen.
+        if ($ec_order_id && !$order->get_meta('_easycheckout_order_id')) {
             $order->update_meta_data('_easycheckout_order_id', $ec_order_id);
             $order->save();
         }
 
-        // Express-Bestellungen NICHT vorzeitig als bezahlt markieren: Bestand und
-        // Abschluss laufen ueber payment_complete() im order.paid-Webhook (der
-        // zugleich die im Fast-Checkout erfasste Adresse nachtraegt). Wuerde hier
-        // vorab auf processing gesetzt, uebersaehe der Webhook payment_complete
-        // (is_paid) und der Bestand bliebe unreduziert.
+        // Die Rückkehr-URL ist vom Käufer veränderbar und beweist KEINE Zahlung.
+        // Bezahlt markiert nur der signierte order.paid-Webhook (payment_complete():
+        // Status, Bestand, Mails); bis dahin bleibt die Bestellung „Zahlung
+        // ausstehend". Kein Wechsel auf „Wartestellung", der dem Kunden eine
+        // zusätzliche WooCommerce-Mail schicken würde.
         $is_express = $order->get_created_via() === 'easycheckout_express';
-
-        // Beim regulaeren Gateway-Flow ist die Adresse bereits erfasst -> als
-        // Zwischenstatus processing setzen, der Webhook bestaetigt endgueltig.
-        if (!$is_express && ($status === 'success' || $status === 'paid')) {
-            if (!$order->is_paid()) {
-                $order->update_status('processing', __('Payment received via EasyCheckout, awaiting webhook confirmation.', 'easycheckout'));
-            }
+        if (!$is_express && ($status === 'success' || $status === 'paid') && !$order->is_paid()) {
+            $order->add_order_note(__('Customer returned from EasyCheckout. Waiting for the payment confirmation (webhook).', 'easycheckout'));
         }
 
         // Warenkorb leeren: Beim Express umgeht der Flow den WC-Checkout, der den
@@ -414,7 +377,7 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
         }
 
         // Redirect to thank you page
-        wp_redirect($this->get_return_url($order));
+        wp_safe_redirect($this->get_return_url($order));
         exit;
     }
 
@@ -422,18 +385,18 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
      * Handle return from payment (cancel)
      */
     public function handle_cancel() {
-        $order_id = isset($_GET['order_id']) ? intval($_GET['order_id']) : 0;
-        $order_key = isset($_GET['key']) ? sanitize_text_field($_GET['key']) : '';
+        $order_id = isset($_GET['order_id']) ? absint(wp_unslash($_GET['order_id'])) : 0;
+        $order_key = isset($_GET['key']) ? sanitize_text_field(wp_unslash($_GET['key'])) : '';
 
         if (!$order_id) {
-            wp_redirect(wc_get_checkout_url());
+            wp_safe_redirect(wc_get_checkout_url());
             exit;
         }
 
         $order = wc_get_order($order_id);
 
         if (!$order || $order->get_order_key() !== $order_key) {
-            wp_redirect(wc_get_checkout_url());
+            wp_safe_redirect(wc_get_checkout_url());
             exit;
         }
 
@@ -447,7 +410,7 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
         wc_add_notice(__('Payment was cancelled. Please try again.', 'easycheckout'), 'notice');
 
         // Redirect back to checkout
-        wp_redirect(wc_get_checkout_url());
+        wp_safe_redirect(wc_get_checkout_url());
         exit;
     }
 

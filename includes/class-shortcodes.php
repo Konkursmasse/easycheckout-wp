@@ -48,7 +48,7 @@ class Shortcodes {
 
     /** Token aus der Anfrage (unguessbar, kein sanitize_title -> Bindestriche/Unterstriche behalten). */
     private function pay_token() {
-        $t = isset($_REQUEST['token']) ? wp_unslash($_REQUEST['token']) : '';
+        $t = isset($_REQUEST['token']) ? sanitize_text_field(wp_unslash($_REQUEST['token'])) : '';
         return preg_replace('/[^A-Za-z0-9_\-]/', '', (string) $t);
     }
 
@@ -66,7 +66,7 @@ class Shortcodes {
     public function ajax_pay_patch() {
         if (!check_ajax_referer('easycheckout_front', 'nonce', false)) { wp_send_json_error(['message' => 'Ungültige Anfrage.'], 400); }
         $token = $this->pay_token();
-        $payload = isset($_POST['payload']) ? json_decode(wp_unslash($_POST['payload']), true) : null;
+        $payload = easycheckout_post_json('payload', null);
         if ($token === '' || !is_array($payload)) { wp_send_json_error(['message' => 'Ungültige Daten.'], 400); }
         $resp = wp_remote_request($this->api_base() . '/api/pay/' . rawurlencode($token), [
             'method' => 'PATCH', 'timeout' => 20, 'headers' => ['Content-Type' => 'application/json'], 'body' => wp_json_encode($payload),
@@ -80,7 +80,7 @@ class Shortcodes {
         if (!check_ajax_referer('easycheckout_front', 'nonce', false)) { wp_send_json_error(['message' => 'Ungültige Anfrage.'], 400); }
         $token = $this->pay_token();
         if ($token === '') { wp_send_json_error(['message' => 'Kein Token.'], 400); }
-        $payload = isset($_POST['payload']) ? json_decode(wp_unslash($_POST['payload']), true) : [];
+        $payload = easycheckout_post_json('payload');
         $resp = wp_remote_post($this->api_base() . '/api/pay/' . rawurlencode($token), [
             'timeout' => 25, 'headers' => ['Content-Type' => 'application/json'], 'body' => wp_json_encode(is_array($payload) ? $payload : []),
         ]);
@@ -110,7 +110,7 @@ class Shortcodes {
     public function ajax_pub_pay() {
         if (!check_ajax_referer('easycheckout_front', 'nonce', false)) { wp_send_json_error(['message' => 'Ungültige Anfrage.'], 400); }
         $slug    = isset($_POST['slug']) ? sanitize_title(wp_unslash($_POST['slug'])) : '';
-        $payload = isset($_POST['payload']) ? json_decode(wp_unslash($_POST['payload']), true) : null;
+        $payload = easycheckout_post_json('payload', null);
         if ($slug === '' || !is_array($payload)) { wp_send_json_error(['message' => 'Ungültige Daten.'], 400); }
         $resp = wp_remote_post($this->api_base() . '/api/public/checkout/' . rawurlencode($slug) . '/pay', [
             'timeout' => 25,
@@ -133,15 +133,12 @@ class Shortcodes {
         // Eingebettete WooCommerce-Zahlseite auf der eigenen Domain: Vollbild-iFrame
         // der gehosteten Zahlseite. Der Kunde bleibt auf der Händler-Domain; die
         // Zahlseite bricht bei Erfolg selbst in den Top-Frame aus (zur WC-Danke-Seite).
-        $embedId = !empty($_GET['ec_embed']) ? preg_replace('/[^A-Za-z0-9]/', '', wp_unslash($_GET['ec_embed'])) : '';
+        $embedId = !empty($_GET['ec_embed']) ? preg_replace('/[^A-Za-z0-9]/', '', sanitize_text_field(wp_unslash($_GET['ec_embed']))) : '';
         if ($embedId !== '') {
-            $payUrl = get_transient('ec_embed_' . $embedId);
+            $payUrl = get_transient('easycheckout_embed_' . $embedId);
             if (!$payUrl) { return; }
-            nocache_headers();
-            echo '<!DOCTYPE html><html ' . get_language_attributes() . '><head><meta charset="' . esc_attr(get_bloginfo('charset')) . '">';
-            echo '<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">';
-            echo '<title>' . esc_html__('Checkout', 'easycheckout') . '</title>';
-            echo '<style>html,body{margin:0;padding:0;height:100%;background:#f8fafc}iframe{border:0;width:100%;height:100vh;display:block}</style>';
+            wp_enqueue_style('easycheckout-embed', EASYCHECKOUT_PLUGIN_URL . 'assets/css/embed.css', [], EASYCHECKOUT_VERSION);
+            $this->print_document_start(__('Checkout', 'easycheckout'));
             echo '</head><body>';
             echo '<iframe src="' . esc_url($payUrl) . '" allow="payment *"></iframe>';
             echo '</body></html>';
@@ -150,9 +147,9 @@ class Shortcodes {
 
         // Nativer WooCommerce-Warenkorb-Checkout (KEIN iFrame): DOM-Rendering auf der
         // eigenen Domain, Stripe white-label via Server-Proxies (/api/pay/{token}).
-        $payId = !empty($_GET['ec_pay']) ? preg_replace('/[^A-Za-z0-9]/', '', wp_unslash($_GET['ec_pay'])) : '';
+        $payId = !empty($_GET['ec_pay']) ? preg_replace('/[^A-Za-z0-9]/', '', sanitize_text_field(wp_unslash($_GET['ec_pay']))) : '';
         if ($payId !== '') {
-            $payUrl = get_transient('ec_embed_' . $payId);
+            $payUrl = get_transient('easycheckout_embed_' . $payId);
             if (!$payUrl) { return; }
             $parts = wp_parse_url($payUrl);
             $token = '';
@@ -162,9 +159,9 @@ class Shortcodes {
             if ($token === '') { return; }
 
             wp_enqueue_style('easycheckout-local-checkout', EASYCHECKOUT_PLUGIN_URL . 'assets/css/local-checkout.css', [], EASYCHECKOUT_VERSION);
-            wp_register_script('stripe-js', 'https://js.stripe.com/v3/', [], null, true);
-            wp_register_script('easycheckout-pay-checkout', EASYCHECKOUT_PLUGIN_URL . 'assets/js/pay-checkout.js', ['stripe-js'], EASYCHECKOUT_VERSION, true);
-            wp_localize_script('easycheckout-pay-checkout', 'ecPay', [
+            wp_register_script('easycheckout-stripe', 'https://js.stripe.com/v3/', [], null, true);
+            wp_register_script('easycheckout-pay-checkout', EASYCHECKOUT_PLUGIN_URL . 'assets/js/pay-checkout.js', ['easycheckout-stripe'], EASYCHECKOUT_VERSION, true);
+            wp_localize_script('easycheckout-pay-checkout', 'easycheckoutPay', [
             'i18n' => easycheckout_checkout_i18n(),
                 'ajaxUrl'    => admin_url('admin-ajax.php'),
                 'nonce'      => wp_create_nonce('easycheckout_front'),
@@ -178,13 +175,8 @@ class Shortcodes {
             ]);
             wp_enqueue_script('easycheckout-pay-checkout');
 
-            nocache_headers();
-            echo '<!DOCTYPE html><html ' . get_language_attributes() . '><head><meta charset="' . esc_attr(get_bloginfo('charset')) . '">';
-            echo '<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">';
-            echo '<title>' . esc_html__('Checkout', 'easycheckout') . '</title>';
-            wp_print_styles();
-            wp_print_head_scripts();
-            \EasyCheckout\Design::head();
+            \EasyCheckout\Design::enqueue_brand(['easycheckout-local-checkout']);
+            $this->print_document_start(__('Checkout', 'easycheckout'));
             echo '</head><body style="margin:0;background:#f8fafc;"><div id="ec-pay-checkout"></div>';
             wp_print_footer_scripts();
             echo '</body></html>';
@@ -212,19 +204,30 @@ class Shortcodes {
             $titleSlug = $local['name'];
         }
 
-        nocache_headers();
-        $title = esc_html($titleSlug . ' – Checkout');
-        echo '<!DOCTYPE html><html ' . get_language_attributes() . '><head><meta charset="' . esc_attr(get_bloginfo('charset')) . '">';
-        echo '<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">';
-        echo '<title>' . $title . '</title>';
-        wp_print_styles();
-        wp_print_head_scripts();
-        \EasyCheckout\Design::head();
+        \EasyCheckout\Design::enqueue_brand(wp_style_is('easycheckout-local-checkout', 'registered') ? ['easycheckout-local-checkout'] : []);
+        $this->print_document_start($titleSlug . ' – Checkout');
         echo '</head><body style="margin:0;">';
-        echo $html;
+        echo wp_kses_post($html);
         wp_print_footer_scripts();
         echo '</body></html>';
         exit;
+    }
+
+    /**
+     * Beginn einer eigenständigen Kassen-Seite: Doctype, <head> mit Titel und
+     * den eingereihten Stylesheets und Skripten. Der Aufrufer schliesst <head>.
+     *
+     * @param string $title Seitentitel (unescaped).
+     */
+    private function print_document_start($title) {
+        nocache_headers();
+        echo '<!DOCTYPE html><html ';
+        language_attributes();
+        echo '><head><meta charset="' . esc_attr(get_bloginfo('charset')) . '">';
+        echo '<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">';
+        echo '<title>' . esc_html($title) . '</title>';
+        wp_print_styles();
+        wp_print_head_scripts();
     }
 
     /**
@@ -243,7 +246,7 @@ class Shortcodes {
      * Render full checkout shortcode (product preview + buy button).
      *
      * Usage: [easycheckout slug="my-checkout"]
-     *        [easycheckout id="123"]            (a local "ec_checkout" post that
+     *        [easycheckout id="123"]            (a local checkout post that
      *                                            references a remote slug)
      *
      * @param array $atts Shortcode attributes
@@ -313,13 +316,13 @@ class Shortcodes {
     private function render_account_checkout($slug, $atts) {
         wp_register_style('easycheckout-local-checkout', EASYCHECKOUT_PLUGIN_URL . 'assets/css/local-checkout.css', [], EASYCHECKOUT_VERSION);
         wp_enqueue_style('easycheckout-local-checkout');
-        \EasyCheckout\Design::enqueue_inline(); // Markenfarbe + Custom CSS
+        \EasyCheckout\Design::enqueue_inline(); // Markenfarbe + Design-Optionen
         // Stripe.js (unsichtbar/white-label) fuer die native Kartenzahlung.
-        wp_register_script('stripe-js', 'https://js.stripe.com/v3/', [], null, true);
-        wp_enqueue_script('stripe-js');
-        wp_register_script('easycheckout-account-checkout', EASYCHECKOUT_PLUGIN_URL . 'assets/js/account-checkout.js', ['stripe-js'], EASYCHECKOUT_VERSION, true);
-        $primary = (isset($atts['primary']) && $atts['primary']) ? $atts['primary'] : '';
-        wp_localize_script('easycheckout-account-checkout', 'ecAccount', [
+        wp_register_script('easycheckout-stripe', 'https://js.stripe.com/v3/', [], null, true);
+        wp_enqueue_script('easycheckout-stripe');
+        wp_register_script('easycheckout-account-checkout', EASYCHECKOUT_PLUGIN_URL . 'assets/js/account-checkout.js', ['easycheckout-stripe'], EASYCHECKOUT_VERSION, true);
+        $primary = (isset($atts['primary']) && $atts['primary']) ? (string) sanitize_hex_color($atts['primary']) : '';
+        wp_localize_script('easycheckout-account-checkout', 'easycheckoutAccount', [
             'i18n' => easycheckout_checkout_i18n(),
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce'   => wp_create_nonce('easycheckout_front'),
@@ -329,8 +332,12 @@ class Shortcodes {
             'showPowered' => \EasyCheckout\Design::show_powered() ? '1' : '',
         ]);
         wp_enqueue_script('easycheckout-account-checkout');
-        $style = $primary ? ' style="--ec-p:' . esc_attr($primary) . ';"' : '';
-        return '<div class="ec-local-checkout ec-account-checkout" data-ec-account="1"' . $style . '></div>';
+        // Eigene Akzentfarbe pro Shortcode als CSS-Variable am Container.
+        $id = 'easycheckout-acc-' . wp_unique_id();
+        if ($primary) {
+            wp_add_inline_style('easycheckout-local-checkout', '#' . $id . '{--ec-p:' . $primary . ';}');
+        }
+        return '<div id="' . esc_attr($id) . '" class="ec-local-checkout ec-account-checkout" data-ec-account="1"></div>';
     }
 
     /**
@@ -396,7 +403,7 @@ class Shortcodes {
 
     /**
      * Resolve a remote checkout slug from a slug attribute or a local
-     * ec_checkout post (without an API round-trip).
+     * checkout post (without an API round-trip).
      *
      * @param int|string $id
      * @param string     $slug
@@ -408,8 +415,8 @@ class Shortcodes {
         }
         if (!empty($id)) {
             $post = get_post($id);
-            if ($post && $post->post_type === 'ec_checkout') {
-                $remote_slug = get_post_meta($post->ID, '_ec_checkout_slug', true);
+            if ($post && $post->post_type === \EasyCheckout\CheckoutBuilder\Checkout_CPT::POST_TYPE) {
+                $remote_slug = \EasyCheckout\CheckoutBuilder\Checkout_CPT::get_meta($post->ID, 'checkout_slug');
                 if (!empty($remote_slug)) {
                     return $remote_slug;
                 }
@@ -421,7 +428,7 @@ class Shortcodes {
 
     /**
      * Rendert einen lokal gebauten Checkout (Bankueberweisung, ohne Konto).
-     * Die eigentliche UI baut assets/js/local-checkout.js aus ecLocal.
+     * Die eigentliche UI baut assets/js/local-checkout.js aus easycheckoutLocal.
      *
      * @param array $c Lokaler Checkout.
      * @return string
@@ -430,11 +437,11 @@ class Shortcodes {
         $handle = 'easycheckout-local-checkout';
         wp_register_style($handle, EASYCHECKOUT_PLUGIN_URL . 'assets/css/local-checkout.css', [], EASYCHECKOUT_VERSION);
         wp_enqueue_style($handle);
-        \EasyCheckout\Design::enqueue_inline($handle); // Markenfarbe + Custom CSS
+        \EasyCheckout\Design::enqueue_inline($handle); // Markenfarbe + Design-Optionen
         wp_register_script('easycheckout-qrgen', EASYCHECKOUT_PLUGIN_URL . 'assets/js/qrcode-generator.js', [], '1.4.4', true);
         wp_register_script($handle, EASYCHECKOUT_PLUGIN_URL . 'assets/js/local-checkout.js', ['easycheckout-qrgen'], EASYCHECKOUT_VERSION, true);
 
-        $primary = (isset($c['design']['primary']) && $c['design']['primary']) ? $c['design']['primary'] : '#4F46E5';
+        $primary = (isset($c['design']['primary']) && sanitize_hex_color($c['design']['primary'])) ? sanitize_hex_color($c['design']['primary']) : '#4F46E5';
         $products = [];
         foreach ((array) (isset($c['products']) ? $c['products'] : []) as $p) {
             $products[] = [
@@ -463,7 +470,7 @@ class Shortcodes {
                 'allowQuantity' => !isset($cat['allowQuantity']) || $cat['allowQuantity'],
             ];
         }
-        wp_localize_script($handle, 'ecLocal', [
+        wp_localize_script($handle, 'easycheckoutLocal', [
             'i18n' => easycheckout_checkout_i18n(),
             'ajaxUrl'  => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('easycheckout_front'),
@@ -487,7 +494,8 @@ class Shortcodes {
         ]);
         wp_enqueue_script($handle);
 
-        return '<div class="ec-local-checkout" data-ec-local="1" style="--ec-p:' . esc_attr($primary) . ';"></div>';
+        wp_add_inline_style($handle, '.ec-local-checkout[data-ec-local]{--ec-p:' . $primary . ';}');
+        return '<div class="ec-local-checkout" data-ec-local="1"></div>';
     }
 
     /**
@@ -573,13 +581,12 @@ class Shortcodes {
         wp_enqueue_style('easycheckout-checkout');
 
         $url = $this->hosted_checkout_url($checkout['slug']);
-        $target = $atts['new_tab'] === 'yes' ? ' target="_blank" rel="noopener"' : '';
 
         ob_start();
         ?>
         <div class="easycheckout-single-product">
             <?php if ($atts['show_image'] === 'yes' && !empty($product['image'])) : ?>
-                <img src="<?php echo $this->img_src($product['image']); ?>" alt="" class="easycheckout-product-image">
+                <img src="<?php echo esc_attr($this->img_src($product['image'])); ?>" alt="" class="easycheckout-product-image">
             <?php endif; ?>
 
             <div class="easycheckout-product-details">
@@ -594,7 +601,7 @@ class Shortcodes {
                 </span>
             </div>
 
-            <a class="easycheckout-button easycheckout-buy-button" href="<?php echo esc_url($url); ?>"<?php echo $target; ?>>
+            <a class="easycheckout-button easycheckout-buy-button" href="<?php echo esc_url($url); ?>"<?php echo $atts['new_tab'] === 'yes' ? ' target="_blank" rel="noopener"' : ''; ?>>
                 <?php echo esc_html($atts['button_text']); ?>
             </a>
         </div>
@@ -603,9 +610,9 @@ class Shortcodes {
     }
 
     /**
-     * Resolve checkout data (normalized) from a slug or a local ec_checkout post.
+     * Resolve checkout data (normalized) from a slug or a local checkout post.
      *
-     * @param int|string $id   Local ec_checkout post ID (optional)
+     * @param int|string $id   Local checkout post ID (optional)
      * @param string     $slug Remote EasyCheckout checkout slug (optional)
      * @return array|\WP_Error Normalized checkout array or error
      */
@@ -618,8 +625,8 @@ class Shortcodes {
         // A local post just needs to reference a remote slug.
         if (!empty($id)) {
             $post = get_post($id);
-            if ($post && $post->post_type === 'ec_checkout') {
-                $remote_slug = get_post_meta($post->ID, '_ec_checkout_slug', true);
+            if ($post && $post->post_type === \EasyCheckout\CheckoutBuilder\Checkout_CPT::POST_TYPE) {
+                $remote_slug = \EasyCheckout\CheckoutBuilder\Checkout_CPT::get_meta($post->ID, 'checkout_slug');
                 if (empty($remote_slug)) {
                     return new \WP_Error(
                         'ec_no_slug',

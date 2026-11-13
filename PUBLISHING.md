@@ -93,6 +93,22 @@ Neu generieren: `node scratchpad/wporg-assets.js` (Icon+Banner) und `node scratc
   Stripe/PayPal/Mailchimp-Plugins), muss aber – wie geschehen – in Beschreibung + Installation
   klar stehen.
 
+### 3.5 Regeln aus der Review vom 30.07.2026 (umgesetzt in 1.0.90)
+
+Gilt für jede künftige Änderung, sonst kommt die Review zurück:
+
+- **Ausgaben escapen:** nie `_e()`/`__()` direkt ausgeben, sondern `esc_html_e()`, `esc_attr_e()`,
+  `esc_html__()`; Variablen immer mit `esc_html`/`esc_attr`/`esc_url`/`wp_kses_post`.
+- **Eingaben bereinigen:** `$_POST`/`$_GET` immer `sanitize_*(wp_unslash(...))`. JSON aus Anfragen
+  nur über `easycheckout_post_json()` (includes/functions-sanitize.php), nie roh `json_decode`.
+- **Kein `<style>`/`<script>` im PHP:** Dateien unter `assets/` per `wp_enqueue_*`, dynamische
+  Werte per `wp_add_inline_style`/`wp_localize_script`.
+- **Kein Eingabefeld für eigenes CSS/JS/PHP.** Für Entwickler bleibt der Filter `easycheckout_checkout_css`.
+- **Präfix mind. 4 Zeichen:** `easycheckout_` / `easycheckout-` / `EasyCheckout\` für Post-Types,
+  Meta, Optionen, Transients, Nonces, Script-Handles und JS-Objekte (nicht `ec_`).
+- **Kein „Powered by"-Link ohne Opt-in** (Standard aus, Schalter in „Design").
+- **Prüfen vor dem Upload:** Workflows „Plugin Check" und „Smoke-Test" müssen im PR grün sein.
+
 ---
 
 ## 4. Vor jedem Release – Checkliste

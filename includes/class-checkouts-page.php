@@ -36,7 +36,7 @@ class Checkouts_Page {
      */
     public function add_menu() {
         add_submenu_page(
-            'edit.php?post_type=ec_checkout',
+            'edit.php?post_type=' . CheckoutBuilder\Checkout_CPT::POST_TYPE,
             __('Checkout einbetten', 'easycheckout'),
             __('Einbetten', 'easycheckout'),
             'manage_options',
