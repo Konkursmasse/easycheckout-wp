@@ -43,7 +43,7 @@ jobs:
           (cd build/full && zip -r "$GITHUB_WORKSPACE/easycheckout-wp.zip" easycheckout >/dev/null)
 
           # --- WordPress.org-Fassung (ohne Updater + ohne Dev-Dokus) ---
-          mkdir -p build/wporg/easycheckout
+          mkdir -p build/wporg/ec-checkout
           rsync -a --exclude='.git' --exclude='.github' --exclude='build' \
                 --exclude='node_modules' --exclude='*.zip' \
                 --exclude='.wordpress-org' \
@@ -54,8 +54,8 @@ jobs:
                 --exclude='API-REFERENCE.md' \
                 --exclude='INSTALL-UND-NUTZUNG.md' \
                 --exclude='PUBLISHING.md' \
-                ./ build/wporg/easycheckout/
-          (cd build/wporg && zip -r "$GITHUB_WORKSPACE/easycheckout-wp-wporg.zip" easycheckout >/dev/null)
+                ./ build/wporg/ec-checkout/
+          (cd build/wporg && zip -r "$GITHUB_WORKSPACE/easycheckout-wp-wporg.zip" ec-checkout >/dev/null)
 
           ls -la easycheckout-wp.zip easycheckout-wp-wporg.zip
 

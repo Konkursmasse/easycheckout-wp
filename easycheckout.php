@@ -1,14 +1,15 @@
 <?php
 /**
- * Plugin Name: EasyCheckout
+ * Plugin Name: EC Checkout
  * Plugin URI: https://easycheckout.io/handbuch/woocommerce
  * Description: Accept payments with EasyCheckout - Credit Cards, TWINT, and Swiss QR-Bill. Works standalone or with WooCommerce.
- * Version: 1.0.91
+ * Version: 1.0.92
  * Author: lokal werbung GmbH
  * Author URI: https://easycheckout.io/impressum
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: easycheckout
+ * Text Domain: ec-checkout
+ * Domain Path: /languages
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * WC requires at least: 7.0
@@ -18,7 +19,7 @@
 defined('ABSPATH') || exit;
 
 // Plugin constants
-define('EASYCHECKOUT_VERSION', '1.0.91');
+define('EASYCHECKOUT_VERSION', '1.0.92');
 define('EASYCHECKOUT_PLUGIN_FILE', __FILE__);
 define('EASYCHECKOUT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EASYCHECKOUT_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -190,7 +191,7 @@ add_action('before_woocommerce_init', function() {
  * Add settings link to plugins page
  */
 add_filter('plugin_action_links_' . EASYCHECKOUT_PLUGIN_BASENAME, function($links) {
-    $settings_link = '<a href="' . admin_url('admin.php?page=easycheckout-settings') . '">' . __('Settings', 'easycheckout') . '</a>';
+    $settings_link = '<a href="' . admin_url('admin.php?page=easycheckout-settings') . '">' . __('Settings', 'ec-checkout') . '</a>';
     array_unshift($links, $settings_link);
     return $links;
 });

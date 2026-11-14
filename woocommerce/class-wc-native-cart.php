@@ -78,7 +78,7 @@ class WC_Native_Cart {
         language_attributes();
         echo '><head><meta charset="' . esc_attr(get_bloginfo('charset')) . '">';
         echo '<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">';
-        echo '<title>' . esc_html__('Checkout', 'easycheckout') . '</title>';
+        echo '<title>' . esc_html__('Checkout', 'ec-checkout') . '</title>';
         // Theme laden (Schriften + Styles), damit die Kasse sich dem Shop-Design anpasst.
         wp_head();
         // WICHTIG: Klasse ec-local-checkout aktiviert den CSS-Scope aus
@@ -144,16 +144,16 @@ class WC_Native_Cart {
 
     public function ajax_wc_cart_pay() {
         if (!check_ajax_referer('easycheckout_front', 'nonce', false)) { wp_send_json_error(['message' => 'Ungültige Anfrage.'], 400); }
-        if (!WC()->cart || WC()->cart->is_empty()) { wp_send_json_error(['message' => __('Der Warenkorb ist leer.', 'easycheckout')]); }
+        if (!WC()->cart || WC()->cart->is_empty()) { wp_send_json_error(['message' => __('Der Warenkorb ist leer.', 'ec-checkout')]); }
 
         $c = easycheckout_post_json('customer');
-        if (!is_array($c) || empty($c['email']) || empty($c['name'])) { wp_send_json_error(['message' => __('Bitte Name und E-Mail angeben.', 'easycheckout')]); }
+        if (!is_array($c) || empty($c['email']) || empty($c['name'])) { wp_send_json_error(['message' => __('Bitte Name und E-Mail angeben.', 'ec-checkout')]); }
 
         WC()->cart->calculate_totals();
         try {
             $order = WC_Cart_Order::from_cart('easycheckout');
         } catch (\Exception $e) {
-            wp_send_json_error(['message' => __('Bestellung konnte nicht erstellt werden.', 'easycheckout')]);
+            wp_send_json_error(['message' => __('Bestellung konnte nicht erstellt werden.', 'ec-checkout')]);
         }
 
         // Adresse aus der Kasse übernehmen.
@@ -207,7 +207,7 @@ class WC_Native_Cart {
         $ecid  = $data['order_id'] ?? '';
         $token = '';
         if (preg_match('#/pay/([^/?]+)#', $url, $m)) { $token = $m[1]; }
-        if ($token === '') { $order->update_status('failed', 'no token'); wp_send_json_error(['message' => __('Zahlung konnte nicht gestartet werden.', 'easycheckout')]); }
+        if ($token === '') { $order->update_status('failed', 'no token'); wp_send_json_error(['message' => __('Zahlung konnte nicht gestartet werden.', 'ec-checkout')]); }
 
         $order->update_meta_data('_easycheckout_order_id', $ecid);
         $order->save();

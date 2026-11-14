@@ -162,7 +162,7 @@ class WC_Session_Builder {
             'success_url'   => $success_url,
             'cancel_url'    => $cancel_url,
             /* translators: %s: order number */
-            'description'   => sprintf(__('Bestellung %s', 'easycheckout'), $order->get_order_number()),
+            'description'   => sprintf(__('Bestellung %s', 'ec-checkout'), $order->get_order_number()),
             'vat_inclusive' => true,
             'line_items'    => $line_items,
             'customer'      => $customer,

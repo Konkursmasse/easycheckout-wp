@@ -42,12 +42,12 @@ class Admin {
         check_ajax_referer('easycheckout_admin', 'nonce');
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('Keine Berechtigung.', 'easycheckout')]);
+            wp_send_json_error(['message' => __('Keine Berechtigung.', 'ec-checkout')]);
         }
 
         $api = new API_Client();
         if (!$api->is_configured()) {
-            wp_send_json_error(['message' => __('Bitte zuerst den API-Schlüssel speichern.', 'easycheckout')]);
+            wp_send_json_error(['message' => __('Bitte zuerst den API-Schlüssel speichern.', 'ec-checkout')]);
         }
 
         $url = Webhook_Handler::get_webhook_url();
@@ -65,7 +65,7 @@ class Admin {
         }
 
         wp_send_json_success([
-            'message' => __('Webhook registriert.', 'easycheckout'),
+            'message' => __('Webhook registriert.', 'ec-checkout'),
             'secret'  => $secret,
         ]);
     }
@@ -94,7 +94,7 @@ class Admin {
         echo '<div class="notice notice-warning"><p>'
             . wp_kses_post(sprintf(
                 /* translators: %s: URL of the settings page */
-                __('EasyCheckout ist noch nicht verbunden. <a href="%s">Jetzt API-Schlüssel hinterlegen</a>.', 'easycheckout'),
+                __('EasyCheckout ist noch nicht verbunden. <a href="%s">Jetzt API-Schlüssel hinterlegen</a>.', 'ec-checkout'),
                 esc_url($url)
             ))
             . '</p></div>';
@@ -105,8 +105,8 @@ class Admin {
      */
     public function add_menu_page() {
         add_options_page(
-            __('EasyCheckout Settings', 'easycheckout'),
-            __('EasyCheckout Einstellungen', 'easycheckout'),
+            __('EasyCheckout Settings', 'ec-checkout'),
+            __('EasyCheckout Einstellungen', 'ec-checkout'),
             'manage_options',
             $this->page_slug,
             [$this, 'render_settings_page']
@@ -250,14 +250,14 @@ class Admin {
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('easycheckout-admin'),
             'i18n' => [
-                'testing' => __('Testing...', 'easycheckout'),
-                'success' => __('Connection successful!', 'easycheckout'),
-                'error' => __('Connection failed:', 'easycheckout'),
-                'clearing' => __('Clearing...', 'easycheckout'),
-                'cleared' => __('Cache cleared!', 'easycheckout'),
-                'registering' => __('Registriere…', 'easycheckout'),
-                'failed' => __('Fehler', 'easycheckout'),
-                'registerError' => __('Fehler bei der Registrierung', 'easycheckout'),
+                'testing' => __('Testing...', 'ec-checkout'),
+                'success' => __('Connection successful!', 'ec-checkout'),
+                'error' => __('Connection failed:', 'ec-checkout'),
+                'clearing' => __('Clearing...', 'ec-checkout'),
+                'cleared' => __('Cache cleared!', 'ec-checkout'),
+                'registering' => __('Registriere…', 'ec-checkout'),
+                'failed' => __('Fehler', 'ec-checkout'),
+                'registerError' => __('Fehler bei der Registrierung', 'ec-checkout'),
             ],
             'webhookNonce' => wp_create_nonce('easycheckout_admin'),
         ]);
@@ -280,29 +280,29 @@ class Admin {
             <nav class="nav-tab-wrapper">
                 <a href="?page=<?php echo esc_attr($this->page_slug); ?>&tab=connection"
                    class="nav-tab <?php echo $active_tab === 'connection' ? 'nav-tab-active' : ''; ?>">
-                    <?php esc_html_e('Connection', 'easycheckout'); ?>
+                    <?php esc_html_e('Connection', 'ec-checkout'); ?>
                 </a>
                 <a href="?page=<?php echo esc_attr($this->page_slug); ?>&tab=payments"
                    class="nav-tab <?php echo $active_tab === 'payments' ? 'nav-tab-active' : ''; ?>">
-                    <?php esc_html_e('Payment Methods', 'easycheckout'); ?>
+                    <?php esc_html_e('Payment Methods', 'ec-checkout'); ?>
                 </a>
                 <?php if (class_exists('WooCommerce')) : ?>
                 <a href="?page=<?php echo esc_attr($this->page_slug); ?>&tab=woocommerce"
                    class="nav-tab <?php echo $active_tab === 'woocommerce' ? 'nav-tab-active' : ''; ?>">
-                    <?php esc_html_e('WooCommerce', 'easycheckout'); ?>
+                    <?php esc_html_e('WooCommerce', 'ec-checkout'); ?>
                 </a>
                 <?php endif; ?>
                 <a href="?page=<?php echo esc_attr($this->page_slug); ?>&tab=design"
                    class="nav-tab <?php echo $active_tab === 'design' ? 'nav-tab-active' : ''; ?>">
-                    <?php esc_html_e('Design', 'easycheckout'); ?>
+                    <?php esc_html_e('Design', 'ec-checkout'); ?>
                 </a>
                 <a href="?page=<?php echo esc_attr($this->page_slug); ?>&tab=webhooks"
                    class="nav-tab <?php echo $active_tab === 'webhooks' ? 'nav-tab-active' : ''; ?>">
-                    <?php esc_html_e('Webhooks', 'easycheckout'); ?>
+                    <?php esc_html_e('Webhooks', 'ec-checkout'); ?>
                 </a>
                 <a href="?page=<?php echo esc_attr($this->page_slug); ?>&tab=logs"
                    class="nav-tab <?php echo $active_tab === 'logs' ? 'nav-tab-active' : ''; ?>">
-                    <?php esc_html_e('Logs', 'easycheckout'); ?>
+                    <?php esc_html_e('Logs', 'ec-checkout'); ?>
                 </a>
             </nav>
 
@@ -344,7 +344,7 @@ class Admin {
             <table class="form-table">
                 <tr>
                     <th scope="row">
-                        <label for="easycheckout_api_key"><?php esc_html_e('API Key', 'easycheckout'); ?></label>
+                        <label for="easycheckout_api_key"><?php esc_html_e('API Key', 'ec-checkout'); ?></label>
                     </th>
                     <td>
                         <input type="password"
@@ -354,13 +354,13 @@ class Admin {
                                placeholder="<?php echo get_option('easycheckout_api_key') ? '••••••••' : ''; ?>"
                                autocomplete="off">
                         <p class="description">
-                            <?php esc_html_e('Optional. In der Regel nicht nötig: Verbinde dein Konto einfach über das Menü „EasyCheckout" → Anmelden — der Schlüssel wird dann automatisch erstellt. Dieses Feld ist nur für die manuelle Verbindung mit einem bestehenden API-Schlüssel (Format eck_live_… / eck_test_…).', 'easycheckout'); ?>
+                            <?php esc_html_e('Optional. In der Regel nicht nötig: Verbinde dein Konto einfach über das Menü „EasyCheckout" → Anmelden — der Schlüssel wird dann automatisch erstellt. Dieses Feld ist nur für die manuelle Verbindung mit einem bestehenden API-Schlüssel (Format eck_live_… / eck_test_…).', 'ec-checkout'); ?>
                         </p>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label for="easycheckout_api_url"><?php esc_html_e('API URL', 'easycheckout'); ?></label>
+                        <label for="easycheckout_api_url"><?php esc_html_e('API URL', 'ec-checkout'); ?></label>
                     </th>
                     <td>
                         <input type="url"
@@ -369,13 +369,13 @@ class Admin {
                                class="regular-text"
                                value="<?php echo esc_attr(get_option('easycheckout_api_url', 'https://www.easycheckout.ch')); ?>">
                         <p class="description">
-                            <?php esc_html_e('EasyCheckout API URL. Only change this for development.', 'easycheckout'); ?>
+                            <?php esc_html_e('EasyCheckout API URL. Only change this for development.', 'ec-checkout'); ?>
                         </p>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label for="easycheckout_test_mode"><?php esc_html_e('Test Mode', 'easycheckout'); ?></label>
+                        <label for="easycheckout_test_mode"><?php esc_html_e('Test Mode', 'ec-checkout'); ?></label>
                     </th>
                     <td>
                         <label>
@@ -384,16 +384,16 @@ class Admin {
                                    id="easycheckout_test_mode"
                                    value="yes"
                                    <?php checked(get_option('easycheckout_test_mode', 'yes'), 'yes'); ?>>
-                            <?php esc_html_e('Enable test mode (no real payments will be processed)', 'easycheckout'); ?>
+                            <?php esc_html_e('Enable test mode (no real payments will be processed)', 'ec-checkout'); ?>
                         </label>
                     </td>
                 </tr>
             </table>
 
             <p class="submit">
-                <?php submit_button(__('Save Settings', 'easycheckout'), 'primary', 'submit', false); ?>
+                <?php submit_button(__('Save Settings', 'ec-checkout'), 'primary', 'submit', false); ?>
                 <button type="button" id="easycheckout-test-connection" class="button">
-                    <?php esc_html_e('Test Connection', 'easycheckout'); ?>
+                    <?php esc_html_e('Test Connection', 'ec-checkout'); ?>
                 </button>
                 <span id="easycheckout-connection-result"></span>
             </p>
@@ -412,7 +412,7 @@ class Admin {
 
             <table class="form-table">
                 <tr>
-                    <th scope="row"><?php esc_html_e('Enabled Payment Methods', 'easycheckout'); ?></th>
+                    <th scope="row"><?php esc_html_e('Enabled Payment Methods', 'ec-checkout'); ?></th>
                     <td>
                         <fieldset>
                             <label>
@@ -420,7 +420,7 @@ class Admin {
                                        name="easycheckout_payment_methods[]"
                                        value="card"
                                        <?php checked(in_array('card', $payment_methods)); ?>>
-                                <?php esc_html_e('Kredit-/Debitkarten', 'easycheckout'); ?>
+                                <?php esc_html_e('Kredit-/Debitkarten', 'ec-checkout'); ?>
                             </label>
                             <br>
                             <label>
@@ -428,7 +428,7 @@ class Admin {
                                        name="easycheckout_payment_methods[]"
                                        value="twint"
                                        <?php checked(in_array('twint', $payment_methods)); ?>>
-                                <?php esc_html_e('TWINT', 'easycheckout'); ?>
+                                <?php esc_html_e('TWINT', 'ec-checkout'); ?>
                             </label>
                             <br>
                             <label>
@@ -436,7 +436,7 @@ class Admin {
                                        name="easycheckout_payment_methods[]"
                                        value="bank_transfer"
                                        <?php checked(in_array('bank_transfer', $payment_methods)); ?>>
-                                <?php esc_html_e('Bank Transfer (Swiss QR-Bill)', 'easycheckout'); ?>
+                                <?php esc_html_e('Bank Transfer (Swiss QR-Bill)', 'ec-checkout'); ?>
                             </label>
                         </fieldset>
                     </td>
@@ -453,14 +453,14 @@ class Admin {
      */
     private function render_woocommerce_tab() {
         if (!class_exists('WooCommerce')) {
-            echo '<p>' . esc_html__('WooCommerce is not installed.', 'easycheckout') . '</p>';
+            echo '<p>' . esc_html__('WooCommerce is not installed.', 'ec-checkout') . '</p>';
             return;
         }
         ?>
-        <p><?php esc_html_e('WooCommerce gateway settings are managed in WooCommerce > Settings > Payments.', 'easycheckout'); ?></p>
+        <p><?php esc_html_e('WooCommerce gateway settings are managed in WooCommerce > Settings > Payments.', 'ec-checkout'); ?></p>
         <p>
             <a href="<?php echo esc_url(admin_url('admin.php?page=wc-settings&tab=checkout&section=easycheckout')); ?>" class="button">
-                <?php esc_html_e('Configure WooCommerce Gateway', 'easycheckout'); ?>
+                <?php esc_html_e('Configure WooCommerce Gateway', 'ec-checkout'); ?>
             </a>
         </p>
         <?php
@@ -479,53 +479,53 @@ class Admin {
         };
         $fs = $get('font_source', 'default');
         ?>
-        <h2><?php esc_html_e('Design des eingebetteten Checkouts', 'easycheckout'); ?></h2>
+        <h2><?php esc_html_e('Design des eingebetteten Checkouts', 'ec-checkout'); ?></h2>
         <p class="description">
-            <?php esc_html_e('Diese Einstellungen werden an die eingebettete Checkout-Seite übergeben (Farben, Eckenradius, Schriftart). Leere Felder = Standard des Checkouts. Pro Einbettung überschreibbar via Shortcode-Attribute, z. B. [easycheckout slug="x" primary="#ff0000" font="site"].', 'easycheckout'); ?>
+            <?php esc_html_e('Diese Einstellungen werden an die eingebettete Checkout-Seite übergeben (Farben, Eckenradius, Schriftart). Leere Felder = Standard des Checkouts. Pro Einbettung überschreibbar via Shortcode-Attribute, z. B. [easycheckout slug="x" primary="#ff0000" font="site"].', 'ec-checkout'); ?>
         </p>
         <form method="post" action="options.php">
             <?php settings_fields('easycheckout_design'); ?>
             <table class="form-table">
                 <tr>
-                    <th scope="row"><label><?php esc_html_e('Akzentfarbe (Primary)', 'easycheckout'); ?></label></th>
+                    <th scope="row"><label><?php esc_html_e('Akzentfarbe (Primary)', 'ec-checkout'); ?></label></th>
                     <td><input type="text" name="easycheckout_design[primary]" value="<?php echo esc_attr($get('primary')); ?>" placeholder="#4F46E5" class="regular-text"></td>
                 </tr>
                 <tr>
-                    <th scope="row"><label><?php esc_html_e('Textfarbe', 'easycheckout'); ?></label></th>
+                    <th scope="row"><label><?php esc_html_e('Textfarbe', 'ec-checkout'); ?></label></th>
                     <td><input type="text" name="easycheckout_design[text]" value="<?php echo esc_attr($get('text')); ?>" placeholder="#111827" class="regular-text"></td>
                 </tr>
                 <tr>
-                    <th scope="row"><label><?php esc_html_e('Hintergrundfarbe', 'easycheckout'); ?></label></th>
+                    <th scope="row"><label><?php esc_html_e('Hintergrundfarbe', 'ec-checkout'); ?></label></th>
                     <td><input type="text" name="easycheckout_design[bg]" value="<?php echo esc_attr($get('bg')); ?>" placeholder="#F9FAFB" class="regular-text"></td>
                 </tr>
                 <tr>
-                    <th scope="row"><label><?php esc_html_e('Button-Farbe', 'easycheckout'); ?></label></th>
+                    <th scope="row"><label><?php esc_html_e('Button-Farbe', 'ec-checkout'); ?></label></th>
                     <td><input type="text" name="easycheckout_design[button]" value="<?php echo esc_attr($get('button')); ?>" placeholder="#4F46E5" class="regular-text"></td>
                 </tr>
                 <tr>
-                    <th scope="row"><label><?php esc_html_e('Button-Textfarbe', 'easycheckout'); ?></label></th>
+                    <th scope="row"><label><?php esc_html_e('Button-Textfarbe', 'ec-checkout'); ?></label></th>
                     <td><input type="text" name="easycheckout_design[buttontext]" value="<?php echo esc_attr($get('buttontext')); ?>" placeholder="#FFFFFF" class="regular-text"></td>
                 </tr>
                 <tr>
-                    <th scope="row"><label><?php esc_html_e('Eckenradius (px)', 'easycheckout'); ?></label></th>
+                    <th scope="row"><label><?php esc_html_e('Eckenradius (px)', 'ec-checkout'); ?></label></th>
                     <td><input type="number" min="0" max="40" name="easycheckout_design[radius]" value="<?php echo esc_attr($get('radius')); ?>" placeholder="12" class="small-text"></td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="ec-font-source"><?php esc_html_e('Schriftart', 'easycheckout'); ?></label></th>
+                    <th scope="row"><label for="ec-font-source"><?php esc_html_e('Schriftart', 'ec-checkout'); ?></label></th>
                     <td>
                         <select name="easycheckout_design[font_source]" id="ec-font-source">
-                            <option value="default" <?php selected($fs, 'default'); ?>><?php esc_html_e('Standard (Inter)', 'easycheckout'); ?></option>
-                            <option value="site" <?php selected($fs, 'site'); ?>><?php esc_html_e('Schriftart dieser Website übernehmen', 'easycheckout'); ?></option>
-                            <option value="custom" <?php selected($fs, 'custom'); ?>><?php esc_html_e('Eigene (Google Font)', 'easycheckout'); ?></option>
+                            <option value="default" <?php selected($fs, 'default'); ?>><?php esc_html_e('Standard (Inter)', 'ec-checkout'); ?></option>
+                            <option value="site" <?php selected($fs, 'site'); ?>><?php esc_html_e('Schriftart dieser Website übernehmen', 'ec-checkout'); ?></option>
+                            <option value="custom" <?php selected($fs, 'custom'); ?>><?php esc_html_e('Eigene (Google Font)', 'ec-checkout'); ?></option>
                         </select>
-                        <p class="description"><?php esc_html_e('„Schriftart dieser Website übernehmen" liest die Font deiner Seite aus und wendet sie im Checkout an (passende Google-Font wird geladen).', 'easycheckout'); ?></p>
+                        <p class="description"><?php esc_html_e('„Schriftart dieser Website übernehmen" liest die Font deiner Seite aus und wendet sie im Checkout an (passende Google-Font wird geladen).', 'ec-checkout'); ?></p>
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><label><?php esc_html_e('Eigene Schriftart (Name)', 'easycheckout'); ?></label></th>
+                    <th scope="row"><label><?php esc_html_e('Eigene Schriftart (Name)', 'ec-checkout'); ?></label></th>
                     <td>
                         <input type="text" name="easycheckout_design[font_custom]" value="<?php echo esc_attr($get('font_custom')); ?>" placeholder="Poppins" class="regular-text">
-                        <p class="description"><?php esc_html_e('Google-Font-Name, z. B. „Poppins" oder „Roboto" (nur bei Auswahl „Eigene").', 'easycheckout'); ?></p>
+                        <p class="description"><?php esc_html_e('Google-Font-Name, z. B. „Poppins" oder „Roboto" (nur bei Auswahl „Eigene").', 'ec-checkout'); ?></p>
                     </td>
                 </tr>
             </table>
@@ -540,18 +540,18 @@ class Admin {
     private function render_webhooks_tab() {
         $webhook_url = Webhook_Handler::get_webhook_url();
         ?>
-        <h2><?php esc_html_e('Webhook Configuration', 'easycheckout'); ?></h2>
+        <h2><?php esc_html_e('Webhook Configuration', 'ec-checkout'); ?></h2>
 
         <table class="form-table">
             <tr>
-                <th scope="row"><?php esc_html_e('Webhook URL', 'easycheckout'); ?></th>
+                <th scope="row"><?php esc_html_e('Webhook URL', 'ec-checkout'); ?></th>
                 <td>
                     <code id="webhook-url"><?php echo esc_html($webhook_url); ?></code>
                     <button type="button" class="button" data-copy="<?php echo esc_attr($webhook_url); ?>">
-                        <?php esc_html_e('Copy', 'easycheckout'); ?>
+                        <?php esc_html_e('Copy', 'ec-checkout'); ?>
                     </button>
                     <p class="description">
-                        <?php esc_html_e('Add this URL to your EasyCheckout dashboard under Settings > Webhooks.', 'easycheckout'); ?>
+                        <?php esc_html_e('Add this URL to your EasyCheckout dashboard under Settings > Webhooks.', 'ec-checkout'); ?>
                     </p>
                 </td>
             </tr>
@@ -563,7 +563,7 @@ class Admin {
             <table class="form-table">
                 <tr>
                     <th scope="row">
-                        <label for="easycheckout_webhook_secret"><?php esc_html_e('Webhook Secret', 'easycheckout'); ?></label>
+                        <label for="easycheckout_webhook_secret"><?php esc_html_e('Webhook Secret', 'ec-checkout'); ?></label>
                     </th>
                     <td>
                         <input type="password"
@@ -573,7 +573,7 @@ class Admin {
                                value="<?php echo esc_attr(get_option('easycheckout_webhook_secret', '')); ?>"
                                autocomplete="off">
                         <p class="description">
-                            <?php esc_html_e('Webhook signing secret from your EasyCheckout dashboard.', 'easycheckout'); ?>
+                            <?php esc_html_e('Webhook signing secret from your EasyCheckout dashboard.', 'ec-checkout'); ?>
                         </p>
                     </td>
                 </tr>
@@ -582,18 +582,18 @@ class Admin {
             <?php submit_button(); ?>
         </form>
 
-        <h3><?php esc_html_e('Webhook Events', 'easycheckout'); ?></h3>
-        <p><?php esc_html_e('The following events are supported:', 'easycheckout'); ?></p>
+        <h3><?php esc_html_e('Webhook Events', 'ec-checkout'); ?></h3>
+        <p><?php esc_html_e('The following events are supported:', 'ec-checkout'); ?></p>
         <ul class="ul-disc">
-            <li><code>order.paid</code> - <?php esc_html_e('Triggered when a payment is completed', 'easycheckout'); ?></li>
-            <li><code>order.failed</code> - <?php esc_html_e('Triggered when a payment fails', 'easycheckout'); ?></li>
-            <li><code>order.refunded</code> - <?php esc_html_e('Triggered when a refund is processed', 'easycheckout'); ?></li>
+            <li><code>order.paid</code> - <?php esc_html_e('Triggered when a payment is completed', 'ec-checkout'); ?></li>
+            <li><code>order.failed</code> - <?php esc_html_e('Triggered when a payment fails', 'ec-checkout'); ?></li>
+            <li><code>order.refunded</code> - <?php esc_html_e('Triggered when a refund is processed', 'ec-checkout'); ?></li>
         </ul>
 
-        <h3><?php esc_html_e('Automatische Registrierung', 'easycheckout'); ?></h3>
-        <p><?php esc_html_e('Registriert diese Webhook-URL direkt in deinem EasyCheckout-Konto (API-Key mit Scope webhooks:write nötig). Der Signing-Secret wird automatisch übernommen.', 'easycheckout'); ?></p>
+        <h3><?php esc_html_e('Automatische Registrierung', 'ec-checkout'); ?></h3>
+        <p><?php esc_html_e('Registriert diese Webhook-URL direkt in deinem EasyCheckout-Konto (API-Key mit Scope webhooks:write nötig). Der Signing-Secret wird automatisch übernommen.', 'ec-checkout'); ?></p>
         <p>
-            <button type="button" class="button button-primary" id="ec-register-webhook"><?php esc_html_e('Webhook automatisch registrieren', 'easycheckout'); ?></button>
+            <button type="button" class="button button-primary" id="ec-register-webhook"><?php esc_html_e('Webhook automatisch registrieren', 'ec-checkout'); ?></button>
             <span id="ec-register-webhook-result" style="margin-left:10px;"></span>
         </p>
         <?php
@@ -610,7 +610,7 @@ class Admin {
             <table class="form-table">
                 <tr>
                     <th scope="row">
-                        <label for="easycheckout_debug_mode"><?php esc_html_e('Debug Mode', 'easycheckout'); ?></label>
+                        <label for="easycheckout_debug_mode"><?php esc_html_e('Debug Mode', 'ec-checkout'); ?></label>
                     </th>
                     <td>
                         <label>
@@ -619,25 +619,25 @@ class Admin {
                                    id="easycheckout_debug_mode"
                                    value="yes"
                                    <?php checked(get_option('easycheckout_debug_mode', 'no'), 'yes'); ?>>
-                            <?php esc_html_e('Enable debug logging', 'easycheckout'); ?>
+                            <?php esc_html_e('Enable debug logging', 'ec-checkout'); ?>
                         </label>
                         <p class="description">
-                            <?php esc_html_e('Logs will be written to WooCommerce logs (if available) or PHP error log.', 'easycheckout'); ?>
+                            <?php esc_html_e('Logs will be written to WooCommerce logs (if available) or PHP error log.', 'ec-checkout'); ?>
                         </p>
                     </td>
                 </tr>
             </table>
 
             <p class="submit">
-                <?php submit_button(__('Save Settings', 'easycheckout'), 'primary', 'submit', false); ?>
+                <?php submit_button(__('Save Settings', 'ec-checkout'), 'primary', 'submit', false); ?>
                 <button type="button" id="easycheckout-clear-cache" class="button">
-                    <?php esc_html_e('Clear Cache', 'easycheckout'); ?>
+                    <?php esc_html_e('Clear Cache', 'ec-checkout'); ?>
                 </button>
                 <span id="easycheckout-cache-result"></span>
             </p>
         </form>
 
-        <h3><?php esc_html_e('Recent Transactions', 'easycheckout'); ?></h3>
+        <h3><?php esc_html_e('Recent Transactions', 'ec-checkout'); ?></h3>
         <?php $this->render_transactions_table(); ?>
         <?php
     }
@@ -654,20 +654,20 @@ class Admin {
         );
 
         if (empty($transactions)) {
-            echo '<p>' . esc_html__('No transactions yet.', 'easycheckout') . '</p>';
+            echo '<p>' . esc_html__('No transactions yet.', 'ec-checkout') . '</p>';
             return;
         }
         ?>
         <table class="wp-list-table widefat fixed striped">
             <thead>
                 <tr>
-                    <th><?php esc_html_e('Date', 'easycheckout'); ?></th>
-                    <th><?php esc_html_e('EC Order ID', 'easycheckout'); ?></th>
-                    <th><?php esc_html_e('WC Order', 'easycheckout'); ?></th>
-                    <th><?php esc_html_e('Amount', 'easycheckout'); ?></th>
-                    <th><?php esc_html_e('Status', 'easycheckout'); ?></th>
-                    <th><?php esc_html_e('Payment Method', 'easycheckout'); ?></th>
-                    <th><?php esc_html_e('Webhook', 'easycheckout'); ?></th>
+                    <th><?php esc_html_e('Date', 'ec-checkout'); ?></th>
+                    <th><?php esc_html_e('EC Order ID', 'ec-checkout'); ?></th>
+                    <th><?php esc_html_e('WC Order', 'ec-checkout'); ?></th>
+                    <th><?php esc_html_e('Amount', 'ec-checkout'); ?></th>
+                    <th><?php esc_html_e('Status', 'ec-checkout'); ?></th>
+                    <th><?php esc_html_e('Payment Method', 'ec-checkout'); ?></th>
+                    <th><?php esc_html_e('Webhook', 'ec-checkout'); ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -706,7 +706,7 @@ class Admin {
         check_ajax_referer('easycheckout-admin', 'nonce');
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('Permission denied', 'easycheckout')]);
+            wp_send_json_error(['message' => __('Permission denied', 'ec-checkout')]);
         }
 
         $api = new API_Client();
@@ -716,7 +716,7 @@ class Admin {
             wp_send_json_error(['message' => $result->get_error_message()]);
         }
 
-        wp_send_json_success(['message' => __('Connection successful!', 'easycheckout')]);
+        wp_send_json_success(['message' => __('Connection successful!', 'ec-checkout')]);
     }
 
     /**
@@ -726,12 +726,12 @@ class Admin {
         check_ajax_referer('easycheckout-admin', 'nonce');
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('Permission denied', 'easycheckout')]);
+            wp_send_json_error(['message' => __('Permission denied', 'ec-checkout')]);
         }
 
         $api = new API_Client();
         $api->clear_cache();
 
-        wp_send_json_success(['message' => __('Cache cleared!', 'easycheckout')]);
+        wp_send_json_success(['message' => __('Cache cleared!', 'ec-checkout')]);
     }
 }

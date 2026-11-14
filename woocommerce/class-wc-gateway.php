@@ -41,8 +41,8 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
         // EasyCheckout-Emblem neben dem Zahlungsart-Namen (Checkout + Admin-Liste).
         $this->icon = apply_filters('easycheckout_gateway_icon', EASYCHECKOUT_PLUGIN_URL . 'assets/images/easycheckout-logo.png');
         $this->has_fields = true;
-        $this->method_title = __('EasyCheckout', 'easycheckout');
-        $this->method_description = __('Accept payments with Credit Cards, TWINT, and Swiss QR-Bill via EasyCheckout.', 'easycheckout');
+        $this->method_title = __('EasyCheckout', 'ec-checkout');
+        $this->method_description = __('Accept payments with Credit Cards, TWINT, and Swiss QR-Bill via EasyCheckout.', 'ec-checkout');
         // Refunds are managed in the EasyCheckout dashboard (no public refund API).
         $this->supports = [
             'products',
@@ -87,96 +87,96 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
     public function init_form_fields() {
         $this->form_fields = [
             'enabled' => [
-                'title' => __('Enable/Disable', 'easycheckout'),
+                'title' => __('Enable/Disable', 'ec-checkout'),
                 'type' => 'checkbox',
-                'label' => __('Enable EasyCheckout', 'easycheckout'),
+                'label' => __('Enable EasyCheckout', 'ec-checkout'),
                 'default' => 'no',
             ],
             'title' => [
-                'title' => __('Title', 'easycheckout'),
+                'title' => __('Title', 'ec-checkout'),
                 'type' => 'text',
-                'description' => __('This controls the title shown during checkout.', 'easycheckout'),
-                'default' => __('Credit Card / TWINT / Bank Transfer', 'easycheckout'),
+                'description' => __('This controls the title shown during checkout.', 'ec-checkout'),
+                'default' => __('Credit Card / TWINT / Bank Transfer', 'ec-checkout'),
                 'desc_tip' => true,
             ],
             'description' => [
-                'title' => __('Description', 'easycheckout'),
+                'title' => __('Description', 'ec-checkout'),
                 'type' => 'textarea',
-                'description' => __('This controls the description shown during checkout.', 'easycheckout'),
-                'default' => __('Pay securely with your preferred payment method.', 'easycheckout'),
+                'description' => __('This controls the description shown during checkout.', 'ec-checkout'),
+                'default' => __('Pay securely with your preferred payment method.', 'ec-checkout'),
                 'desc_tip' => true,
             ],
             'product_source' => [
-                'title' => __('Produktquelle', 'easycheckout'),
+                'title' => __('Produktquelle', 'ec-checkout'),
                 'type' => 'select',
-                'description' => __('„WooCommerce-Warenkorb": die im Shop gewählten Artikel werden verarbeitet. „EasyCheckout-Checkout": es wird dein im EasyCheckout hinterlegter Checkout (mit dessen Produkten) geöffnet – dazu unten den Slug angeben.', 'easycheckout'),
+                'description' => __('„WooCommerce-Warenkorb": die im Shop gewählten Artikel werden verarbeitet. „EasyCheckout-Checkout": es wird dein im EasyCheckout hinterlegter Checkout (mit dessen Produkten) geöffnet – dazu unten den Slug angeben.', 'ec-checkout'),
                 'default' => 'woo_cart',
                 'options' => [
-                    'woo_cart'    => __('WooCommerce-Warenkorb', 'easycheckout'),
-                    'ec_checkout' => __('EasyCheckout-Checkout (Slug)', 'easycheckout'),
+                    'woo_cart'    => __('WooCommerce-Warenkorb', 'ec-checkout'),
+                    'ec_checkout' => __('EasyCheckout-Checkout (Slug)', 'ec-checkout'),
                 ],
                 'desc_tip' => true,
             ],
             'checkout_slug' => [
-                'title' => __('Checkout Slug (optional)', 'easycheckout'),
+                'title' => __('Checkout Slug (optional)', 'ec-checkout'),
                 'type' => 'text',
-                'description' => __('Nur für Standalone-Nutzung ohne WooCommerce. Im WooCommerce-Betrieb wird immer der WooCommerce-Warenkorb verarbeitet.', 'easycheckout'),
+                'description' => __('Nur für Standalone-Nutzung ohne WooCommerce. Im WooCommerce-Betrieb wird immer der WooCommerce-Warenkorb verarbeitet.', 'ec-checkout'),
                 'default' => '',
                 'desc_tip' => true,
             ],
             'express_checkout' => [
-                'title' => __('Express-Checkout', 'easycheckout'),
+                'title' => __('Express-Checkout', 'ec-checkout'),
                 'type' => 'checkbox',
-                'label' => __('Express-Checkout-Button im Warenkorb anzeigen', 'easycheckout'),
-                'description' => __('Zeigt zusätzlich zum normalen Checkout einen Direkt-Button im Warenkorb, der Adresse und Zahlung in einem schnellen Schritt erfasst.', 'easycheckout'),
+                'label' => __('Express-Checkout-Button im Warenkorb anzeigen', 'ec-checkout'),
+                'description' => __('Zeigt zusätzlich zum normalen Checkout einen Direkt-Button im Warenkorb, der Adresse und Zahlung in einem schnellen Schritt erfasst.', 'ec-checkout'),
                 'default' => 'yes',
                 'desc_tip' => true,
             ],
             'buy_now' => [
-                'title' => __('Sofort kaufen', 'easycheckout'),
+                'title' => __('Sofort kaufen', 'ec-checkout'),
                 'type' => 'checkbox',
-                'label' => __('„Sofort kaufen"-Button auf Produktseiten anzeigen', 'easycheckout'),
-                'description' => __('Zeigt auf jeder Produktseite unter „In den Warenkorb" einen Direkt-Kauf-Button, der sofort zur EasyCheckout-Kasse führt.', 'easycheckout'),
+                'label' => __('„Sofort kaufen"-Button auf Produktseiten anzeigen', 'ec-checkout'),
+                'description' => __('Zeigt auf jeder Produktseite unter „In den Warenkorb" einen Direkt-Kauf-Button, der sofort zur EasyCheckout-Kasse führt.', 'ec-checkout'),
                 'default' => 'yes',
                 'desc_tip' => true,
             ],
             'replace_checkout' => [
-                'title' => __('WooCommerce-Kasse ersetzen', 'easycheckout'),
+                'title' => __('WooCommerce-Kasse ersetzen', 'ec-checkout'),
                 'type' => 'checkbox',
-                'label' => __('Die WooCommerce-Kasse vollständig durch die EasyCheckout-Kasse ersetzen', 'easycheckout'),
-                'description' => __('Beim Aufruf der Kasse wird der Warenkorb direkt an die EasyCheckout-Kasse übergeben (Adresse + Zahlung dort). Die Standard-WooCommerce-Kasse wird übersprungen.', 'easycheckout'),
+                'label' => __('Die WooCommerce-Kasse vollständig durch die EasyCheckout-Kasse ersetzen', 'ec-checkout'),
+                'description' => __('Beim Aufruf der Kasse wird der Warenkorb direkt an die EasyCheckout-Kasse übergeben (Adresse + Zahlung dort). Die Standard-WooCommerce-Kasse wird übersprungen.', 'ec-checkout'),
                 'default' => 'no',
                 'desc_tip' => true,
             ],
             'checkout_mode' => [
-                'title' => __('Darstellung der Kasse', 'easycheckout'),
+                'title' => __('Darstellung der Kasse', 'ec-checkout'),
                 'type' => 'select',
-                'description' => __('Wie die EasyCheckout-Kasse angezeigt wird, wenn sie die WooCommerce-Kasse ersetzt (oder bei „Sofort kaufen“).', 'easycheckout'),
+                'description' => __('Wie die EasyCheckout-Kasse angezeigt wird, wenn sie die WooCommerce-Kasse ersetzt (oder bei „Sofort kaufen“).', 'ec-checkout'),
                 'default' => 'inline',
                 'options' => [
-                    'inline'   => __('Nativ auf Ihrer Website (empfohlen) – kein iFrame, gleiche Domain', 'easycheckout'),
-                    'embedded' => __('Eingebettet (iFrame)', 'easycheckout'),
-                    'extern'   => __('Weiterleitung zu easycheckout.ch', 'easycheckout'),
+                    'inline'   => __('Nativ auf Ihrer Website (empfohlen) – kein iFrame, gleiche Domain', 'ec-checkout'),
+                    'embedded' => __('Eingebettet (iFrame)', 'ec-checkout'),
+                    'extern'   => __('Weiterleitung zu easycheckout.ch', 'ec-checkout'),
                 ],
                 'desc_tip' => true,
             ],
             'brand_color' => [
-                'title' => __('Markenfarbe (Design)', 'easycheckout'),
+                'title' => __('Markenfarbe (Design)', 'ec-checkout'),
                 'type' => 'text',
-                'description' => __('Primärfarbe der Kasse (Buttons/Akzente), z. B. #0891b2 oder #4F46E5. Gilt für die native WooCommerce-Kasse und /pay. Entwickler können sie auch per Filter easycheckout_checkout_color überschreiben.', 'easycheckout'),
+                'description' => __('Primärfarbe der Kasse (Buttons/Akzente), z. B. #0891b2 oder #4F46E5. Gilt für die native WooCommerce-Kasse und /pay. Entwickler können sie auch per Filter easycheckout_checkout_color überschreiben.', 'ec-checkout'),
                 'default' => '#4F46E5',
                 'placeholder' => '#4F46E5',
                 'desc_tip' => true,
             ],
             'payment_methods' => [
-                'title' => __('Payment Methods', 'easycheckout'),
+                'title' => __('Payment Methods', 'ec-checkout'),
                 'type' => 'multiselect',
                 'class' => 'wc-enhanced-select',
-                'description' => __('Select which payment methods to display. Actual availability depends on EasyCheckout configuration.', 'easycheckout'),
+                'description' => __('Select which payment methods to display. Actual availability depends on EasyCheckout configuration.', 'ec-checkout'),
                 'options' => [
-                    'card' => __('Credit/Debit Cards', 'easycheckout'),
-                    'twint' => __('TWINT', 'easycheckout'),
-                    'bank_transfer' => __('Bank Transfer (QR-Bill)', 'easycheckout'),
+                    'card' => __('Credit/Debit Cards', 'ec-checkout'),
+                    'twint' => __('TWINT', 'ec-checkout'),
+                    'bank_transfer' => __('Bank Transfer (QR-Bill)', 'ec-checkout'),
                 ],
                 'default' => ['card', 'twint'],
                 'desc_tip' => true,
@@ -219,7 +219,7 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
         ?>
         <div id="easycheckout-payment-info">
             <p class="easycheckout-redirect-notice">
-                <?php esc_html_e('Nach dem Absenden der Bestellung wirst du sicher zu EasyCheckout weitergeleitet – dort wählst du deine Zahlungsart und bezahlst.', 'easycheckout'); ?>
+                <?php esc_html_e('Nach dem Absenden der Bestellung wirst du sicher zu EasyCheckout weitergeleitet – dort wählst du deine Zahlungsart und bezahlst.', 'ec-checkout'); ?>
             </p>
 
             <?php if (!empty($labels)) : ?>
@@ -242,9 +242,9 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
      */
     private function get_method_label($method) {
         $labels = [
-            'card' => __('Credit/Debit Card', 'easycheckout'),
-            'twint' => __('TWINT', 'easycheckout'),
-            'bank_transfer' => __('Bank Transfer (QR-Bill)', 'easycheckout'),
+            'card' => __('Credit/Debit Card', 'ec-checkout'),
+            'twint' => __('TWINT', 'ec-checkout'),
+            'bank_transfer' => __('Bank Transfer (QR-Bill)', 'ec-checkout'),
         ];
         return $labels[$method] ?? $method;
     }
@@ -298,7 +298,7 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
 
         if (empty($redirect_url)) {
             $this->log('No payment_url in payment session response', 'error');
-            wc_add_notice(__('Zahlung konnte nicht gestartet werden. Bitte versuche es erneut.', 'easycheckout'), 'error');
+            wc_add_notice(__('Zahlung konnte nicht gestartet werden. Bitte versuche es erneut.', 'ec-checkout'), 'error');
             return ['result' => 'failure'];
         }
 
@@ -321,7 +321,7 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
 
         // Reduce stock and mark order as pending
         wc_reduce_stock_levels($order_id);
-        $order->update_status('pending', __('Awaiting payment via EasyCheckout.', 'easycheckout'));
+        $order->update_status('pending', __('Awaiting payment via EasyCheckout.', 'ec-checkout'));
 
         return [
             'result' => 'success',
@@ -365,7 +365,7 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
         // zusätzliche WooCommerce-Mail schicken würde.
         $is_express = $order->get_created_via() === 'easycheckout_express';
         if (!$is_express && ($status === 'success' || $status === 'paid') && !$order->is_paid()) {
-            $order->add_order_note(__('Customer returned from EasyCheckout. Waiting for the payment confirmation (webhook).', 'easycheckout'));
+            $order->add_order_note(__('Customer returned from EasyCheckout. Waiting for the payment confirmation (webhook).', 'ec-checkout'));
         }
 
         // Warenkorb leeren: Beim Express umgeht der Flow den WC-Checkout, der den
@@ -404,10 +404,10 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
         wc_increase_stock_levels($order_id);
 
         // Update order status
-        $order->update_status('cancelled', __('Payment cancelled by customer.', 'easycheckout'));
+        $order->update_status('cancelled', __('Payment cancelled by customer.', 'ec-checkout'));
 
         // Add notice
-        wc_add_notice(__('Payment was cancelled. Please try again.', 'easycheckout'), 'notice');
+        wc_add_notice(__('Payment was cancelled. Please try again.', 'ec-checkout'), 'notice');
 
         // Redirect back to checkout
         wp_safe_redirect(wc_get_checkout_url());
@@ -426,7 +426,7 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
         $order = wc_get_order($order_id);
 
         if (!$order) {
-            return new \WP_Error('invalid_order', __('Invalid order.', 'easycheckout'));
+            return new \WP_Error('invalid_order', __('Invalid order.', 'ec-checkout'));
         }
 
         // The EasyCheckout API does not expose a refund endpoint, so refunds must
@@ -434,7 +434,7 @@ class WC_Gateway_EasyCheckout extends \WC_Payment_Gateway {
         // instead of silently failing.
         return new \WP_Error(
             'easycheckout_refund_unsupported',
-            __('Rückerstattungen werden direkt im EasyCheckout-Konto durchgeführt (keine API verfügbar).', 'easycheckout')
+            __('Rückerstattungen werden direkt im EasyCheckout-Konto durchgeführt (keine API verfügbar).', 'ec-checkout')
         );
     }
 

@@ -38,17 +38,17 @@ class WC_Settings_Tab {
     }
 
     public function add_tab($tabs) {
-        $tabs[self::TAB] = __('EasyCheckout', 'easycheckout');
+        $tabs[self::TAB] = __('EasyCheckout', 'ec-checkout');
         return $tabs;
     }
 
     public function sections($sections) {
         return [
-            ''        => __('Zahlung & Kasse', 'easycheckout'),
-            'design'  => __('Design', 'easycheckout'),
-            'shop'    => __('Shop & Firma', 'easycheckout'),
-            'invoice' => __('Rechnung', 'easycheckout'),
-            'emails'  => __('E-Mails', 'easycheckout'),
+            ''        => __('Zahlung & Kasse', 'ec-checkout'),
+            'design'  => __('Design', 'ec-checkout'),
+            'shop'    => __('Shop & Firma', 'ec-checkout'),
+            'invoice' => __('Rechnung', 'ec-checkout'),
+            'emails'  => __('E-Mails', 'ec-checkout'),
         ];
     }
 
@@ -57,72 +57,72 @@ class WC_Settings_Tab {
         switch ($section) {
             case 'design':
                 return [
-                    ['type' => 'title', 'id' => 'ec_design_t', 'title' => __('Checkout-Design', 'easycheckout'),
-                     'desc' => __('Gilt für die native Kasse, Shortcode-Checkouts und die Bestellbestätigung. Für weitere Anpassungen eignet sich der CSS-Editor von WordPress (Customizer bzw. Website-Editor).', 'easycheckout')],
+                    ['type' => 'title', 'id' => 'ec_design_t', 'title' => __('Checkout-Design', 'ec-checkout'),
+                     'desc' => __('Gilt für die native Kasse, Shortcode-Checkouts und die Bestellbestätigung. Für weitere Anpassungen eignet sich der CSS-Editor von WordPress (Customizer bzw. Website-Editor).', 'ec-checkout')],
                     ['type' => 'easycheckout_media', 'id' => 'easycheckout_design[logoUrl]',
-                     'title' => __('Logo', 'easycheckout'),
-                     'desc' => __('Wird oben in der Kasse und in Bestell-Mails (Absendername) verwendet.', 'easycheckout')],
-                    ['type' => 'color', 'id' => 'easycheckout_design[primary]', 'title' => __('Primärfarbe', 'easycheckout'),
-                     'desc' => __('Buttons, Preise, Akzente.', 'easycheckout'), 'default' => '#4F46E5', 'css' => 'width:6em;'],
-                    ['type' => 'color', 'id' => 'easycheckout_design[bg]', 'title' => __('Hintergrund', 'easycheckout'), 'default' => '#F9FAFB', 'css' => 'width:6em;'],
-                    ['type' => 'color', 'id' => 'easycheckout_design[text]', 'title' => __('Textfarbe', 'easycheckout'), 'default' => '#111827', 'css' => 'width:6em;'],
-                    ['type' => 'color', 'id' => 'easycheckout_design[buttonText]', 'title' => __('Button-Textfarbe', 'easycheckout'), 'default' => '#FFFFFF', 'css' => 'width:6em;'],
-                    ['type' => 'number', 'id' => 'easycheckout_design[radius]', 'title' => __('Ecken-Radius (px)', 'easycheckout'),
+                     'title' => __('Logo', 'ec-checkout'),
+                     'desc' => __('Wird oben in der Kasse und in Bestell-Mails (Absendername) verwendet.', 'ec-checkout')],
+                    ['type' => 'color', 'id' => 'easycheckout_design[primary]', 'title' => __('Primärfarbe', 'ec-checkout'),
+                     'desc' => __('Buttons, Preise, Akzente.', 'ec-checkout'), 'default' => '#4F46E5', 'css' => 'width:6em;'],
+                    ['type' => 'color', 'id' => 'easycheckout_design[bg]', 'title' => __('Hintergrund', 'ec-checkout'), 'default' => '#F9FAFB', 'css' => 'width:6em;'],
+                    ['type' => 'color', 'id' => 'easycheckout_design[text]', 'title' => __('Textfarbe', 'ec-checkout'), 'default' => '#111827', 'css' => 'width:6em;'],
+                    ['type' => 'color', 'id' => 'easycheckout_design[buttonText]', 'title' => __('Button-Textfarbe', 'ec-checkout'), 'default' => '#FFFFFF', 'css' => 'width:6em;'],
+                    ['type' => 'number', 'id' => 'easycheckout_design[radius]', 'title' => __('Ecken-Radius (px)', 'ec-checkout'),
                      'default' => '8', 'custom_attributes' => ['min' => 0, 'max' => 32], 'css' => 'width:6em;'],
-                    ['type' => 'select', 'id' => 'easycheckout_design[font]', 'title' => __('Schrift', 'easycheckout'),
+                    ['type' => 'select', 'id' => 'easycheckout_design[font]', 'title' => __('Schrift', 'ec-checkout'),
                      'default' => 'site', 'options' => [
-                        'site'   => __('Schrift der Website (empfohlen)', 'easycheckout'),
-                        'system' => __('Neutrale System-Schrift', 'easycheckout'),
+                        'site'   => __('Schrift der Website (empfohlen)', 'ec-checkout'),
+                        'system' => __('Neutrale System-Schrift', 'ec-checkout'),
                      ]],
-                    ['type' => 'checkbox', 'id' => 'easycheckout_design[showPowered]', 'title' => __('„Powered by"-Hinweis', 'easycheckout'),
-                     'label' => __('„Powered by easyCheckout" unten in der Kasse anzeigen', 'easycheckout'),
+                    ['type' => 'checkbox', 'id' => 'easycheckout_design[showPowered]', 'title' => __('„Powered by"-Hinweis', 'ec-checkout'),
+                     'label' => __('„Powered by easyCheckout" unten in der Kasse anzeigen', 'ec-checkout'),
                      'default' => 'no',
-                     'desc' => __('Standardmäßig aus. Aktiviert erscheint ein kleiner Link zu easycheckout.ch am Ende der Kasse.', 'easycheckout')],
+                     'desc' => __('Standardmäßig aus. Aktiviert erscheint ein kleiner Link zu easycheckout.ch am Ende der Kasse.', 'ec-checkout')],
                     ['type' => 'sectionend', 'id' => 'ec_design_e'],
                 ];
             case 'shop':
                 return [
-                    ['type' => 'title', 'id' => 'ec_shop_t', 'title' => __('Shop & Firma', 'easycheckout'),
-                     'desc' => __('Erscheint als Rechnungssteller auf Bestellbestätigungen, Swiss-QR-Rechnungen und als Mail-Absender.', 'easycheckout')],
-                    ['type' => 'text', 'id' => 'easycheckout_company[name]', 'title' => __('Firmenname', 'easycheckout'), 'css' => 'width:24em;'],
-                    ['type' => 'text', 'id' => 'easycheckout_company[street]', 'title' => __('Strasse & Nr.', 'easycheckout'), 'css' => 'width:24em;'],
-                    ['type' => 'text', 'id' => 'easycheckout_company[postalCode]', 'title' => __('PLZ', 'easycheckout'), 'css' => 'width:8em;'],
-                    ['type' => 'text', 'id' => 'easycheckout_company[city]', 'title' => __('Ort', 'easycheckout'), 'css' => 'width:24em;'],
-                    ['type' => 'text', 'id' => 'easycheckout_company[country]', 'title' => __('Land', 'easycheckout'), 'default' => 'CH', 'css' => 'width:8em;'],
-                    ['type' => 'email', 'id' => 'easycheckout_company[email]', 'title' => __('E-Mail', 'easycheckout'), 'css' => 'width:24em;'],
-                    ['type' => 'text', 'id' => 'easycheckout_company[phone]', 'title' => __('Telefon', 'easycheckout'), 'css' => 'width:24em;'],
-                    ['type' => 'text', 'id' => 'easycheckout_company[vatNumber]', 'title' => __('MwSt-Nummer', 'easycheckout'), 'css' => 'width:24em;'],
+                    ['type' => 'title', 'id' => 'ec_shop_t', 'title' => __('Shop & Firma', 'ec-checkout'),
+                     'desc' => __('Erscheint als Rechnungssteller auf Bestellbestätigungen, Swiss-QR-Rechnungen und als Mail-Absender.', 'ec-checkout')],
+                    ['type' => 'text', 'id' => 'easycheckout_company[name]', 'title' => __('Firmenname', 'ec-checkout'), 'css' => 'width:24em;'],
+                    ['type' => 'text', 'id' => 'easycheckout_company[street]', 'title' => __('Strasse & Nr.', 'ec-checkout'), 'css' => 'width:24em;'],
+                    ['type' => 'text', 'id' => 'easycheckout_company[postalCode]', 'title' => __('PLZ', 'ec-checkout'), 'css' => 'width:8em;'],
+                    ['type' => 'text', 'id' => 'easycheckout_company[city]', 'title' => __('Ort', 'ec-checkout'), 'css' => 'width:24em;'],
+                    ['type' => 'text', 'id' => 'easycheckout_company[country]', 'title' => __('Land', 'ec-checkout'), 'default' => 'CH', 'css' => 'width:8em;'],
+                    ['type' => 'email', 'id' => 'easycheckout_company[email]', 'title' => __('E-Mail', 'ec-checkout'), 'css' => 'width:24em;'],
+                    ['type' => 'text', 'id' => 'easycheckout_company[phone]', 'title' => __('Telefon', 'ec-checkout'), 'css' => 'width:24em;'],
+                    ['type' => 'text', 'id' => 'easycheckout_company[vatNumber]', 'title' => __('MwSt-Nummer', 'ec-checkout'), 'css' => 'width:24em;'],
                     ['type' => 'sectionend', 'id' => 'ec_shop_e'],
                 ];
             case 'invoice':
                 return [
-                    ['type' => 'title', 'id' => 'ec_inv_t', 'title' => __('Rechnung & Bankverbindung', 'easycheckout'),
-                     'desc' => __('Grundlage für Banküberweisung und Swiss-QR-Rechnung bei lokalen Bestellungen.', 'easycheckout')],
-                    ['type' => 'text', 'id' => 'easycheckout_bank[iban]', 'title' => __('IBAN / QR-IBAN', 'easycheckout'), 'css' => 'width:24em;'],
-                    ['type' => 'text', 'id' => 'easycheckout_bank[holder]', 'title' => __('Kontoinhaber', 'easycheckout'), 'css' => 'width:24em;'],
-                    ['type' => 'text', 'id' => 'easycheckout_bank[bankName]', 'title' => __('Bank', 'easycheckout'), 'css' => 'width:24em;'],
-                    ['type' => 'number', 'id' => 'easycheckout_invoice[due_days]', 'title' => __('Zahlungsfrist (Tage)', 'easycheckout'),
+                    ['type' => 'title', 'id' => 'ec_inv_t', 'title' => __('Rechnung & Bankverbindung', 'ec-checkout'),
+                     'desc' => __('Grundlage für Banküberweisung und Swiss-QR-Rechnung bei lokalen Bestellungen.', 'ec-checkout')],
+                    ['type' => 'text', 'id' => 'easycheckout_bank[iban]', 'title' => __('IBAN / QR-IBAN', 'ec-checkout'), 'css' => 'width:24em;'],
+                    ['type' => 'text', 'id' => 'easycheckout_bank[holder]', 'title' => __('Kontoinhaber', 'ec-checkout'), 'css' => 'width:24em;'],
+                    ['type' => 'text', 'id' => 'easycheckout_bank[bankName]', 'title' => __('Bank', 'ec-checkout'), 'css' => 'width:24em;'],
+                    ['type' => 'number', 'id' => 'easycheckout_invoice[due_days]', 'title' => __('Zahlungsfrist (Tage)', 'ec-checkout'),
                      'default' => '30', 'custom_attributes' => ['min' => 0, 'max' => 120], 'css' => 'width:6em;',
-                     'desc' => __('0 = keine Frist anzeigen.', 'easycheckout')],
-                    ['type' => 'textarea', 'id' => 'easycheckout_invoice[footer]', 'title' => __('Fußtext', 'easycheckout'),
+                     'desc' => __('0 = keine Frist anzeigen.', 'ec-checkout')],
+                    ['type' => 'textarea', 'id' => 'easycheckout_invoice[footer]', 'title' => __('Fußtext', 'ec-checkout'),
                      'css' => 'width:24em;height:5em;',
-                     'desc' => __('Erscheint am Ende von Bestellbestätigung und Mail (z. B. Dankestext, rechtliche Hinweise).', 'easycheckout')],
+                     'desc' => __('Erscheint am Ende von Bestellbestätigung und Mail (z. B. Dankestext, rechtliche Hinweise).', 'ec-checkout')],
                     ['type' => 'sectionend', 'id' => 'ec_inv_e'],
                 ];
             case 'emails':
                 return [
-                    ['type' => 'title', 'id' => 'ec_mail_t', 'title' => __('Bestellbestätigung (E-Mail)', 'easycheckout'),
-                     'desc' => __('Vorlage für die Bestellbestätigung bei lokalen Bestellungen (Banküberweisung/QR). Leere Felder nutzen die Standard-Vorlage. Platzhalter: {ref}, {name}, {firma}, {positionen}, {total}, {waehrung}, {iban}, {empfaenger}, {bank}, {zahlungsfrist}, {rechnungsadresse}, {lieferadresse}, {art}, {fusszeile}. Hinweis: Mails des WooCommerce-Bestellflusses werden unter WooCommerce → Einstellungen → E-Mails verwaltet.', 'easycheckout')],
-                    ['type' => 'text', 'id' => 'easycheckout_emails[from_name]', 'title' => __('Absender-Name', 'easycheckout'),
-                     'css' => 'width:24em;', 'desc' => __('Leer = Firmenname aus Shop & Firma.', 'easycheckout')],
-                    ['type' => 'email', 'id' => 'easycheckout_emails[from_email]', 'title' => __('Absender-Adresse', 'easycheckout'),
-                     'css' => 'width:24em;', 'desc' => __('Leer = E-Mail aus Shop & Firma.', 'easycheckout')],
-                    ['type' => 'text', 'id' => 'easycheckout_emails[subject]', 'title' => __('Betreff', 'easycheckout'),
-                     'css' => 'width:24em;', 'placeholder' => __('Bestellbestätigung {ref}', 'easycheckout')],
-                    ['type' => 'textarea', 'id' => 'easycheckout_emails[body]', 'title' => __('Inhalt', 'easycheckout'),
-                     'css' => 'width:40em;height:16em;', 'placeholder' => __('Leer = Standard-Vorlage', 'easycheckout')],
-                    ['type' => 'checkbox', 'id' => 'easycheckout_emails[bcc_shop]', 'title' => __('Kopie an Shop', 'easycheckout'),
-                     'desc' => __('Jede Bestellbestätigung als Blindkopie an die Shop-E-Mail senden.', 'easycheckout'), 'default' => 'no'],
+                    ['type' => 'title', 'id' => 'ec_mail_t', 'title' => __('Bestellbestätigung (E-Mail)', 'ec-checkout'),
+                     'desc' => __('Vorlage für die Bestellbestätigung bei lokalen Bestellungen (Banküberweisung/QR). Leere Felder nutzen die Standard-Vorlage. Platzhalter: {ref}, {name}, {firma}, {positionen}, {total}, {waehrung}, {iban}, {empfaenger}, {bank}, {zahlungsfrist}, {rechnungsadresse}, {lieferadresse}, {art}, {fusszeile}. Hinweis: Mails des WooCommerce-Bestellflusses werden unter WooCommerce → Einstellungen → E-Mails verwaltet.', 'ec-checkout')],
+                    ['type' => 'text', 'id' => 'easycheckout_emails[from_name]', 'title' => __('Absender-Name', 'ec-checkout'),
+                     'css' => 'width:24em;', 'desc' => __('Leer = Firmenname aus Shop & Firma.', 'ec-checkout')],
+                    ['type' => 'email', 'id' => 'easycheckout_emails[from_email]', 'title' => __('Absender-Adresse', 'ec-checkout'),
+                     'css' => 'width:24em;', 'desc' => __('Leer = E-Mail aus Shop & Firma.', 'ec-checkout')],
+                    ['type' => 'text', 'id' => 'easycheckout_emails[subject]', 'title' => __('Betreff', 'ec-checkout'),
+                     'css' => 'width:24em;', 'placeholder' => __('Bestellbestätigung {ref}', 'ec-checkout')],
+                    ['type' => 'textarea', 'id' => 'easycheckout_emails[body]', 'title' => __('Inhalt', 'ec-checkout'),
+                     'css' => 'width:40em;height:16em;', 'placeholder' => __('Leer = Standard-Vorlage', 'ec-checkout')],
+                    ['type' => 'checkbox', 'id' => 'easycheckout_emails[bcc_shop]', 'title' => __('Kopie an Shop', 'ec-checkout'),
+                     'desc' => __('Jede Bestellbestätigung als Blindkopie an die Shop-E-Mail senden.', 'ec-checkout'), 'default' => 'no'],
                     ['type' => 'sectionend', 'id' => 'ec_mail_e'],
                 ];
         }
@@ -197,7 +197,7 @@ class WC_Settings_Tab {
         echo '<p class="description" style="margin-top:4px;">'
             . sprintf(
                 /* translators: 1: Bankname, 2: letzte 4 Stellen der IBAN */
-                esc_html__('Im easyCheckout-Onboarding hinterlegte Bank: %1$s (IBAN endet auf %2$s). Der Zahlungsabwickler gibt aus Sicherheitsgründen nur die letzten Stellen frei — bitte trage oben die vollständige IBAN ein, damit sie auf QR-Rechnungen erscheint.', 'easycheckout'),
+                esc_html__('Im easyCheckout-Onboarding hinterlegte Bank: %1$s (IBAN endet auf %2$s). Der Zahlungsabwickler gibt aus Sicherheitsgründen nur die letzten Stellen frei — bitte trage oben die vollständige IBAN ein, damit sie auf QR-Rechnungen erscheint.', 'ec-checkout'),
                 '<strong>' . esc_html($info['bankName']) . '</strong>',
                 '<strong>••••' . esc_html($info['ibanLast4']) . '</strong>'
             )
@@ -250,19 +250,19 @@ class WC_Settings_Tab {
      */
     private function platform_types() {
         $types = [
-            'confirmation'   => ['label' => __('Bestellbestätigung an Käufer', 'easycheckout'),
+            'confirmation'   => ['label' => __('Bestellbestätigung an Käufer', 'ec-checkout'),
                 'vars' => '{{customer_name}}, {{order_number}}, {{items}}, {{total}}, {{subtotal}}, {{vat_amount}}, {{company_name}}, {{company_address}}, {{company_email}}, {{date}}'],
-            'merchant_order' => ['label' => __('„Neue Bestellung" an dich', 'easycheckout'),
+            'merchant_order' => ['label' => __('„Neue Bestellung" an dich', 'ec-checkout'),
                 'vars' => '{{customer_name}}, {{customer_email}}, {{order_number}}, {{items}}, {{total}}, {{company_name}}, {{date}}'],
-            'decline'        => ['label' => __('Zahlung fehlgeschlagen (an Käufer)', 'easycheckout'),
+            'decline'        => ['label' => __('Zahlung fehlgeschlagen (an Käufer)', 'ec-checkout'),
                 'vars' => '{{customer_name}}, {{order_number}}, {{total}}, {{company_name}}'],
-            'refund'         => ['label' => __('Rückerstattung bestätigt (an Käufer)', 'easycheckout'),
+            'refund'         => ['label' => __('Rückerstattung bestätigt (an Käufer)', 'ec-checkout'),
                 'vars' => '{{customer_name}}, {{order_number}}, {{total}}, {{company_name}}'],
         ];
         if ($this->plan_has_invoices()) {
-            $types['invoice']  = ['label' => __('Rechnung an Käufer', 'easycheckout'),
+            $types['invoice']  = ['label' => __('Rechnung an Käufer', 'ec-checkout'),
                 'vars' => '{{customer_name}}, {{invoice_number}}, {{invoice_date}}, {{due_date}}, {{total}}, {{invoice_url}}, {{company_name}}, {{company_email}}'];
-            $types['reminder'] = ['label' => __('Mahnung / Zahlungserinnerung', 'easycheckout'),
+            $types['reminder'] = ['label' => __('Mahnung / Zahlungserinnerung', 'ec-checkout'),
                 'vars' => '{{customer_name}}, {{invoice_number}}, {{due_date}}, {{total}}, {{invoice_url}}, {{company_name}}'];
         }
         return $types;
@@ -270,12 +270,12 @@ class WC_Settings_Tab {
 
     private function output_platform_templates() {
         $api = new Native_API();
-        echo '<h2>' . esc_html__('Online-Zahlungs-Mails (easyCheckout-Konto)', 'easycheckout') . '</h2>';
+        echo '<h2>' . esc_html__('Online-Zahlungs-Mails (easyCheckout-Konto)', 'ec-checkout') . '</h2>';
 
         $res = $api->request('GET', '/api/emails', null, ['keep_session_on_401' => true]);
         if (is_wp_error($res)) {
             echo '<p class="description">'
-                . esc_html__('Diese Mails versendet die easyCheckout-Plattform bei Karten-/TWINT-Zahlungen. Zum Bearbeiten muss das Plugin mit deinem easyCheckout-Konto verbunden sein (Menü „EasyCheckout" → Anmelden).', 'easycheckout')
+                . esc_html__('Diese Mails versendet die easyCheckout-Plattform bei Karten-/TWINT-Zahlungen. Zum Bearbeiten muss das Plugin mit deinem easyCheckout-Konto verbunden sein (Menü „EasyCheckout" → Anmelden).', 'ec-checkout')
                 . '</p>';
             return;
         }
@@ -285,13 +285,13 @@ class WC_Settings_Tab {
         }
 
         echo '<p class="description">'
-            . esc_html__('Diese Vorlagen gelten für ALLE Bestellungen — WooCommerce wie Standalone. Leer = Standard-Vorlage.', 'easycheckout')
-            . ' <strong>' . esc_html__('HTML oder reiner Text:', 'easycheckout') . '</strong> '
-            . esc_html__('Schreibst du HTML, wird es als HTML gesendet; reiner Text wird mit deinen Zeilenumbrüchen als Text gesendet — beides funktioniert.', 'easycheckout')
-            . ' ' . esc_html__('Absender ist easycheckout.ch; eine eigene Absender-Domain kannst du im easyCheckout-Dashboard verifizieren.', 'easycheckout')
+            . esc_html__('Diese Vorlagen gelten für ALLE Bestellungen — WooCommerce wie Standalone. Leer = Standard-Vorlage.', 'ec-checkout')
+            . ' <strong>' . esc_html__('HTML oder reiner Text:', 'ec-checkout') . '</strong> '
+            . esc_html__('Schreibst du HTML, wird es als HTML gesendet; reiner Text wird mit deinen Zeilenumbrüchen als Text gesendet — beides funktioniert.', 'ec-checkout')
+            . ' ' . esc_html__('Absender ist easycheckout.ch; eine eigene Absender-Domain kannst du im easyCheckout-Dashboard verifizieren.', 'ec-checkout')
             . '</p>';
         if (!$this->plan_has_invoices()) {
-            echo '<p class="description">' . esc_html__('Hinweis: Die Vorlagen für Rechnung und Mahnung erscheinen hier, sobald dein Tarif Rechnungen enthält (ab „Rechnungen“ / „Basic“ / „Pro“).', 'easycheckout') . '</p>';
+            echo '<p class="description">' . esc_html__('Hinweis: Die Vorlagen für Rechnung und Mahnung erscheinen hier, sobald dein Tarif Rechnungen enthält (ab „Rechnungen“ / „Basic“ / „Pro“).', 'ec-checkout') . '</p>';
         }
         // Versand-Schalter: welche Plattform-Mails überhaupt rausgehen.
         $flags = ['sendOrderConfirmationEmail' => true, 'sendOrderInvoiceEmail' => true];
@@ -302,12 +302,12 @@ class WC_Settings_Tab {
             }
         }
         echo '<table class="form-table">';
-        echo '<tr valign="top"><th scope="row" class="titledesc">' . esc_html__('Versand', 'easycheckout') . '</th><td class="forminp">';
+        echo '<tr valign="top"><th scope="row" class="titledesc">' . esc_html__('Versand', 'ec-checkout') . '</th><td class="forminp">';
         echo '<label style="display:block;margin-bottom:6px;"><input type="checkbox" name="ec_platform_flags[sendOrderConfirmationEmail]" value="1" ' . checked($flags['sendOrderConfirmationEmail'], true, false) . ' /> '
-            . esc_html__('easyCheckout-Bestellbestätigung an den Käufer senden', 'easycheckout') . '</label>';
+            . esc_html__('easyCheckout-Bestellbestätigung an den Käufer senden', 'ec-checkout') . '</label>';
         echo '<label style="display:block;"><input type="checkbox" name="ec_platform_flags[sendOrderInvoiceEmail]" value="1" ' . checked($flags['sendOrderInvoiceEmail'], true, false) . ' /> '
-            . esc_html__('Rechnung (mit PDF-Anhang) an den Käufer senden', 'easycheckout') . '</label>';
-        echo '<p class="description">' . esc_html__('Abschalten, wenn WooCommerce die Kunden-Mails übernehmen soll (vermeidet doppelte Mails). Die „Neue Bestellung"-Mail an dich bleibt davon unberührt.', 'easycheckout') . '</p>';
+            . esc_html__('Rechnung (mit PDF-Anhang) an den Käufer senden', 'ec-checkout') . '</label>';
+        echo '<p class="description">' . esc_html__('Abschalten, wenn WooCommerce die Kunden-Mails übernehmen soll (vermeidet doppelte Mails). Die „Neue Bestellung"-Mail an dich bleibt davon unberührt.', 'ec-checkout') . '</p>';
         echo '<input type="hidden" name="ec_platform_flags[_present]" value="1" />';
         echo '</td></tr>';
         foreach ($this->platform_types() as $type => $def) {
@@ -315,9 +315,9 @@ class WC_Settings_Tab {
             $subject = $t['subject'] ?? '';
             $body = $t['body'] ?? '';
             echo '<tr valign="top"><th scope="row" class="titledesc">' . esc_html($def['label']) . '</th><td class="forminp">';
-            echo '<input type="text" name="ec_platform_mail[' . esc_attr($type) . '][subject]" style="width:40em;margin-bottom:6px;" placeholder="' . esc_attr__('Betreff (leer = Standard)', 'easycheckout') . '" value="' . esc_attr($subject) . '" /><br/>';
-            echo '<textarea name="ec_platform_mail[' . esc_attr($type) . '][body]" style="width:40em;height:10em;" placeholder="' . esc_attr__('Inhalt – HTML oder reiner Text (leer = Standard)', 'easycheckout') . '">' . esc_textarea($body) . '</textarea>';
-            echo '<p class="description">' . esc_html__('Platzhalter:', 'easycheckout') . ' <code>' . esc_html($def['vars']) . '</code></p>';
+            echo '<input type="text" name="ec_platform_mail[' . esc_attr($type) . '][subject]" style="width:40em;margin-bottom:6px;" placeholder="' . esc_attr__('Betreff (leer = Standard)', 'ec-checkout') . '" value="' . esc_attr($subject) . '" /><br/>';
+            echo '<textarea name="ec_platform_mail[' . esc_attr($type) . '][body]" style="width:40em;height:10em;" placeholder="' . esc_attr__('Inhalt – HTML oder reiner Text (leer = Standard)', 'ec-checkout') . '">' . esc_textarea($body) . '</textarea>';
+            echo '<p class="description">' . esc_html__('Platzhalter:', 'ec-checkout') . ' <code>' . esc_html($def['vars']) . '</code></p>';
             echo '</td></tr>';
         }
         echo '</table>';
@@ -409,7 +409,7 @@ class WC_Settings_Tab {
             wp_enqueue_media();
             wp_enqueue_script('easycheckout-media-pick', EASYCHECKOUT_PLUGIN_URL . 'assets/js/media-pick.js', ['jquery'], EASYCHECKOUT_VERSION, true);
             wp_localize_script('easycheckout-media-pick', 'easycheckoutMediaPick', [
-                'title' => __('Logo wählen', 'easycheckout'),
+                'title' => __('Logo wählen', 'ec-checkout'),
             ]);
         }
     }
@@ -427,7 +427,7 @@ class WC_Settings_Tab {
                        type="url" style="width:24em;" value="<?php echo esc_attr($option_value); ?>"
                        placeholder="https://…/logo.png" />
                 <button type="button" class="button ec-media-pick" data-target="<?php echo esc_attr($field['id']); ?>">
-                    <?php esc_html_e('Bild wählen', 'easycheckout'); ?>
+                    <?php esc_html_e('Bild wählen', 'ec-checkout'); ?>
                 </button>
                 <?php if (!empty($field['desc'])) : ?><p class="description"><?php echo esc_html($field['desc']); ?></p><?php endif; ?>
                 <?php if ($option_value) : ?>
