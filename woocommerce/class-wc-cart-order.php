@@ -76,7 +76,7 @@ class WC_Cart_Order {
         }
 
         $order->set_payment_method('easycheckout');
-        $order->set_payment_method_title(__('EasyCheckout', 'easycheckout'));
+        $order->set_payment_method_title(__('EasyCheckout', 'ec-checkout'));
         $order->set_currency(get_woocommerce_currency());
 
         // Bei eingeloggtem Kunden Adresse vorbefüllen (spart Tippen im Fast-Checkout).

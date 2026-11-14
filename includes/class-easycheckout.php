@@ -176,8 +176,8 @@ class EasyCheckout {
         add_action('admin_menu', function() {
             add_submenu_page(
                 'woocommerce',
-                __('EasyCheckout', 'easycheckout'),
-                __('EasyCheckout', 'easycheckout'),
+                __('EasyCheckout', 'ec-checkout'),
+                __('EasyCheckout', 'ec-checkout'),
                 'manage_woocommerce',
                 'admin.php?page=wc-settings&tab=checkout&section=easycheckout'
             );
@@ -231,13 +231,13 @@ class EasyCheckout {
             'locale' => get_locale(),
             'isTestMode' => get_option('easycheckout_test_mode', 'yes') === 'yes',
             'i18n' => [
-                'processing' => __('Processing...', 'easycheckout'),
-                'error' => __('An error occurred. Please try again.', 'easycheckout'),
-                'success' => __('Payment successful!', 'easycheckout'),
-                'redirecting' => __('Redirecting to payment...', 'easycheckout'),
-                'emailRequired' => __('Please enter a valid email address.', 'easycheckout'),
-                'nameRequired' => __('Please enter your name.', 'easycheckout'),
-                'termsRequired' => __('Please accept the terms and conditions.', 'easycheckout'),
+                'processing' => __('Processing...', 'ec-checkout'),
+                'error' => __('An error occurred. Please try again.', 'ec-checkout'),
+                'success' => __('Payment successful!', 'ec-checkout'),
+                'redirecting' => __('Redirecting to payment...', 'ec-checkout'),
+                'emailRequired' => __('Please enter a valid email address.', 'ec-checkout'),
+                'nameRequired' => __('Please enter your name.', 'ec-checkout'),
+                'termsRequired' => __('Please accept the terms and conditions.', 'ec-checkout'),
             ],
         ]);
 

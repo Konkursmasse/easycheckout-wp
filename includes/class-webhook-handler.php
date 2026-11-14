@@ -491,7 +491,7 @@ class Webhook_Handler {
         if ($discount > 0 && !$wc_order->get_meta('_easycheckout_loyalty_discount')) {
             $code = isset($order['voucherCode']) ? sanitize_text_field($order['voucherCode']) : '';
             $fee = new \WC_Order_Item_Fee();
-            $fee->set_name(trim(__('Treuepunkte-Gutschein', 'easycheckout') . ($code ? " ($code)" : '')));
+            $fee->set_name(trim(__('Treuepunkte-Gutschein', 'ec-checkout') . ($code ? " ($code)" : '')));
             $fee->set_amount(-$discount);
             $fee->set_total(-$discount);
             $fee->set_tax_status('none');
@@ -505,7 +505,7 @@ class Webhook_Handler {
 
         $wc_order->add_order_note(sprintf(
             /* translators: %s: transaction/order id */
-            __('Zahlung via EasyCheckout bestätigt (Referenz: %s).', 'easycheckout'),
+            __('Zahlung via EasyCheckout bestätigt (Referenz: %s).', 'ec-checkout'),
             $transaction_id
         ));
 
@@ -606,15 +606,15 @@ class Webhook_Handler {
             return;
         }
 
-        $error_message = $data['error'] ?? $data['errorMessage'] ?? __('Zahlung fehlgeschlagen', 'easycheckout');
+        $error_message = $data['error'] ?? $data['errorMessage'] ?? __('Zahlung fehlgeschlagen', 'ec-checkout');
 
         $order->add_order_note(sprintf(
             /* translators: %s: error message */
-            __('Zahlung via EasyCheckout fehlgeschlagen: %s', 'easycheckout'),
+            __('Zahlung via EasyCheckout fehlgeschlagen: %s', 'ec-checkout'),
             $error_message
         ));
 
-        $order->update_status('failed', __('Zahlung fehlgeschlagen.', 'easycheckout'));
+        $order->update_status('failed', __('Zahlung fehlgeschlagen.', 'ec-checkout'));
 
         do_action('easycheckout_wc_order_failed', $order_id, $data);
     }
@@ -654,7 +654,7 @@ class Webhook_Handler {
 
         $refund = wc_create_refund([
             'amount' => $amount,
-            'reason' => $data['refundReason'] ?? __('Rückerstattung via EasyCheckout', 'easycheckout'),
+            'reason' => $data['refundReason'] ?? __('Rückerstattung via EasyCheckout', 'ec-checkout'),
             'order_id' => $order_id,
             'refund_payment' => false, // Erstattung erfolgte bereits über EasyCheckout/Stripe.
         ]);
@@ -666,7 +666,7 @@ class Webhook_Handler {
 
         $order->add_order_note(sprintf(
             /* translators: %s: refunded amount */
-            __('Rückerstattung von %s via EasyCheckout verbucht.', 'easycheckout'),
+            __('Rückerstattung von %s via EasyCheckout verbucht.', 'ec-checkout'),
             wc_price($amount, ['currency' => $order->get_currency()])
         ));
 

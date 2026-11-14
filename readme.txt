@@ -1,10 +1,10 @@
-=== EasyCheckout ===
+=== EC Checkout ===
 Contributors: easycheckout
 Tags: checkout, payments, twint, woocommerce, qr-bill
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.91
+Stable tag: 1.0.92
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,14 +12,14 @@ Checkout pages and payment links for Switzerland: cards, TWINT and Swiss QR-bill
 
 == Description ==
 
-**EasyCheckout** is the official WordPress plugin of easyCheckout (https://easycheckout.io), a Swiss payment platform operated by lokal werbung GmbH, Effretikon, Switzerland.
+**EC Checkout** is the official WordPress plugin of easyCheckout (https://easycheckout.io), a Swiss payment platform operated by lokal werbung GmbH, Effretikon, Switzerland.
 
 The plugin adds ready-made checkout pages and payment links to your WordPress site. Your customers pay by **credit/debit card**, **TWINT** or **Swiss QR-bill**, and you manage orders, customers and invoices directly in the WordPress admin.
 
 The plugin works in two modes:
 
 * **Standalone** – no WooCommerce needed. Embed a checkout on any page with a shortcode and start selling.
-* **With WooCommerce** – EasyCheckout registers as a payment method and can optionally replace the WooCommerce checkout with a native checkout rendered on your own domain (editable cart, VAT, pickup/delivery options and loyalty points).
+* **With WooCommerce** – EC Checkout registers as a payment method and can optionally replace the WooCommerce checkout with a native checkout rendered on your own domain (editable cart, VAT, pickup/delivery options and loyalty points).
 
 = Features =
 
@@ -150,6 +150,9 @@ Only if you enable it. The "Powered by easyCheckout" note at the bottom of the c
 
 == Changelog ==
 
+= 1.0.92 =
+* Plugin renamed to "EC Checkout" (text domain ec-checkout). No functional changes; shortcodes, settings and the payment method stay the same.
+
 = 1.0.91 =
 * No limit on the number of local checkouts without an account.
 
@@ -179,6 +182,9 @@ Only if you enable it. The "Powered by easyCheckout" note at the bottom of the c
 * First release: checkout pages, payment links, shortcodes, WooCommerce payment method, native dashboard, webhooks.
 
 == Upgrade Notice ==
+
+= 1.0.92 =
+The plugin is now called "EC Checkout". Settings and checkouts are kept.
 
 = 1.0.91 =
 Local checkouts without an account are no longer limited.

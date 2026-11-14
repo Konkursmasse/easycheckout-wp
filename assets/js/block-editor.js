@@ -21,7 +21,7 @@
     var checkouts = data.checkouts || [];
 
     // Build checkout options for select
-    var checkoutOptions = [{ value: 0, label: __('Select a checkout...', 'easycheckout') }];
+    var checkoutOptions = [{ value: 0, label: __('Select a checkout...', 'ec-checkout') }];
     checkouts.forEach(function(checkout) {
         checkoutOptions.push({
             value: checkout.value,
@@ -72,7 +72,7 @@
 
             return el(Fragment, {},
                 el(InspectorControls, {},
-                    el(PanelBody, { title: __('Checkout Settings', 'easycheckout') },
+                    el(PanelBody, { title: __('Checkout Settings', 'ec-checkout') },
                         el(SelectControl, {
                             label: data.i18n?.selectCheckout || 'Select Checkout',
                             value: attributes.checkoutId,
@@ -89,7 +89,7 @@
                         }),
                         el(TextControl, {
                             label: data.i18n?.checkoutSlug || 'Checkout Slug',
-                            help: __('Or enter an EasyCheckout slug directly', 'easycheckout'),
+                            help: __('Or enter an EasyCheckout slug directly', 'ec-checkout'),
                             value: attributes.checkoutSlug,
                             onChange: function(value) {
                                 setAttributes({ checkoutSlug: value });
@@ -130,14 +130,14 @@
                                 el('span', {}, selectedCheckout ? selectedCheckout.label : attributes.checkoutSlug)
                             ),
                             el('div', { className: 'easycheckout-block-preview-body' },
-                                el('p', {}, __('Checkout form will appear here', 'easycheckout'))
+                                el('p', {}, __('Checkout form will appear here', 'ec-checkout'))
                             )
                         )
                         : el(Placeholder, {
                             icon: 'cart',
                             label: data.i18n?.blockTitle || 'EasyCheckout',
                             instructions: checkouts.length
-                                ? __('Select a checkout from the sidebar settings.', 'easycheckout')
+                                ? __('Select a checkout from the sidebar settings.', 'ec-checkout')
                                 : (data.i18n?.noCheckouts || 'No checkouts found. Create one first.')
                         })
                 )
@@ -189,7 +189,7 @@
 
             return el(Fragment, {},
                 el(InspectorControls, {},
-                    el(PanelBody, { title: __('Button Settings', 'easycheckout') },
+                    el(PanelBody, { title: __('Button Settings', 'ec-checkout') },
                         el(SelectControl, {
                             label: data.i18n?.selectCheckout || 'Select Checkout',
                             value: attributes.checkoutId,
@@ -220,7 +220,7 @@
                         }),
                         el(TextControl, {
                             label: data.i18n?.productId || 'Product ID',
-                            help: __('Optional: Specific product to purchase', 'easycheckout'),
+                            help: __('Optional: Specific product to purchase', 'ec-checkout'),
                             value: attributes.productId,
                             onChange: function(value) {
                                 setAttributes({ productId: value });

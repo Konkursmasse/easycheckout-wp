@@ -117,7 +117,7 @@ class WC_Blocks_Payment_Method extends AbstractPaymentMethodType {
         );
 
         if (function_exists('wp_set_script_translations')) {
-            wp_set_script_translations('easycheckout-blocks', 'easycheckout');
+            wp_set_script_translations('easycheckout-blocks', 'ec-checkout');
         }
 
         return ['easycheckout-blocks'];
@@ -164,11 +164,11 @@ class WC_Blocks_Payment_Method extends AbstractPaymentMethodType {
         return [
             'card' => [
                 'src' => EASYCHECKOUT_PLUGIN_URL . 'assets/images/card-icon.svg',
-                'alt' => __('Credit Card', 'easycheckout'),
+                'alt' => __('Credit Card', 'ec-checkout'),
             ],
             'twint' => [
                 'src' => EASYCHECKOUT_PLUGIN_URL . 'assets/images/twint-icon.svg',
-                'alt' => __('TWINT', 'easycheckout'),
+                'alt' => __('TWINT', 'ec-checkout'),
             ],
         ];
     }
