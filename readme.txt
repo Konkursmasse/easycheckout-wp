@@ -1,6 +1,6 @@
 === EC Checkout ===
 Contributors: easycheckout
-Tags: checkout, payments, twint, woocommerce, qr-bill
+Tags: checkout, payments, woocommerce, payment links, twint
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
@@ -8,13 +8,13 @@ Stable tag: 1.0.92
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Checkout pages and payment links for Switzerland: cards, TWINT and Swiss QR-bill. Works standalone or with WooCommerce, no code required.
+Checkout pages and payment links with cards, wallets and local payment methods across Europe. Works standalone or with WooCommerce.
 
 == Description ==
 
-**EC Checkout** is the official WordPress plugin of easyCheckout (https://easycheckout.io), a Swiss payment platform operated by lokal werbung GmbH, Effretikon, Switzerland.
+**EC Checkout** is the official WordPress plugin of easyCheckout (https://easycheckout.io), a payment platform operated by lokal werbung GmbH, Effretikon, Switzerland. Merchants from Switzerland, Germany, Austria, France and Italy can connect an account.
 
-The plugin adds ready-made checkout pages and payment links to your WordPress site. Your customers pay by **credit/debit card**, **TWINT** or **Swiss QR-bill**, and you manage orders, customers and invoices directly in the WordPress admin.
+The plugin adds ready-made checkout pages and payment links to your WordPress site. Your customers pay by **credit/debit card**, **Apple Pay / Google Pay**, **Klarna**, **SEPA Direct Debit**, **iDEAL**, **Bancontact**, **EPS**, **Przelewy24**, **bank transfer**, and in Switzerland also by **TWINT** or **Swiss QR-bill**. You manage orders, customers and invoices directly in the WordPress admin.
 
 The plugin works in two modes:
 
@@ -24,7 +24,7 @@ The plugin works in two modes:
 = Features =
 
 * Mobile-ready **checkout pages** and **payment links**, set up in minutes
-* **Credit/debit cards**, **TWINT** and **Swiss QR-bill** as payment methods
+* **Cards, wallets and local payment methods**: credit/debit cards, Apple Pay, Google Pay, Klarna, SEPA Direct Debit, iDEAL, Bancontact, EPS, Przelewy24 and bank transfer, plus TWINT and Swiss QR-bill for Swiss merchants
 * **Shortcodes** `[easycheckout]`, `[easycheckout_button]` and `[easycheckout_product]` for any page
 * **WooCommerce integration**: payment method, "Buy now" button, express checkout and an optional **full checkout replacement** (native on your domain, embedded, or as a redirect)
 * **Editable cart** in the checkout
@@ -117,7 +117,7 @@ An easyCheckout account is required for card and TWINT payments. You can start f
 No. The plugin works on its own with shortcodes. With WooCommerce you additionally get the payment method and the optional checkout replacement.
 
 = Which payment methods are supported? =
-Credit/debit cards, TWINT and the Swiss QR-bill. The methods offered depend on your connected account.
+Credit/debit cards, Apple Pay, Google Pay, Klarna, SEPA Direct Debit, iDEAL, Bancontact, EPS, Przelewy24 and bank transfer. Swiss accounts additionally offer TWINT and the Swiss QR-bill. The methods shown to a customer depend on your connected account, its country and the order currency.
 
 = Are card details stored on my server? =
 No. Card details are sent directly and encrypted from the browser to the payment processor. Your server and your WordPress database never see full card details.
@@ -151,7 +151,7 @@ Only if you enable it. The "Powered by easyCheckout" note at the bottom of the c
 == Changelog ==
 
 = 1.0.92 =
-* Plugin renamed to "EC Checkout" (text domain ec-checkout). No functional changes; shortcodes, settings and the payment method stay the same.
+* Plugin renamed to "EC Checkout" (text domain ec-checkout). Description no longer limited to Switzerland. No functional changes; shortcodes, settings and the payment method stay the same.
 
 = 1.0.91 =
 * No limit on the number of local checkouts without an account.
