@@ -1,10 +1,10 @@
-=== EC Checkout ===
+=== Checkoutly ===
 Contributors: easycheckout
 Tags: checkout, payments, woocommerce, payment links, twint
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.92
+Stable tag: 1.0.93
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,14 +12,14 @@ Checkout pages and payment links with cards, wallets and local payment methods a
 
 == Description ==
 
-**EC Checkout** is the official WordPress plugin of easyCheckout (https://easycheckout.io), a payment platform operated by lokal werbung GmbH, Effretikon, Switzerland. Merchants from Switzerland, Germany, Austria, France and Italy can connect an account.
+**Checkoutly** is the official WordPress plugin of easyCheckout (https://easycheckout.io), a payment platform operated by lokal werbung GmbH, Effretikon, Switzerland. Merchants from Switzerland, Germany, Austria, France and Italy can connect an account.
 
 The plugin adds ready-made checkout pages and payment links to your WordPress site. Your customers pay by **credit/debit card**, **Apple Pay / Google Pay**, **Klarna**, **SEPA Direct Debit**, **iDEAL**, **Bancontact**, **EPS**, **Przelewy24**, **bank transfer**, and in Switzerland also by **TWINT** or **Swiss QR-bill**. You manage orders, customers and invoices directly in the WordPress admin.
 
 The plugin works in two modes:
 
 * **Standalone** – no WooCommerce needed. Embed a checkout on any page with a shortcode and start selling.
-* **With WooCommerce** – EC Checkout registers as a payment method and can optionally replace the WooCommerce checkout with a native checkout rendered on your own domain (editable cart, VAT, pickup/delivery options and loyalty points).
+* **With WooCommerce** – Checkoutly registers as a payment method and can optionally replace the WooCommerce checkout with a native checkout rendered on your own domain (editable cart, VAT, pickup/delivery options and loyalty points).
 
 = Features =
 
@@ -150,8 +150,8 @@ Only if you enable it. The "Powered by easyCheckout" note at the bottom of the c
 
 == Changelog ==
 
-= 1.0.92 =
-* Plugin renamed to "EC Checkout" (text domain ec-checkout). Description no longer limited to Switzerland. No functional changes; shortcodes, settings and the payment method stay the same.
+= 1.0.93 =
+* Plugin renamed to "Checkoutly" (text domain checkoutly). Description no longer limited to Switzerland. No functional changes; shortcodes, settings and the payment method stay the same.
 
 = 1.0.91 =
 * No limit on the number of local checkouts without an account.
@@ -183,8 +183,8 @@ Only if you enable it. The "Powered by easyCheckout" note at the bottom of the c
 
 == Upgrade Notice ==
 
-= 1.0.92 =
-The plugin is now called "EC Checkout". Settings and checkouts are kept.
+= 1.0.93 =
+The plugin is now called "Checkoutly". Settings and checkouts are kept.
 
 = 1.0.91 =
 Local checkouts without an account are no longer limited.

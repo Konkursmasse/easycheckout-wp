@@ -37,8 +37,8 @@ class Checkouts_Page {
     public function add_menu() {
         add_submenu_page(
             'edit.php?post_type=' . CheckoutBuilder\Checkout_CPT::POST_TYPE,
-            __('Checkout einbetten', 'ec-checkout'),
-            __('Einbetten', 'ec-checkout'),
+            __('Checkout einbetten', 'checkoutly'),
+            __('Einbetten', 'checkoutly'),
             'manage_options',
             $this->page_slug,
             [$this, 'render']
@@ -61,9 +61,9 @@ class Checkouts_Page {
         $api = new API_Client();
         ?>
         <div class="wrap">
-            <h1><?php esc_html_e('EasyCheckout — Checkout einbetten', 'ec-checkout'); ?></h1>
+            <h1><?php esc_html_e('EasyCheckout — Checkout einbetten', 'checkoutly'); ?></h1>
             <p class="description">
-                <?php esc_html_e('Wähle einen deiner EasyCheckout-Checkouts und kopiere den Shortcode auf jede beliebige Seite. Käufer werden zur sicheren, gehosteten Bezahlseite weitergeleitet — ganz ohne WooCommerce.', 'ec-checkout'); ?>
+                <?php esc_html_e('Wähle einen deiner EasyCheckout-Checkouts und kopiere den Shortcode auf jede beliebige Seite. Käufer werden zur sicheren, gehosteten Bezahlseite weitergeleitet — ganz ohne WooCommerce.', 'checkoutly'); ?>
             </p>
 
             <?php
@@ -92,8 +92,8 @@ class Checkouts_Page {
             $this->render_table($checkouts);
             ?>
 
-            <h2 style="margin-top:2em;"><?php esc_html_e('Manuell per Slug einbetten', 'ec-checkout'); ?></h2>
-            <p><?php esc_html_e('Du kannst einen Checkout auch direkt über seinen Slug einbetten, ohne ihn hier auszuwählen:', 'ec-checkout'); ?></p>
+            <h2 style="margin-top:2em;"><?php esc_html_e('Manuell per Slug einbetten', 'checkoutly'); ?></h2>
+            <p><?php esc_html_e('Du kannst einen Checkout auch direkt über seinen Slug einbetten, ohne ihn hier auszuwählen:', 'checkoutly'); ?></p>
             <code>[easycheckout slug="dein-slug"]</code>
         </div>
         <?php
@@ -109,12 +109,12 @@ class Checkouts_Page {
         <table class="wp-list-table widefat fixed striped">
             <thead>
                 <tr>
-                    <th><?php esc_html_e('Name', 'ec-checkout'); ?></th>
-                    <th><?php esc_html_e('Slug', 'ec-checkout'); ?></th>
-                    <th><?php esc_html_e('Produkte', 'ec-checkout'); ?></th>
-                    <th><?php esc_html_e('Status', 'ec-checkout'); ?></th>
-                    <th style="width:30%;"><?php esc_html_e('Shortcode', 'ec-checkout'); ?></th>
-                    <th><?php esc_html_e('Links', 'ec-checkout'); ?></th>
+                    <th><?php esc_html_e('Name', 'checkoutly'); ?></th>
+                    <th><?php esc_html_e('Slug', 'checkoutly'); ?></th>
+                    <th><?php esc_html_e('Produkte', 'checkoutly'); ?></th>
+                    <th><?php esc_html_e('Status', 'checkoutly'); ?></th>
+                    <th style="width:30%;"><?php esc_html_e('Shortcode', 'checkoutly'); ?></th>
+                    <th><?php esc_html_e('Links', 'checkoutly'); ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -133,19 +133,19 @@ class Checkouts_Page {
                         <td><?php echo esc_html(isset($c['products_count']) ? (int) $c['products_count'] : '—'); ?></td>
                         <td>
                             <?php if ($active) : ?>
-                                <span style="color:#008a20;">● <?php esc_html_e('Aktiv', 'ec-checkout'); ?></span>
+                                <span style="color:#008a20;">● <?php esc_html_e('Aktiv', 'checkoutly'); ?></span>
                             <?php else : ?>
-                                <span style="color:#996800;">○ <?php esc_html_e('Inaktiv', 'ec-checkout'); ?></span>
+                                <span style="color:#996800;">○ <?php esc_html_e('Inaktiv', 'checkoutly'); ?></span>
                             <?php endif; ?>
                         </td>
                         <td>
                             <input type="text" class="large-text code" readonly
                                    onclick="this.select();document.execCommand('copy');"
                                    value="<?php echo esc_attr($shortcode); ?>"
-                                   title="<?php esc_attr_e('Klicken zum Kopieren', 'ec-checkout'); ?>">
+                                   title="<?php esc_attr_e('Klicken zum Kopieren', 'checkoutly'); ?>">
                         </td>
                         <td>
-                            <a href="<?php echo esc_url($hosted); ?>" target="_blank" rel="noopener"><?php esc_html_e('Vorschau', 'ec-checkout'); ?></a>
+                            <a href="<?php echo esc_url($hosted); ?>" target="_blank" rel="noopener"><?php esc_html_e('Vorschau', 'checkoutly'); ?></a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -165,7 +165,7 @@ class Checkouts_Page {
                 <?php
                 printf(
                     /* translators: %s: settings page URL */
-                    wp_kses_post(__('Bitte hinterlege zuerst deinen EasyCheckout-API-Schlüssel unter <a href="%s">Einstellungen → EasyCheckout</a>.', 'ec-checkout')),
+                    wp_kses_post(__('Bitte hinterlege zuerst deinen EasyCheckout-API-Schlüssel unter <a href="%s">Einstellungen → EasyCheckout</a>.', 'checkoutly')),
                     esc_url($settings_url)
                 );
                 ?>
@@ -182,9 +182,9 @@ class Checkouts_Page {
     private function render_api_error($error) {
         ?>
         <div class="notice notice-error inline" style="margin-top:1em;">
-            <p><strong><?php esc_html_e('Checkouts konnten nicht geladen werden:', 'ec-checkout'); ?></strong>
+            <p><strong><?php esc_html_e('Checkouts konnten nicht geladen werden:', 'checkoutly'); ?></strong>
                <?php echo esc_html($error->get_error_message()); ?></p>
-            <p><?php esc_html_e('Dein API-Schlüssel hat möglicherweise keine Dashboard-Leserechte (checkouts:read). Du kannst Checkouts trotzdem manuell per Slug einbetten:', 'ec-checkout'); ?></p>
+            <p><?php esc_html_e('Dein API-Schlüssel hat möglicherweise keine Dashboard-Leserechte (checkouts:read). Du kannst Checkouts trotzdem manuell per Slug einbetten:', 'checkoutly'); ?></p>
             <p><code>[easycheckout slug="dein-slug"]</code></p>
         </div>
         <?php
@@ -201,7 +201,7 @@ class Checkouts_Page {
                 <?php
                 printf(
                     /* translators: %s: EasyCheckout dashboard URL */
-                    wp_kses_post(__('Noch keine Checkouts vorhanden. Erstelle einen in deinem <a href="%s" target="_blank" rel="noopener">EasyCheckout-Konto</a> und lade diese Seite neu.', 'ec-checkout')),
+                    wp_kses_post(__('Noch keine Checkouts vorhanden. Erstelle einen in deinem <a href="%s" target="_blank" rel="noopener">EasyCheckout-Konto</a> und lade diese Seite neu.', 'checkoutly')),
                     esc_url($dashboard)
                 );
                 ?>

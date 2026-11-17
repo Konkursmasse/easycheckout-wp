@@ -110,7 +110,7 @@ class WC_Checkout_Replace {
 
         if (is_wp_error($response)) {
             $this->log('Checkout-replace session failed: ' . $response->get_error_message(), 'error');
-            $order->update_status('failed', __('EasyCheckout payment session konnte nicht erstellt werden.', 'ec-checkout'));
+            $order->update_status('failed', __('EasyCheckout payment session konnte nicht erstellt werden.', 'checkoutly'));
             return; // Fallback: normale WC-Kasse.
         }
 
@@ -120,12 +120,12 @@ class WC_Checkout_Replace {
         $ec_order_id = $data['order_id'] ?? '';
 
         if (empty($redirect)) {
-            $order->update_status('failed', __('Keine Bezahl-URL von EasyCheckout erhalten.', 'ec-checkout'));
+            $order->update_status('failed', __('Keine Bezahl-URL von EasyCheckout erhalten.', 'checkoutly'));
             return;
         }
 
         $order->update_meta_data('_easycheckout_order_id', $ec_order_id);
-        $order->add_order_note(__('Kasse via EasyCheckout gestartet – warte auf Zahlung.', 'ec-checkout'));
+        $order->add_order_note(__('Kasse via EasyCheckout gestartet – warte auf Zahlung.', 'checkoutly'));
         $order->save();
 
         if (WC()->session) {

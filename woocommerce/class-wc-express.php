@@ -81,8 +81,8 @@ class WC_Express {
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce'   => wp_create_nonce('easycheckout_express'),
             'i18n'    => [
-                'processing' => __('Einen Moment …', 'ec-checkout'),
-                'error'      => __('Express-Checkout konnte nicht gestartet werden. Bitte erneut versuchen.', 'ec-checkout'),
+                'processing' => __('Einen Moment …', 'checkoutly'),
+                'error'      => __('Express-Checkout konnte nicht gestartet werden. Bitte erneut versuchen.', 'checkoutly'),
             ],
         ]);
     }
@@ -97,18 +97,18 @@ class WC_Express {
             <?php if ($ec !== '') : ?>
             <a href="<?php echo esc_url($ec); ?>" class="button alt easycheckout-express-btn"
                style="width:100%;text-align:center;display:block;box-sizing:border-box;">
-                <?php esc_html_e('Zum Checkout', 'ec-checkout'); ?>
+                <?php esc_html_e('Zum Checkout', 'checkoutly'); ?>
             </a>
             <?php else : ?>
             <button type="button"
                     id="easycheckout-express-btn"
                     class="button alt easycheckout-express-btn"
                     style="width:100%;text-align:center;">
-                <?php esc_html_e('Express-Checkout', 'ec-checkout'); ?>
+                <?php esc_html_e('Express-Checkout', 'checkoutly'); ?>
             </button>
             <?php endif; ?>
             <p class="easycheckout-express-hint" style="margin:6px 0 0;font-size:12px;color:#666;text-align:center;">
-                <?php esc_html_e('Schnell bezahlen – Adresse und Zahlung in einem Schritt.', 'ec-checkout'); ?>
+                <?php esc_html_e('Schnell bezahlen – Adresse und Zahlung in einem Schritt.', 'checkoutly'); ?>
             </p>
         </div>
         <?php
@@ -122,7 +122,7 @@ class WC_Express {
         check_ajax_referer('easycheckout_express', 'nonce');
 
         if (!function_exists('WC') || WC()->cart === null || WC()->cart->is_empty()) {
-            wp_send_json_error(['message' => __('Der Warenkorb ist leer.', 'ec-checkout')]);
+            wp_send_json_error(['message' => __('Der Warenkorb ist leer.', 'checkoutly')]);
         }
 
         // Totals frisch berechnen, damit Positionen/Versand/Gutscheine stimmen.
@@ -132,11 +132,11 @@ class WC_Express {
             $order = WC_Cart_Order::from_cart('easycheckout_express');
         } catch (\Exception $e) {
             $this->log('Express order creation failed: ' . $e->getMessage(), 'error');
-            wp_send_json_error(['message' => __('Bestellung konnte nicht erstellt werden.', 'ec-checkout')]);
+            wp_send_json_error(['message' => __('Bestellung konnte nicht erstellt werden.', 'checkoutly')]);
         }
 
         if (!$order) {
-            wp_send_json_error(['message' => __('Bestellung konnte nicht erstellt werden.', 'ec-checkout')]);
+            wp_send_json_error(['message' => __('Bestellung konnte nicht erstellt werden.', 'checkoutly')]);
         }
 
         $order_id = $order->get_id();
@@ -162,7 +162,7 @@ class WC_Express {
         if (is_wp_error($response)) {
             $this->log('Express payment session failed: ' . $response->get_error_message(), 'error');
             // Bestellung nicht als Leiche zuruecklassen.
-            $order->update_status('failed', __('EasyCheckout payment session konnte nicht erstellt werden.', 'ec-checkout'));
+            $order->update_status('failed', __('EasyCheckout payment session konnte nicht erstellt werden.', 'checkoutly'));
             wp_send_json_error(['message' => $response->get_error_message()]);
         }
 
@@ -171,13 +171,13 @@ class WC_Express {
         $ec_order_id  = $data['order_id'] ?? '';
 
         if (empty($redirect_url)) {
-            $order->update_status('failed', __('Keine Bezahl-URL von EasyCheckout erhalten.', 'ec-checkout'));
-            wp_send_json_error(['message' => __('Zahlung konnte nicht gestartet werden.', 'ec-checkout')]);
+            $order->update_status('failed', __('Keine Bezahl-URL von EasyCheckout erhalten.', 'checkoutly'));
+            wp_send_json_error(['message' => __('Zahlung konnte nicht gestartet werden.', 'checkoutly')]);
         }
 
         // EC-Order-ID fuer Webhook-Matching hinterlegen.
         $order->update_meta_data('_easycheckout_order_id', $ec_order_id);
-        $order->add_order_note(__('Express-Checkout gestartet – warte auf Zahlung via EasyCheckout.', 'ec-checkout'));
+        $order->add_order_note(__('Express-Checkout gestartet – warte auf Zahlung via EasyCheckout.', 'checkoutly'));
         $order->save();
 
         // Transaktion protokollieren (wie im Gateway).

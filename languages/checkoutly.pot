@@ -1,11 +1,11 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: EC Checkout\n"
+"Project-Id-Version: Checkoutly\n"
 "Report-Msgid-Bugs-To: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Domain: ec-checkout\n"
+"X-Domain: checkoutly\n"
 "Language: \n"
 
 #: checkout-builder/class-checkout-cpt.php:42 includes/class-native-dashboard.php:31

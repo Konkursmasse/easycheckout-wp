@@ -30,7 +30,7 @@ jobs:
 
       - name: WordPress.org-Fassung bauen
         run: |
-          mkdir -p build/ec-checkout
+          mkdir -p build/checkoutly
           rsync -a --exclude='.git' --exclude='.github' --exclude='build' \
                 --exclude='node_modules' --exclude='*.zip' \
                 --exclude='.wordpress-org' \
@@ -41,9 +41,9 @@ jobs:
                 --exclude='INSTALL-UND-NUTZUNG.md' \
                 --exclude='PUBLISHING.md' \
                 --exclude='HANDBUCH.md' \
-                ./ build/ec-checkout/
+                ./ build/checkoutly/
 
       - name: Plugin Check
         uses: wordpress/plugin-check-action@v1
         with:
-          build-dir: './build/ec-checkout'
+          build-dir: './build/checkoutly'

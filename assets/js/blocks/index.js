@@ -24,7 +24,7 @@
 	}
 
 	var data = settingsApi.getSetting( 'easycheckout_data', {} );
-	var title = decodeEntities( data.title || __( 'EasyCheckout', 'ec-checkout' ) );
+	var title = decodeEntities( data.title || __( 'EasyCheckout', 'checkoutly' ) );
 	var description = decodeEntities( data.description || '' );
 	var logo = data.logo || '';
 	var icons = data.icons || {};
@@ -84,7 +84,7 @@
 			lines.push( el( 'p', {
 				key: 'test',
 				style: { margin: '4px 0 0', fontSize: '12px', color: '#9a6700' }
-			}, __( 'Testmodus aktiv – es werden keine echten Zahlungen ausgeführt.', 'ec-checkout' ) ) );
+			}, __( 'Testmodus aktiv – es werden keine echten Zahlungen ausgeführt.', 'checkoutly' ) ) );
 		}
 		if ( ! lines.length ) {
 			return null;
@@ -98,7 +98,7 @@
 		content: el( Content, null ),
 		edit: el( Content, null ),
 		ariaLabel: title,
-		placeOrderButtonLabel: __( 'Weiter zur Zahlung', 'ec-checkout' ),
+		placeOrderButtonLabel: __( 'Weiter zur Zahlung', 'checkoutly' ),
 		// Redirect-basiert: der Server (process_payment) entscheidet über die Zahlung.
 		canMakePayment: function () { return true; },
 		supports: {

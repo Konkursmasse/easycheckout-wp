@@ -68,7 +68,7 @@ class Native_API {
         }
 
         if (empty($resp['token'])) {
-            return new \WP_Error('ec_login_failed', __('Anmeldung fehlgeschlagen.', 'ec-checkout'));
+            return new \WP_Error('ec_login_failed', __('Anmeldung fehlgeschlagen.', 'checkoutly'));
         }
 
         update_option(self::OPT_TOKEN, $this->encrypt($resp['token']), false);
@@ -119,7 +119,7 @@ class Native_API {
     public function request($method, $path, $data = null, $opts = []) {
         $token = $this->get_token();
         if (!$token) {
-            return new \WP_Error('ec_not_authenticated', __('Nicht angemeldet.', 'ec-checkout'), ['status' => 401]);
+            return new \WP_Error('ec_not_authenticated', __('Nicht angemeldet.', 'checkoutly'), ['status' => 401]);
         }
 
         $args = [
@@ -172,7 +172,7 @@ class Native_API {
     public function upload($method, $path, $files, $fields = []) {
         $token = $this->get_token();
         if (!$token) {
-            return new \WP_Error('ec_not_authenticated', __('Nicht angemeldet.', 'ec-checkout'), ['status' => 401]);
+            return new \WP_Error('ec_not_authenticated', __('Nicht angemeldet.', 'checkoutly'), ['status' => 401]);
         }
 
         $boundary = wp_generate_password(24, false);
@@ -240,7 +240,7 @@ class Native_API {
         $body   = json_decode(wp_remote_retrieve_body($response), true);
 
         if ($status >= 400) {
-            $msg = is_array($body) && !empty($body['error']) ? $body['error'] : __('Anfrage fehlgeschlagen.', 'ec-checkout');
+            $msg = is_array($body) && !empty($body['error']) ? $body['error'] : __('Anfrage fehlgeschlagen.', 'checkoutly');
             return new \WP_Error('ec_api_error', $msg, ['status' => $status]);
         }
 

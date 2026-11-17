@@ -59,8 +59,8 @@ class WC_BuyNow {
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce'   => wp_create_nonce('easycheckout_buynow'),
             'i18n'    => [
-                'processing' => __('Einen Moment …', 'ec-checkout'),
-                'error'      => __('Sofort-Kauf konnte nicht gestartet werden. Bitte erneut versuchen.', 'ec-checkout'),
+                'processing' => __('Einen Moment …', 'checkoutly'),
+                'error'      => __('Sofort-Kauf konnte nicht gestartet werden. Bitte erneut versuchen.', 'checkoutly'),
             ],
         ]);
     }
@@ -80,7 +80,7 @@ class WC_BuyNow {
             printf(
                 '<a href="%s" class="button alt easycheckout-buynow-link" style="margin-top:10px;display:block;text-align:center;width:100%%;box-sizing:border-box;">%s</a>',
                 esc_url($ec),
-                esc_html__('Zum Checkout', 'ec-checkout')
+                esc_html__('Zum Checkout', 'checkoutly')
             );
             return;
         }
@@ -96,7 +96,7 @@ class WC_BuyNow {
         printf(
             '<button type="button" class="single_add_to_cart_button button alt wp-element-button easycheckout-buynow-btn" id="easycheckout-buynow-btn" data-product-id="%d" style="margin-top:10px;width:100%%;">%s</button>',
             (int) $product->get_id(),
-            esc_html__('Sofort kaufen', 'ec-checkout')
+            esc_html__('Sofort kaufen', 'checkoutly')
         );
     }
 
@@ -115,7 +115,7 @@ class WC_BuyNow {
 
         $product = wc_get_product($variation_id ?: $product_id);
         if (!$product || !$product->is_purchasable()) {
-            wp_send_json_error(['message' => __('Produkt nicht verfügbar.', 'ec-checkout')]);
+            wp_send_json_error(['message' => __('Produkt nicht verfügbar.', 'checkoutly')]);
         }
 
         try {
@@ -125,13 +125,13 @@ class WC_BuyNow {
             }
             $order->add_product($product, $quantity, ['variation' => $variation]);
             $order->set_payment_method('easycheckout');
-            $order->set_payment_method_title(__('EasyCheckout', 'ec-checkout'));
+            $order->set_payment_method_title(__('EasyCheckout', 'checkoutly'));
             $order->set_currency(get_woocommerce_currency());
             $order->calculate_totals(true);
             $order->save();
         } catch (\Exception $e) {
             $this->log('Buy-now order creation failed: ' . $e->getMessage(), 'error');
-            wp_send_json_error(['message' => __('Bestellung konnte nicht erstellt werden.', 'ec-checkout')]);
+            wp_send_json_error(['message' => __('Bestellung konnte nicht erstellt werden.', 'checkoutly')]);
         }
 
         $order_id = $order->get_id();
@@ -147,7 +147,7 @@ class WC_BuyNow {
 
         if (is_wp_error($response)) {
             $this->log('Buy-now payment session failed: ' . $response->get_error_message(), 'error');
-            $order->update_status('failed', __('EasyCheckout payment session konnte nicht erstellt werden.', 'ec-checkout'));
+            $order->update_status('failed', __('EasyCheckout payment session konnte nicht erstellt werden.', 'checkoutly'));
             wp_send_json_error(['message' => $response->get_error_message()]);
         }
 
@@ -156,12 +156,12 @@ class WC_BuyNow {
         $ec_order_id = $data['order_id'] ?? '';
 
         if (empty($redirect)) {
-            $order->update_status('failed', __('Keine Bezahl-URL von EasyCheckout erhalten.', 'ec-checkout'));
-            wp_send_json_error(['message' => __('Zahlung konnte nicht gestartet werden.', 'ec-checkout')]);
+            $order->update_status('failed', __('Keine Bezahl-URL von EasyCheckout erhalten.', 'checkoutly'));
+            wp_send_json_error(['message' => __('Zahlung konnte nicht gestartet werden.', 'checkoutly')]);
         }
 
         $order->update_meta_data('_easycheckout_order_id', $ec_order_id);
-        $order->add_order_note(__('Sofort-Kauf gestartet – warte auf Zahlung via EasyCheckout.', 'ec-checkout'));
+        $order->add_order_note(__('Sofort-Kauf gestartet – warte auf Zahlung via EasyCheckout.', 'checkoutly'));
         $order->save();
 
         EasyCheckout::instance()->log_transaction([

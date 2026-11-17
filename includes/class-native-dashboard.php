@@ -27,17 +27,17 @@ class Native_Dashboard {
      */
     private function sections() {
         return [
-            'easycheckout'  => [__('Übersicht', 'ec-checkout'), 'overview'],
-            'ec-checkouts'  => [__('Checkouts', 'ec-checkout'), 'checkouts'],
-            'ec-embed'      => [__('Einbindung', 'ec-checkout'), 'embed'],
-            'ec-orders'     => [__('Bestellungen', 'ec-checkout'), 'orders'],
-            'ec-customers'  => [__('Kunden', 'ec-checkout'), 'customers'],
-            'ec-invoices'   => [__('Rechnungen', 'ec-checkout'), 'invoices'],
-            'ec-emails'     => [__('E-Mails', 'ec-checkout'), 'emails'],
-            'ec-onboarding' => [__('Verifizierung', 'ec-checkout'), 'onboarding'],
-            'ec-billing'    => [__('Tarif', 'ec-checkout'), 'billing'],
-            'ec-support'    => [__('Support', 'ec-checkout'), 'support'],
-            'ec-settings'   => [__('Einstellungen', 'ec-checkout'), 'settings'],
+            'easycheckout'  => [__('Übersicht', 'checkoutly'), 'overview'],
+            'ec-checkouts'  => [__('Checkouts', 'checkoutly'), 'checkouts'],
+            'ec-embed'      => [__('Einbindung', 'checkoutly'), 'embed'],
+            'ec-orders'     => [__('Bestellungen', 'checkoutly'), 'orders'],
+            'ec-customers'  => [__('Kunden', 'checkoutly'), 'customers'],
+            'ec-invoices'   => [__('Rechnungen', 'checkoutly'), 'invoices'],
+            'ec-emails'     => [__('E-Mails', 'checkoutly'), 'emails'],
+            'ec-onboarding' => [__('Verifizierung', 'checkoutly'), 'onboarding'],
+            'ec-billing'    => [__('Tarif', 'checkoutly'), 'billing'],
+            'ec-support'    => [__('Support', 'checkoutly'), 'support'],
+            'ec-settings'   => [__('Einstellungen', 'checkoutly'), 'settings'],
         ];
     }
 
@@ -90,8 +90,8 @@ class Native_Dashboard {
 
     public function add_menu() {
         $this->hooks[] = add_menu_page(
-            __('EasyCheckout', 'ec-checkout'),
-            __('EasyCheckout', 'ec-checkout'),
+            __('EasyCheckout', 'checkoutly'),
+            __('EasyCheckout', 'checkoutly'),
             'manage_options',
             $this->page_slug,
             [$this, 'render'],
@@ -481,11 +481,11 @@ class Native_Dashboard {
      */
     public function ajax_place_order() {
         if (!check_ajax_referer('easycheckout_front', 'nonce', false)) {
-            wp_send_json_error(['message' => __('Ungültige Anfrage.', 'ec-checkout')], 400);
+            wp_send_json_error(['message' => __('Ungültige Anfrage.', 'checkoutly')], 400);
         }
         $slug = isset($_POST['slug']) ? sanitize_title(wp_unslash($_POST['slug'])) : '';
         $checkout = self::get_local_checkout_by_slug($slug);
-        if (!$checkout) { wp_send_json_error(['message' => __('Checkout nicht gefunden.', 'ec-checkout')], 404); }
+        if (!$checkout) { wp_send_json_error(['message' => __('Checkout nicht gefunden.', 'checkoutly')], 404); }
 
         // Fulfillment-Modus: 'delivery' nur, wenn der Checkout Lieferung anbietet,
         // sonst Abholung (= Standardpreis, keine Liefergebuehr). SERVER entscheidet.
@@ -518,7 +518,7 @@ class Native_Dashboard {
                 if (!$match) {
                     wp_send_json_error(['message' => sprintf(
                         /* translators: 1: option group name, 2: product name */
-                        __('Bitte eine Auswahl für „%1$s" bei „%2$s" treffen.', 'ec-checkout'),
+                        __('Bitte eine Auswahl für „%1$s" bei „%2$s" treffen.', 'checkoutly'),
                         $g['name'],
                         $p['name']
                     )], 400);
@@ -543,7 +543,7 @@ class Native_Dashboard {
                 if (!empty($f['required']) && $empty) {
                     wp_send_json_error(['message' => sprintf(
                         /* translators: 1: field label, 2: product name */
-                        __('Bitte „%1$s" bei „%2$s" ausfüllen.', 'ec-checkout'),
+                        __('Bitte „%1$s" bei „%2$s" ausfüllen.', 'checkoutly'),
                         $f['label'],
                         $p['name']
                     )], 400);
@@ -566,13 +566,13 @@ class Native_Dashboard {
             if ($lineFee) { $line['deliveryFee'] = $lineFee; }
             $lines[] = $line;
         }
-        if (!$lines) { wp_send_json_error(['message' => __('Warenkorb ist leer.', 'ec-checkout')], 400); }
+        if (!$lines) { wp_send_json_error(['message' => __('Warenkorb ist leer.', 'checkoutly')], 400); }
         $deliveryFeeTotal = round($deliveryFeeTotal, 2);
         $total = round($subtotal + $deliveryFeeTotal, 2);
 
         $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
         $name  = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
-        if (!$name || !is_email($email)) { wp_send_json_error(['message' => __('Bitte Name und gültige E-Mail angeben.', 'ec-checkout')], 400); }
+        if (!$name || !is_email($email)) { wp_send_json_error(['message' => __('Bitte Name und gültige E-Mail angeben.', 'checkoutly')], 400); }
 
         $company    = isset($_POST['company']) ? sanitize_text_field(wp_unslash($_POST['company'])) : '';
         $phone      = isset($_POST['phone']) ? sanitize_text_field(wp_unslash($_POST['phone'])) : '';
@@ -581,7 +581,7 @@ class Native_Dashboard {
         $billing    = self::sanitize_address(easycheckout_post_json('billing'));
         $delivery   = $sameAddr ? $billing : self::sanitize_address(easycheckout_post_json('delivery'));
         if (!$billing['street'] || !$billing['postalCode'] || !$billing['city']) {
-            wp_send_json_error(['message' => __('Bitte vollständige Rechnungsadresse angeben.', 'ec-checkout')], 400);
+            wp_send_json_error(['message' => __('Bitte vollständige Rechnungsadresse angeben.', 'checkoutly')], 400);
         }
 
         $ref = 'EC-' . strtoupper(wp_generate_password(6, false, false));
@@ -689,7 +689,7 @@ class Native_Dashboard {
                 ? strtr($tpl['subject'], $tokens)
                 : sprintf(
                     /* translators: %s: order reference */
-                    __('Bestellbestätigung %s', 'ec-checkout'),
+                    __('Bestellbestätigung %s', 'checkoutly'),
                     $ref
                 );
             $body = !empty($tpl['body']) ? strtr($tpl['body'], $tokens) : $defaultBody;
@@ -743,7 +743,7 @@ class Native_Dashboard {
 
     private function guard() {
         if (!check_ajax_referer('easycheckout_native', 'nonce', false) || !current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('Nicht erlaubt.', 'ec-checkout')], 403);
+            wp_send_json_error(['message' => __('Nicht erlaubt.', 'checkoutly')], 403);
         }
     }
 
@@ -786,7 +786,7 @@ class Native_Dashboard {
     public function ajax_activate_gateway() {
         $this->guard();
         if (!$this->api->is_authenticated()) {
-            wp_send_json_error(['message' => __('Bitte zuerst mit deinem EasyCheckout-Konto anmelden.', 'ec-checkout')]);
+            wp_send_json_error(['message' => __('Bitte zuerst mit deinem EasyCheckout-Konto anmelden.', 'checkoutly')]);
         }
 
         $result = $this->provision_gateway_key();
@@ -808,17 +808,17 @@ class Native_Dashboard {
      */
     public function provision_gateway_key() {
         if (!$this->api->is_authenticated()) {
-            return new \WP_Error('ec_not_authenticated', __('Nicht mit EasyCheckout verbunden.', 'ec-checkout'));
+            return new \WP_Error('ec_not_authenticated', __('Nicht mit EasyCheckout verbunden.', 'checkoutly'));
         }
 
         // 1) Gateway-Key erzeugen (JWT-authentifiziert).
         $r = $this->api->request('POST', '/api/auth/gateway-key', []);
         if (is_wp_error($r)) { return $r; }
         if (($r['status'] ?? 0) >= 400) {
-            return new \WP_Error('ec_gateway_key', $r['body']['error'] ?? __('Gateway-Key konnte nicht erstellt werden.', 'ec-checkout'));
+            return new \WP_Error('ec_gateway_key', $r['body']['error'] ?? __('Gateway-Key konnte nicht erstellt werden.', 'checkoutly'));
         }
         $key = $r['body']['apiKey'] ?? '';
-        if (!$key) { return new \WP_Error('ec_gateway_key', __('Kein Key erhalten.', 'ec-checkout')); }
+        if (!$key) { return new \WP_Error('ec_gateway_key', __('Kein Key erhalten.', 'checkoutly')); }
         $keyType = $r['body']['keyType'] ?? 'live';
 
         // 2) Verschluesselt speichern (Gateway/API_Client nutzen genau diesen Key).
@@ -851,7 +851,7 @@ class Native_Dashboard {
         }
 
         return [
-            'message'    => __('WooCommerce-Gateway aktiviert.', 'ec-checkout'),
+            'message'    => __('WooCommerce-Gateway aktiviert.', 'checkoutly'),
             'keyType'    => $keyType,
             'webhook'    => $webhook,
             'webhookUrl' => $url,
@@ -907,11 +907,11 @@ class Native_Dashboard {
         }
         $url = admin_url('admin.php?page=' . $this->page_slug);
         if ($this->api->is_authenticated()) {
-            $msg = __('EasyCheckout ist verbunden, aber das WooCommerce-Gateway ist noch nicht aktiviert. „Sofort kaufen", der Kassen-Ersatz und die Bezahlung sind deshalb inaktiv.', 'ec-checkout');
-            $btn = __('Gateway jetzt aktivieren', 'ec-checkout');
+            $msg = __('EasyCheckout ist verbunden, aber das WooCommerce-Gateway ist noch nicht aktiviert. „Sofort kaufen", der Kassen-Ersatz und die Bezahlung sind deshalb inaktiv.', 'checkoutly');
+            $btn = __('Gateway jetzt aktivieren', 'checkoutly');
         } else {
-            $msg = __('EasyCheckout ist als Zahlart aktiviert, aber nicht mit deinem Konto verbunden. „Sofort kaufen", der Kassen-Ersatz und die Bezahlung sind deshalb inaktiv.', 'ec-checkout');
-            $btn = __('Mit EasyCheckout verbinden', 'ec-checkout');
+            $msg = __('EasyCheckout ist als Zahlart aktiviert, aber nicht mit deinem Konto verbunden. „Sofort kaufen", der Kassen-Ersatz und die Bezahlung sind deshalb inaktiv.', 'checkoutly');
+            $btn = __('Mit EasyCheckout verbinden', 'checkoutly');
         }
         printf(
             '<div class="notice notice-warning is-dismissible"><p><strong>EasyCheckout:</strong> %s</p><p><a class="button button-primary" href="%s">%s</a></p></div>',
@@ -984,7 +984,7 @@ class Native_Dashboard {
             // Dateityp aus dem Inhalt bestimmen, nicht aus der Angabe des Browsers.
             $check = wp_check_filetype_and_ext($f['tmp_name'], $name);
             if (empty($check['type'])) {
-                wp_send_json_error(['message' => __('Dateityp nicht erlaubt.', 'ec-checkout')], 400);
+                wp_send_json_error(['message' => __('Dateityp nicht erlaubt.', 'checkoutly')], 400);
             }
             $files[sanitize_key($field)] = [
                 'name' => $check['proper_filename'] ? sanitize_file_name($check['proper_filename']) : $name,
