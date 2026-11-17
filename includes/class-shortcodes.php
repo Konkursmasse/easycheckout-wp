@@ -138,7 +138,7 @@ class Shortcodes {
             $payUrl = get_transient('easycheckout_embed_' . $embedId);
             if (!$payUrl) { return; }
             wp_enqueue_style('easycheckout-embed', EASYCHECKOUT_PLUGIN_URL . 'assets/css/embed.css', [], EASYCHECKOUT_VERSION);
-            $this->print_document_start(__('Checkout', 'ec-checkout'));
+            $this->print_document_start(__('Checkout', 'checkoutly'));
             echo '</head><body>';
             echo '<iframe src="' . esc_url($payUrl) . '" allow="payment *"></iframe>';
             echo '</body></html>';
@@ -176,7 +176,7 @@ class Shortcodes {
             wp_enqueue_script('easycheckout-pay-checkout');
 
             \EasyCheckout\Design::enqueue_brand(['easycheckout-local-checkout']);
-            $this->print_document_start(__('Checkout', 'ec-checkout'));
+            $this->print_document_start(__('Checkout', 'checkoutly'));
             echo '</head><body style="margin:0;background:#f8fafc;"><div id="ec-pay-checkout"></div>';
             wp_print_footer_scripts();
             echo '</body></html>';
@@ -259,7 +259,7 @@ class Shortcodes {
             'mode' => 'iframe',   // 'iframe' = inline checkout (identical to easycheckout.ch) | 'button' = redirect
             'height' => '',       // fixed px height for the iframe; empty = responsive default
             'max_width' => '1100',
-            'button_text' => __('Jetzt kaufen', 'ec-checkout'),
+            'button_text' => __('Jetzt kaufen', 'checkoutly'),
             'new_tab' => 'no',
             // Design overrides (each falls back to the global Design settings).
             'primary' => '',
@@ -420,10 +420,10 @@ class Shortcodes {
                 if (!empty($remote_slug)) {
                     return $remote_slug;
                 }
-                return new \WP_Error('ec_no_slug', __('Diesem Checkout ist kein EasyCheckout-Slug zugeordnet.', 'ec-checkout'));
+                return new \WP_Error('ec_no_slug', __('Diesem Checkout ist kein EasyCheckout-Slug zugeordnet.', 'checkoutly'));
             }
         }
-        return new \WP_Error('ec_missing_checkout', __('Bitte gib einen Checkout-Slug an: [easycheckout slug="dein-slug"].', 'ec-checkout'));
+        return new \WP_Error('ec_missing_checkout', __('Bitte gib einen Checkout-Slug an: [easycheckout slug="dein-slug"].', 'checkoutly'));
     }
 
     /**
@@ -510,7 +510,7 @@ class Shortcodes {
         $atts = shortcode_atts([
             'id' => '',
             'slug' => '',
-            'text' => __('Jetzt kaufen', 'ec-checkout'),
+            'text' => __('Jetzt kaufen', 'checkoutly'),
             'class' => '',
             'new_tab' => 'no',
         ], $atts, 'easycheckout_button');
@@ -550,7 +550,7 @@ class Shortcodes {
             'product' => '',
             'show_description' => 'yes',
             'show_image' => 'yes',
-            'button_text' => __('Jetzt kaufen', 'ec-checkout'),
+            'button_text' => __('Jetzt kaufen', 'checkoutly'),
             'new_tab' => 'no',
         ], $atts, 'easycheckout_product');
 
@@ -575,7 +575,7 @@ class Shortcodes {
         }
 
         if (!$product) {
-            return $this->error_for_admin(new \WP_Error('ec_product_not_found', __('Produkt nicht gefunden.', 'ec-checkout')));
+            return $this->error_for_admin(new \WP_Error('ec_product_not_found', __('Produkt nicht gefunden.', 'checkoutly')));
         }
 
         wp_enqueue_style('easycheckout-checkout');
@@ -630,14 +630,14 @@ class Shortcodes {
                 if (empty($remote_slug)) {
                     return new \WP_Error(
                         'ec_no_slug',
-                        __('Diesem Checkout ist kein EasyCheckout-Slug zugeordnet. Trage den Slug aus deinem EasyCheckout-Konto ein.', 'ec-checkout')
+                        __('Diesem Checkout ist kein EasyCheckout-Slug zugeordnet. Trage den Slug aus deinem EasyCheckout-Konto ein.', 'checkoutly')
                     );
                 }
                 return $this->fetch_remote_checkout($remote_slug);
             }
         }
 
-        return new \WP_Error('ec_missing_checkout', __('Bitte gib einen Checkout-Slug an: [easycheckout slug="dein-slug"].', 'ec-checkout'));
+        return new \WP_Error('ec_missing_checkout', __('Bitte gib einen Checkout-Slug an: [easycheckout slug="dein-slug"].', 'checkoutly'));
     }
 
     /**
@@ -657,7 +657,7 @@ class Shortcodes {
         $c = isset($response['checkout']) && is_array($response['checkout']) ? $response['checkout'] : $response;
 
         if (empty($c) || empty($c['slug'])) {
-            return new \WP_Error('ec_invalid_checkout', __('Checkout nicht gefunden.', 'ec-checkout'));
+            return new \WP_Error('ec_invalid_checkout', __('Checkout nicht gefunden.', 'checkoutly'));
         }
 
         $products = [];

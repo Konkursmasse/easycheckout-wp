@@ -50,17 +50,17 @@ class Checkout_CPT {
      */
     public function register_post_type() {
         $labels = [
-            'name' => __('Checkouts', 'ec-checkout'),
-            'singular_name' => __('Checkout', 'ec-checkout'),
-            'add_new' => __('Add New', 'ec-checkout'),
-            'add_new_item' => __('Add New Checkout', 'ec-checkout'),
-            'edit_item' => __('Edit Checkout', 'ec-checkout'),
-            'new_item' => __('New Checkout', 'ec-checkout'),
-            'view_item' => __('View Checkout', 'ec-checkout'),
-            'search_items' => __('Search Checkouts', 'ec-checkout'),
-            'not_found' => __('No checkouts found', 'ec-checkout'),
-            'not_found_in_trash' => __('No checkouts found in trash', 'ec-checkout'),
-            'menu_name' => __('EasyCheckout', 'ec-checkout'),
+            'name' => __('Checkouts', 'checkoutly'),
+            'singular_name' => __('Checkout', 'checkoutly'),
+            'add_new' => __('Add New', 'checkoutly'),
+            'add_new_item' => __('Add New Checkout', 'checkoutly'),
+            'edit_item' => __('Edit Checkout', 'checkoutly'),
+            'new_item' => __('New Checkout', 'checkoutly'),
+            'view_item' => __('View Checkout', 'checkoutly'),
+            'search_items' => __('Search Checkouts', 'checkoutly'),
+            'not_found' => __('No checkouts found', 'checkoutly'),
+            'not_found_in_trash' => __('No checkouts found in trash', 'checkoutly'),
+            'menu_name' => __('EasyCheckout', 'checkoutly'),
         ];
 
         $args = [
@@ -170,7 +170,7 @@ class Checkout_CPT {
     public function add_meta_boxes() {
         add_meta_box(
             'easycheckout_checkout_settings',
-            __('Checkout Settings', 'ec-checkout'),
+            __('Checkout Settings', 'checkoutly'),
             [$this, 'render_settings_meta_box'],
             self::POST_TYPE,
             'normal',
@@ -179,7 +179,7 @@ class Checkout_CPT {
 
         add_meta_box(
             'easycheckout_checkout_products',
-            __('Products', 'ec-checkout'),
+            __('Products', 'checkoutly'),
             [$this, 'render_products_meta_box'],
             self::POST_TYPE,
             'normal',
@@ -188,7 +188,7 @@ class Checkout_CPT {
 
         add_meta_box(
             'easycheckout_checkout_shortcode',
-            __('Shortcode', 'ec-checkout'),
+            __('Shortcode', 'checkoutly'),
             [$this, 'render_shortcode_meta_box'],
             self::POST_TYPE,
             'side',
@@ -197,7 +197,7 @@ class Checkout_CPT {
 
         add_meta_box(
             'easycheckout_checkout_design',
-            __('Design', 'ec-checkout'),
+            __('Design', 'checkoutly'),
             [$this, 'render_design_meta_box'],
             self::POST_TYPE,
             'side',
@@ -225,23 +225,23 @@ class Checkout_CPT {
         ?>
         <table class="form-table">
             <tr>
-                <th><label for="easycheckout_checkout_slug"><?php esc_html_e('Checkout Slug', 'ec-checkout'); ?></label></th>
+                <th><label for="easycheckout_checkout_slug"><?php esc_html_e('Checkout Slug', 'checkoutly'); ?></label></th>
                 <td>
                     <input type="text" id="easycheckout_checkout_slug" name="easycheckout_checkout_slug"
                            value="<?php echo esc_attr($slug); ?>" class="regular-text">
                     <p class="description">
-                        <?php esc_html_e('Slug des Checkouts aus deinem EasyCheckout-Konto. Produkte und Design werden von dort übernommen; der Button leitet auf die gehostete Bezahlseite (/c/{slug}). Einbetten z. B. mit [easycheckout slug="dein-slug"].', 'ec-checkout'); ?>
+                        <?php esc_html_e('Slug des Checkouts aus deinem EasyCheckout-Konto. Produkte und Design werden von dort übernommen; der Button leitet auf die gehostete Bezahlseite (/c/{slug}). Einbetten z. B. mit [easycheckout slug="dein-slug"].', 'checkoutly'); ?>
                     </p>
                 </td>
             </tr>
             <tr>
-                <th><label for="easycheckout_description"><?php esc_html_e('Description', 'ec-checkout'); ?></label></th>
+                <th><label for="easycheckout_description"><?php esc_html_e('Description', 'checkoutly'); ?></label></th>
                 <td>
                     <textarea id="easycheckout_description" name="easycheckout_description" rows="3" class="large-text"><?php echo esc_textarea($description); ?></textarea>
                 </td>
             </tr>
             <tr>
-                <th><label for="easycheckout_currency"><?php esc_html_e('Currency', 'ec-checkout'); ?></label></th>
+                <th><label for="easycheckout_currency"><?php esc_html_e('Currency', 'checkoutly'); ?></label></th>
                 <td>
                     <select id="easycheckout_currency" name="easycheckout_currency">
                         <option value="CHF" <?php selected($currency, 'CHF'); ?>>CHF</option>
@@ -251,62 +251,62 @@ class Checkout_CPT {
                 </td>
             </tr>
             <tr>
-                <th><label for="easycheckout_vat_rate"><?php esc_html_e('VAT Rate (%)', 'ec-checkout'); ?></label></th>
+                <th><label for="easycheckout_vat_rate"><?php esc_html_e('VAT Rate (%)', 'checkoutly'); ?></label></th>
                 <td>
                     <input type="number" id="easycheckout_vat_rate" name="easycheckout_vat_rate"
                            value="<?php echo esc_attr($vat_rate); ?>" step="0.1" min="0" max="100" class="small-text">
-                    <p class="description"><?php esc_html_e('Leave at 0 for no VAT.', 'ec-checkout'); ?></p>
+                    <p class="description"><?php esc_html_e('Leave at 0 for no VAT.', 'checkoutly'); ?></p>
                 </td>
             </tr>
             <tr>
-                <th><?php esc_html_e('Payment Methods', 'ec-checkout'); ?></th>
+                <th><?php esc_html_e('Payment Methods', 'checkoutly'); ?></th>
                 <td>
                     <label>
                         <input type="checkbox" name="easycheckout_payment_methods[]" value="card"
                                <?php checked(in_array('card', $payment_methods, true)); ?>>
-                        <?php esc_html_e('Credit/Debit Cards', 'ec-checkout'); ?>
+                        <?php esc_html_e('Credit/Debit Cards', 'checkoutly'); ?>
                     </label><br>
                     <label>
                         <input type="checkbox" name="easycheckout_payment_methods[]" value="twint"
                                <?php checked(in_array('twint', $payment_methods, true)); ?>>
-                        <?php esc_html_e('TWINT', 'ec-checkout'); ?>
+                        <?php esc_html_e('TWINT', 'checkoutly'); ?>
                     </label><br>
                     <label>
                         <input type="checkbox" name="easycheckout_payment_methods[]" value="bank_transfer"
                                <?php checked(in_array('bank_transfer', $payment_methods, true)); ?>>
-                        <?php esc_html_e('Bank Transfer (QR-Bill)', 'ec-checkout'); ?>
+                        <?php esc_html_e('Bank Transfer (QR-Bill)', 'checkoutly'); ?>
                     </label>
                 </td>
             </tr>
             <tr>
-                <th><label for="easycheckout_success_url"><?php esc_html_e('Success URL', 'ec-checkout'); ?></label></th>
+                <th><label for="easycheckout_success_url"><?php esc_html_e('Success URL', 'checkoutly'); ?></label></th>
                 <td>
                     <input type="url" id="easycheckout_success_url" name="easycheckout_success_url"
                            value="<?php echo esc_url($success_url); ?>" class="regular-text">
-                    <p class="description"><?php esc_html_e('Redirect URL after successful payment.', 'ec-checkout'); ?></p>
+                    <p class="description"><?php esc_html_e('Redirect URL after successful payment.', 'checkoutly'); ?></p>
                 </td>
             </tr>
             <tr>
-                <th><label for="easycheckout_cancel_url"><?php esc_html_e('Cancel URL', 'ec-checkout'); ?></label></th>
+                <th><label for="easycheckout_cancel_url"><?php esc_html_e('Cancel URL', 'checkoutly'); ?></label></th>
                 <td>
                     <input type="url" id="easycheckout_cancel_url" name="easycheckout_cancel_url"
                            value="<?php echo esc_url($cancel_url); ?>" class="regular-text">
                 </td>
             </tr>
             <tr>
-                <th><label for="easycheckout_terms_url"><?php esc_html_e('Terms URL', 'ec-checkout'); ?></label></th>
+                <th><label for="easycheckout_terms_url"><?php esc_html_e('Terms URL', 'checkoutly'); ?></label></th>
                 <td>
                     <input type="url" id="easycheckout_terms_url" name="easycheckout_terms_url"
                            value="<?php echo esc_url($terms_url); ?>" class="regular-text">
                 </td>
             </tr>
             <tr>
-                <th><?php esc_html_e('Email Notifications', 'ec-checkout'); ?></th>
+                <th><?php esc_html_e('Email Notifications', 'checkoutly'); ?></th>
                 <td>
                     <label>
                         <input type="checkbox" name="easycheckout_email_notifications" value="1"
                                <?php checked($email_notifications, true); ?>>
-                        <?php esc_html_e('Send email notifications for orders', 'ec-checkout'); ?>
+                        <?php esc_html_e('Send email notifications for orders', 'checkoutly'); ?>
                     </label>
                 </td>
             </tr>
@@ -323,7 +323,7 @@ class Checkout_CPT {
         $products = self::get_meta($post->ID, 'products') ?: [];
         ?>
         <div class="notice notice-info inline ec-products-notice">
-            <p><?php esc_html_e('Hinweis: Produkte werden in deinem EasyCheckout-Konto verwaltet und beim Einbetten automatisch aus dem Checkout (per Slug oben) geladen. Diese lokale Liste ist nur ein optionaler Fallback und wird nicht ins EasyCheckout-Konto synchronisiert.', 'ec-checkout'); ?></p>
+            <p><?php esc_html_e('Hinweis: Produkte werden in deinem EasyCheckout-Konto verwaltet und beim Einbetten automatisch aus dem Checkout (per Slug oben) geladen. Diese lokale Liste ist nur ein optionaler Fallback und wird nicht ins EasyCheckout-Konto synchronisiert.', 'checkoutly'); ?></p>
         </div>
         <div id="ec-products-container">
             <div id="ec-products-list" data-next-index="<?php echo esc_attr(count($products)); ?>">
@@ -333,7 +333,7 @@ class Checkout_CPT {
             </div>
 
             <button type="button" class="button" id="ec-add-product">
-                <?php esc_html_e('Add Product', 'ec-checkout'); ?>
+                <?php esc_html_e('Add Product', 'checkoutly'); ?>
             </button>
         </div>
 
@@ -369,37 +369,37 @@ class Checkout_CPT {
             <div class="ec-product-header">
                 <strong><?php
                     /* translators: %s: position of the product in the list */
-                    echo esc_html(sprintf(__('Product #%s', 'ec-checkout'), is_int($index) ? $index + 1 : ''));
+                    echo esc_html(sprintf(__('Product #%s', 'checkoutly'), is_int($index) ? $index + 1 : ''));
                 ?></strong>
-                <button type="button" class="button-link ec-remove-product"><?php esc_html_e('Remove', 'ec-checkout'); ?></button>
+                <button type="button" class="button-link ec-remove-product"><?php esc_html_e('Remove', 'checkoutly'); ?></button>
             </div>
             <div class="ec-product-fields">
                 <div>
-                    <label><?php esc_html_e('Name', 'ec-checkout'); ?></label>
+                    <label><?php esc_html_e('Name', 'checkoutly'); ?></label>
                     <input type="text" name="<?php echo esc_attr($field('name')); ?>"
                            value="<?php echo esc_attr($product['name']); ?>">
                 </div>
                 <div>
-                    <label><?php esc_html_e('Price', 'ec-checkout'); ?></label>
+                    <label><?php esc_html_e('Price', 'checkoutly'); ?></label>
                     <input type="number" name="<?php echo esc_attr($field('price')); ?>"
                            value="<?php echo esc_attr($product['price']); ?>" step="0.01" min="0">
                 </div>
                 <div>
-                    <label><?php esc_html_e('SKU', 'ec-checkout'); ?></label>
+                    <label><?php esc_html_e('SKU', 'checkoutly'); ?></label>
                     <input type="text" name="<?php echo esc_attr($field('sku')); ?>"
                            value="<?php echo esc_attr($product['sku']); ?>">
                 </div>
                 <div>
-                    <label><?php esc_html_e('Max Quantity', 'ec-checkout'); ?></label>
+                    <label><?php esc_html_e('Max Quantity', 'checkoutly'); ?></label>
                     <input type="number" name="<?php echo esc_attr($field('maxQuantity')); ?>"
                            value="<?php echo esc_attr($product['maxQuantity']); ?>" min="1">
                 </div>
                 <div class="ec-product-wide">
-                    <label><?php esc_html_e('Description', 'ec-checkout'); ?></label>
+                    <label><?php esc_html_e('Description', 'checkoutly'); ?></label>
                     <textarea name="<?php echo esc_attr($field('description')); ?>" rows="2"><?php echo esc_textarea($product['description']); ?></textarea>
                 </div>
                 <div class="ec-product-wide">
-                    <label><?php esc_html_e('Image URL', 'ec-checkout'); ?></label>
+                    <label><?php esc_html_e('Image URL', 'checkoutly'); ?></label>
                     <input type="url" name="<?php echo esc_attr($field('image')); ?>"
                            value="<?php echo esc_url($product['image']); ?>">
                 </div>
@@ -415,14 +415,14 @@ class Checkout_CPT {
      */
     public function render_shortcode_meta_box($post) {
         if ($post->post_status !== 'publish') {
-            echo '<p>' . esc_html__('Publish the checkout to get the shortcode.', 'ec-checkout') . '</p>';
+            echo '<p>' . esc_html__('Publish the checkout to get the shortcode.', 'checkoutly') . '</p>';
             return;
         }
         ?>
-        <p><?php esc_html_e('Copy this shortcode to embed the checkout:', 'ec-checkout'); ?></p>
+        <p><?php esc_html_e('Copy this shortcode to embed the checkout:', 'checkoutly'); ?></p>
         <code>[easycheckout id="<?php echo esc_html((string) $post->ID); ?>"]</code>
 
-        <p style="margin-top: 15px;"><?php esc_html_e('Or use the direct URL:', 'ec-checkout'); ?></p>
+        <p style="margin-top: 15px;"><?php esc_html_e('Or use the direct URL:', 'checkoutly'); ?></p>
         <code style="word-break: break-all;"><?php echo esc_url(get_permalink($post->ID)); ?></code>
         <?php
     }
@@ -437,11 +437,11 @@ class Checkout_CPT {
         $primary_color = self::get_meta($post->ID, 'primary_color') ?: '#0066cc';
         ?>
         <p>
-            <label for="easycheckout_logo"><?php esc_html_e('Logo URL', 'ec-checkout'); ?></label><br>
+            <label for="easycheckout_logo"><?php esc_html_e('Logo URL', 'checkoutly'); ?></label><br>
             <input type="url" id="easycheckout_logo" name="easycheckout_logo" value="<?php echo esc_url($logo); ?>" class="widefat">
         </p>
         <p>
-            <label for="easycheckout_primary_color"><?php esc_html_e('Primary Color', 'ec-checkout'); ?></label><br>
+            <label for="easycheckout_primary_color"><?php esc_html_e('Primary Color', 'checkoutly'); ?></label><br>
             <input type="color" id="easycheckout_primary_color" name="easycheckout_primary_color"
                    value="<?php echo esc_attr($primary_color); ?>">
         </p>
@@ -540,8 +540,8 @@ class Checkout_CPT {
         foreach ($columns as $key => $value) {
             $new_columns[$key] = $value;
             if ($key === 'title') {
-                $new_columns['shortcode'] = __('Shortcode', 'ec-checkout');
-                $new_columns['products'] = __('Products', 'ec-checkout');
+                $new_columns['shortcode'] = __('Shortcode', 'checkoutly');
+                $new_columns['products'] = __('Products', 'checkoutly');
             }
         }
         return $new_columns;
@@ -577,7 +577,7 @@ class Checkout_CPT {
             $actions['view_checkout'] = sprintf(
                 '<a href="%s" target="_blank">%s</a>',
                 esc_url(get_permalink($post->ID)),
-                esc_html__('View Checkout', 'ec-checkout')
+                esc_html__('View Checkout', 'checkoutly')
             );
         }
         return $actions;

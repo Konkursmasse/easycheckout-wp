@@ -128,21 +128,21 @@ class Checkout_Editor {
             'checkouts' => $checkout_options,
             'pluginUrl' => EASYCHECKOUT_PLUGIN_URL,
             'i18n' => [
-                'blockTitle' => __('EasyCheckout', 'ec-checkout'),
-                'blockDescription' => __('Embed an EasyCheckout payment form.', 'ec-checkout'),
-                'selectCheckout' => __('Select Checkout', 'ec-checkout'),
-                'checkoutId' => __('Checkout ID', 'ec-checkout'),
-                'checkoutSlug' => __('Checkout Slug', 'ec-checkout'),
-                'theme' => __('Theme', 'ec-checkout'),
-                'light' => __('Light', 'ec-checkout'),
-                'dark' => __('Dark', 'ec-checkout'),
-                'showHeader' => __('Show Header', 'ec-checkout'),
-                'buttonText' => __('Button Text', 'ec-checkout'),
-                'buttonBlockTitle' => __('EasyCheckout Button', 'ec-checkout'),
-                'buttonBlockDescription' => __('Add a payment button.', 'ec-checkout'),
-                'productId' => __('Product ID', 'ec-checkout'),
-                'noCheckouts' => __('No checkouts found. Create one first.', 'ec-checkout'),
-                'preview' => __('Preview', 'ec-checkout'),
+                'blockTitle' => __('EasyCheckout', 'checkoutly'),
+                'blockDescription' => __('Embed an EasyCheckout payment form.', 'checkoutly'),
+                'selectCheckout' => __('Select Checkout', 'checkoutly'),
+                'checkoutId' => __('Checkout ID', 'checkoutly'),
+                'checkoutSlug' => __('Checkout Slug', 'checkoutly'),
+                'theme' => __('Theme', 'checkoutly'),
+                'light' => __('Light', 'checkoutly'),
+                'dark' => __('Dark', 'checkoutly'),
+                'showHeader' => __('Show Header', 'checkoutly'),
+                'buttonText' => __('Button Text', 'checkoutly'),
+                'buttonBlockTitle' => __('EasyCheckout Button', 'checkoutly'),
+                'buttonBlockDescription' => __('Add a payment button.', 'checkoutly'),
+                'productId' => __('Product ID', 'checkoutly'),
+                'noCheckouts' => __('No checkouts found. Create one first.', 'checkoutly'),
+                'preview' => __('Preview', 'checkoutly'),
             ],
         ]);
     }
@@ -162,7 +162,7 @@ class Checkout_Editor {
 
         if (!$checkout_id && !$checkout_slug) {
             if (current_user_can('edit_posts')) {
-                return '<p class="easycheckout-error">' . __('Please select a checkout in the block settings.', 'ec-checkout') . '</p>';
+                return '<p class="easycheckout-error">' . __('Please select a checkout in the block settings.', 'checkoutly') . '</p>';
             }
             return '';
         }
@@ -197,13 +197,13 @@ class Checkout_Editor {
     public function render_button_block($attributes) {
         $checkout_id = intval($attributes['checkoutId'] ?? 0);
         $checkout_slug = sanitize_text_field($attributes['checkoutSlug'] ?? '');
-        $button_text = sanitize_text_field($attributes['buttonText'] ?? __('Buy Now', 'ec-checkout'));
+        $button_text = sanitize_text_field($attributes['buttonText'] ?? __('Buy Now', 'checkoutly'));
         $product_id = sanitize_text_field($attributes['productId'] ?? '');
         $class_name = sanitize_html_class($attributes['className'] ?? '');
 
         if (!$checkout_id && !$checkout_slug) {
             if (current_user_can('edit_posts')) {
-                return '<p class="easycheckout-error">' . __('Please select a checkout in the block settings.', 'ec-checkout') . '</p>';
+                return '<p class="easycheckout-error">' . __('Please select a checkout in the block settings.', 'checkoutly') . '</p>';
             }
             return '';
         }

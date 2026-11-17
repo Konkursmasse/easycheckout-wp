@@ -59,7 +59,7 @@ class Updater {
         // translate.wordpress.org, und das .org-ZIP enthält weder diese Datei
         // noch den Ordner languages/.
         add_action('init', function () {
-            load_plugin_textdomain('ec-checkout', false, dirname(EASYCHECKOUT_PLUGIN_BASENAME) . '/languages');
+            load_plugin_textdomain('checkoutly', false, dirname(EASYCHECKOUT_PLUGIN_BASENAME) . '/languages');
         });
     }
 
